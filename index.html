@@ -476,6 +476,7 @@
             <form id="uploadForm" action="https://formsubmit.co/yoursmilecenter9@gmail.com" method="POST" enctype="multipart/form-data">
                 <!-- FormSubmit Configuration -->
                 <input type="hidden" name="_subject" value="New File Upload - Smile Center">
+                <input type="hidden" name="_next" value="https://yoursmilecenter.github.io/Landing-page-/?success=true">
                 <input type="hidden" name="_captcha" value="false">
                 <input type="hidden" name="_template" value="table">
                 
@@ -523,6 +524,17 @@
     </div>
 
     <script>
+        // Check if page was loaded with success parameter
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === 'true') {
+                // Show success message
+                alert('✅ Thank you! Your files have been uploaded successfully. We\'ll contact you soon at the email you provided.');
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
         function handleContact() {
             window.location.href = 'mailto:yoursmilecenter9@gmail.com';
         }
