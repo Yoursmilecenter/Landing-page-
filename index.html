@@ -481,22 +481,22 @@
                 
                 <div class="form-group">
                     <label class="form-label">Your Name *</label>
-                    <input type="text" name="name" class="form-input" required placeholder="John Doe">
+                    <input type="text" name="name" id="clientName" class="form-input" required placeholder="John Doe">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Your Email *</label>
-                    <input type="email" name="email" class="form-input" required placeholder="john@example.com">
+                    <input type="email" name="email" id="clientEmail" class="form-input" required placeholder="john@example.com">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Phone Number (Optional)</label>
-                    <input type="tel" name="phone" class="form-input" placeholder="+1 (555) 123-4567">
+                    <input type="tel" name="phone" id="clientPhone" class="form-input" placeholder="+1 (555) 123-4567">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Project Description (Optional)</label>
-                    <textarea name="message" class="form-input form-textarea" placeholder="Tell us about your project..."></textarea>
+                    <textarea name="message" id="clientMessage" class="form-input form-textarea" placeholder="Tell us about your project..."></textarea>
                 </div>
 
                 <div class="form-group">
@@ -506,10 +506,10 @@
                         <div class="upload-text">Drag & drop files here</div>
                         <div class="upload-hint">or click to browse (max 10MB per file)</div>
                     </div>
-                    <input type="file" name="attachment" id="fileInput" multiple style="display: none;" accept="*/*" required>
+                    <input type="file" name="attachment" id="fileInput" multiple style="display: none;" accept="*/*">
                     <div id="fileList" class="file-list"></div>
                     <div id="fileSizeWarning" class="file-size-warning" style="display: none;">
-                        ⚠️ Files larger than 10MB cannot be sent via email. Please use smaller files or contact us directly.
+                        ⚠️ Files larger than 10MB cannot be sent. Please remove them or use smaller files.
                     </div>
                 </div>
 
@@ -535,6 +535,10 @@
         function closeUploadModal() {
             document.getElementById('uploadModal').classList.remove('active');
             document.body.style.overflow = 'auto';
+            document.getElementById('uploadForm').reset();
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('fileSizeWarning').style.display = 'none';
+            document.getElementById('statusMessage').classList.remove('active');
         }
 
         document.getElementById('uploadModal').addEventListener('click', function(e) {
@@ -562,7 +566,11 @@
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
-            fileInput.files = e.dataTransfer.files;
+            
+            const dt = new DataTransfer();
+            Array.from(e.dataTransfer.files).forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+            
             displayFiles();
         });
 
@@ -627,6 +635,14 @@
             const files = fileInput.files;
             const maxSize = 10 * 1024 * 1024; // 10MB
             
+            // Check if files selected
+            if (files.length === 0) {
+                e.preventDefault();
+                showStatus('❌ Please select at least one file.', 'error');
+                return false;
+            }
+
+            // Check file sizes
             for (let file of files) {
                 if (file.size > maxSize) {
                     e.preventDefault();
@@ -635,17 +651,11 @@
                 }
             }
 
-            if (files.length === 0) {
-                e.preventDefault();
-                showStatus('❌ Please select at least one file.', 'error');
-                return false;
-            }
-
             // Show loading state
             const submitButton = document.getElementById('submitButton');
             submitButton.disabled = true;
             submitButton.textContent = 'Sending...';
-            showStatus('📤 Uploading files... Please wait.', 'success');
+            showStatus('📤 Sending your files... Please wait (this may take a moment).', 'success');
         });
     </script>
 </body>
