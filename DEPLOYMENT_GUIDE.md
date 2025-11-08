@@ -33,33 +33,6 @@ You have **3 files** ready to deploy:
 5. Add commit message: `Update: Added Client Portal with Firebase authentication`
 6. Click **"Commit changes"**
 
-#### **Option B: Replace Files One by One**
-
-If you prefer to update files individually:
-
-**For index.html (update existing):**
-1. Click on **index.html** in the file list
-2. Click the **pencil icon** (Edit this file)
-3. **Delete all content**
-4. **Copy & paste** new index.html content
-5. Scroll down, add message: `Update landing page with portal button`
-6. Click **"Commit changes"**
-
-**For portal-login.html (new file):**
-1. Click **"Add file"** → **"Create new file"**
-2. Name it: `portal-login.html`
-3. **Copy & paste** the login page content
-4. Add message: `Add client portal login page`
-5. Click **"Commit new file"**
-
-**For portal-dashboard.html (new file):**
-1. Click **"Add file"** → **"Create new file"**
-2. Name it: `portal-dashboard.html`
-3. **Copy & paste** the dashboard content
-4. Add message: `Add client portal dashboard`
-5. Click **"Commit new file"**
-
----
 
 ### **Step 3: Wait for Deployment**
 
