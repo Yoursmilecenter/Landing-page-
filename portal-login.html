@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal - Smile Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo-text {
+            font-size: 36px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-accent {
+            color: #38bdf8;
+        }
+
+        .logo-subtitle {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-top: 8px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .login-card {
+            background: #1a1a1a;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 20px;
+            padding: 48px 40px;
+            box-shadow: 0 10px 40px rgba(56, 189, 248, 0.3);
+        }
+
+        .login-title {
+            font-size: 28px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            color: #d1d5db;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-input::placeholder {
+            color: #6b7280;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 8px;
+        }
+
+        .forgot-password a {
+            color: #38bdf8;
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .forgot-password a:hover {
+            color: #0ea5e9;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 32px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .login-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(56, 189, 248, 0.6);
+        }
+
+        .login-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 32px 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider-text {
+            padding: 0 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .back-link a {
+            color: #9ca3af;
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .back-link a:hover {
+            color: #38bdf8;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .status-message.active {
+            display: block;
+        }
+
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .status-message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 36px 24px;
+            }
+
+            .logo-text {
+                font-size: 28px;
+            }
+
+            .login-title {
+                font-size: 24px;
+            }
+
+            .login-button {
+                padding: 14px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Logo -->
+        <div class="logo">
+            <div class="logo-text">
+                Smile <span class="logo-accent">Center</span>
+            </div>
+            <div class="logo-subtitle">Client Portal</div>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+            <h1 class="login-title">Welcome Back</h1>
+            <p class="login-subtitle">Sign in to access your projects</p>
+
+            <!-- Status Message -->
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="form-input" 
+                        placeholder="your@email.com"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                    <div class="forgot-password">
+                        <a href="#" onclick="handleForgotPassword(); return false;">Forgot password?</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button" id="loginButton">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <div class="divider-line"></div>
+                <div class="divider-text">or</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <!-- Back to Main Site -->
+            <div class="back-link">
+                <a href="index.html">← Back to Main Site</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+            authDomain: "smile-center-7c6f5.firebaseapp.com",
+            projectId: "smile-center-7c6f5",
+            storageBucket: "smile-center-7c6f5.firebasestorage.app",
+            messagingSenderId: "517098616907",
+            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Make functions globally available
+        window.handleLogin = async function(email, password) {
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                return { success: true, user: userCredential.user };
+            } catch (error) {
+                return { success: false, error: error };
+            }
+        };
+
+        window.handlePasswordReset = async function(email) {
+            try {
+                await sendPasswordResetEmail(auth, email);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error };
+            }
+        };
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is logged in, redirect to dashboard
+                window.location.href = 'portal-dashboard.html';
+            }
+        });
+    </script>
+
+    <script>
+        // Form submission handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+
+            // Disable button and show loading
+            loginButton.disabled = true;
+            loginButton.textContent = 'Signing in...';
+
+            // Attempt login
+            const result = await window.handleLogin(email, password);
+
+            if (result.success) {
+                showStatus('✅ Login successful! Redirecting...', 'success');
+                // Redirect will happen automatically via onAuthStateChanged
+            } else {
+                // Show error
+                let errorMessage = 'Login failed. Please check your credentials.';
+                
+                if (result.error.code === 'auth/user-not-found') {
+                    errorMessage = 'No account found with this email.';
+                } else if (result.error.code === 'auth/wrong-password') {
+                    errorMessage = 'Incorrect password.';
+                } else if (result.error.code === 'auth/invalid-email') {
+                    errorMessage = 'Invalid email address.';
+                } else if (result.error.code === 'auth/invalid-credential') {
+                    errorMessage = 'Invalid email or password.';
+                }
+                
+                showStatus('❌ ' + errorMessage, 'error');
+                loginButton.disabled = false;
+                loginButton.textContent = 'Sign In';
+            }
+        });
+
+        async function handleForgotPassword() {
+            const email = document.getElementById('email').value;
+            
+            if (!email) {
+                showStatus('Please enter your email address first.', 'error');
+                return;
+            }
+
+            const result = await window.handlePasswordReset(email);
+            
+            if (result.success) {
+                showStatus('✅ Password reset email sent! Check your inbox.', 'success');
+            } else {
+                showStatus('❌ Failed to send reset email. Please check the email address.', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message active ' + type;
+        }
+    </script>
+</body>
+</html>
