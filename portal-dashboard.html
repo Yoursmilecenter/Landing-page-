@@ -158,26 +158,6 @@
             font-weight: 600;
         }
 
-        .upload-button {
-            background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);
-            color: #ffffff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .upload-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(56, 189, 248, 0.4);
-        }
-
         /* Projects List */
         .projects-list {
             display: grid;
@@ -342,6 +322,8 @@
             cursor: pointer;
             transition: all 0.3s;
             border: none;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .download-button {
@@ -352,16 +334,6 @@
 
         .download-button:hover {
             background: rgba(56, 189, 248, 0.2);
-        }
-
-        .view-button {
-            background: rgba(139, 92, 246, 0.1);
-            color: #8b5cf6;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
-
-        .view-button:hover {
-            background: rgba(139, 92, 246, 0.2);
         }
 
         /* Empty State */
@@ -450,11 +422,6 @@
                 align-items: flex-start;
             }
 
-            .upload-button {
-                width: 100%;
-                justify-content: center;
-            }
-
             .project-header {
                 flex-direction: column;
                 gap: 12px;
@@ -499,6 +466,8 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getStorage, ref, listAll, getDownloadURL, getMetadata } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -513,102 +482,107 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
 
-        // Mock project data (will be replaced with real Firebase data later)
-        const mockProjects = [
-            {
-                id: 'proj_001',
-                title: 'Website Redesign',
-                status: 'in-progress',
-                date: 'Started Nov 1, 2025',
-                description: 'Complete redesign of your clinic website with modern UI/UX, mobile optimization, and SEO improvements.',
-                files: [
-                    {
-                        name: 'Homepage_Design_v2.pdf',
-                        size: '2.4 MB',
-                        type: 'pdf',
-                        uploadedDate: 'Nov 5, 2025',
-                        url: '#'
-                    },
-                    {
-                        name: 'Brand_Guidelines.pdf',
-                        size: '1.8 MB',
-                        type: 'pdf',
-                        uploadedDate: 'Nov 3, 2025',
-                        url: '#'
-                    },
-                    {
-                        name: 'Color_Palette.png',
-                        size: '456 KB',
-                        type: 'image',
-                        uploadedDate: 'Nov 2, 2025',
-                        url: '#'
-                    }
-                ]
-            },
-            {
-                id: 'proj_002',
-                title: 'Social Media Campaign',
-                status: 'completed',
-                date: 'Completed Oct 28, 2025',
-                description: 'Q4 social media marketing campaign including content calendar, graphics, and performance analytics.',
-                files: [
-                    {
-                        name: 'Q4_Content_Calendar.xlsx',
-                        size: '845 KB',
-                        type: 'excel',
-                        uploadedDate: 'Oct 28, 2025',
-                        url: '#'
-                    },
-                    {
-                        name: 'Campaign_Results.pdf',
-                        size: '3.2 MB',
-                        type: 'pdf',
-                        uploadedDate: 'Oct 28, 2025',
-                        url: '#'
-                    }
-                ]
-            },
-            {
-                id: 'proj_003',
-                title: 'Patient Portal Development',
-                status: 'pending',
-                date: 'Scheduled for Nov 15, 2025',
-                description: 'Custom patient portal for appointment booking, medical records access, and secure messaging.',
-                files: [
-                    {
-                        name: 'Requirements_Doc.pdf',
-                        size: '1.2 MB',
-                        type: 'pdf',
-                        uploadedDate: 'Nov 6, 2025',
-                        url: '#'
-                    }
-                ]
-            }
-        ];
+        let userProjects = [];
 
         // Check authentication state
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is logged in
                 loadDashboard(user);
             } else {
-                // User is not logged in, redirect to login
                 window.location.href = 'portal-login.html';
             }
         });
 
-        function loadDashboard(user) {
-            // Update user email
+        async function loadDashboard(user) {
             document.getElementById('userEmail').textContent = user.email;
+            
+            try {
+                // Load user's projects
+                await loadUserProjects(user.email);
+                renderDashboard();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                renderEmptyState();
+            }
+        }
 
-            // Calculate stats
-            const totalProjects = mockProjects.length;
-            const completedProjects = mockProjects.filter(p => p.status === 'completed').length;
-            const inProgressProjects = mockProjects.filter(p => p.status === 'in-progress').length;
-            const totalFiles = mockProjects.reduce((sum, p) => sum + p.files.length, 0);
+        async function loadUserProjects(userEmail) {
+            try {
+                const projectsRef = collection(db, 'projects');
+                const q = query(projectsRef, where('clientEmail', '==', userEmail));
+                const querySnapshot = await getDocs(q);
+                
+                userProjects = [];
 
-            // Build dashboard HTML
+                for (const docSnap of querySnapshot.docs) {
+                    const projectData = docSnap.data();
+                    const files = await loadProjectFiles(docSnap.id);
+                    
+                    userProjects.push({
+                        id: docSnap.id,
+                        ...projectData,
+                        files: files
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                userProjects = [];
+            }
+        }
+
+        async function loadProjectFiles(projectId) {
+            try {
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const fileList = await listAll(filesRef);
+                
+                const files = await Promise.all(
+                    fileList.items.map(async (itemRef) => {
+                        try {
+                            const url = await getDownloadURL(itemRef);
+                            const metadata = await getMetadata(itemRef);
+                            
+                            return {
+                                name: itemRef.name,
+                                url: url,
+                                size: metadata.size,
+                                uploadedDate: new Date(metadata.timeCreated).toLocaleDateString(),
+                                type: getFileType(itemRef.name)
+                            };
+                        } catch (error) {
+                            console.error('Error loading file:', error);
+                            return null;
+                        }
+                    })
+                );
+                
+                return files.filter(f => f !== null);
+            } catch (error) {
+                console.error('Error loading project files:', error);
+                return [];
+            }
+        }
+
+        function getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const typeMap = {
+                'pdf': 'pdf',
+                'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
+                'doc': 'word', 'docx': 'word',
+                'xls': 'excel', 'xlsx': 'excel',
+                'zip': 'zip', 'rar': 'zip', '7z': 'zip'
+            };
+            return typeMap[ext] || 'file';
+        }
+
+        function renderDashboard() {
+            const totalProjects = userProjects.length;
+            const completedProjects = userProjects.filter(p => p.status === 'completed').length;
+            const inProgressProjects = userProjects.filter(p => p.status === 'in-progress').length;
+            const totalFiles = userProjects.reduce((sum, p) => sum + p.files.length, 0);
+
             const dashboardHTML = `
                 <!-- Welcome Section -->
                 <div class="welcome-section">
@@ -625,12 +599,12 @@
                     <div class="stat-card">
                         <div class="stat-label">Completed</div>
                         <div class="stat-value">${completedProjects}</div>
-                        <div class="stat-trend">✓ All deliverables ready</div>
+                        ${completedProjects > 0 ? '<div class="stat-trend">✓ All deliverables ready</div>' : ''}
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">In Progress</div>
                         <div class="stat-value">${inProgressProjects}</div>
-                        <div class="stat-trend">⚡ Active development</div>
+                        ${inProgressProjects > 0 ? '<div class="stat-trend">⚡ Active development</div>' : ''}
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Total Files</div>
@@ -641,13 +615,9 @@
                 <!-- Projects Section -->
                 <div class="section-header">
                     <h2 class="section-title">Your Projects</h2>
-                    <button class="upload-button" onclick="alert('File upload coming in Step 5!')">
-                        <span>📎</span>
-                        Upload Files
-                    </button>
                 </div>
 
-                ${mockProjects.length > 0 ? renderProjects() : renderEmptyState()}
+                ${userProjects.length > 0 ? renderProjects() : renderEmptyState()}
             `;
 
             document.getElementById('mainContent').innerHTML = dashboardHTML;
@@ -656,19 +626,19 @@
         function renderProjects() {
             return `
                 <div class="projects-list">
-                    ${mockProjects.map(project => `
+                    ${userProjects.map(project => `
                         <div class="project-card">
                             <div class="project-header">
                                 <div class="project-info">
                                     <h3 class="project-title">${project.title}</h3>
-                                    <p class="project-date">${project.date}</p>
+                                    <p class="project-date">Created ${new Date(project.createdAt).toLocaleDateString()}</p>
                                 </div>
                                 <span class="status-badge status-${project.status}">
                                     ${formatStatus(project.status)}
                                 </span>
                             </div>
 
-                            <p class="project-description">${project.description}</p>
+                            ${project.description ? `<p class="project-description">${project.description}</p>` : ''}
 
                             ${project.files.length > 0 ? `
                                 <div class="files-section">
@@ -683,22 +653,19 @@
                                                     <div class="file-icon">${getFileIcon(file.type)}</div>
                                                     <div class="file-details">
                                                         <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${file.size} • Uploaded ${file.uploadedDate}</div>
+                                                        <div class="file-meta">${formatFileSize(file.size)} • Uploaded ${file.uploadedDate}</div>
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    <button class="action-button view-button" onclick="alert('File preview coming soon!')">
-                                                        👁️ View
-                                                    </button>
-                                                    <button class="action-button download-button" onclick="handleDownload('${file.name}')">
+                                                    <a href="${file.url}" target="_blank" class="action-button download-button" download="${file.name}">
                                                         ⬇️ Download
-                                                    </button>
+                                                    </a>
                                                 </div>
                                             </div>
                                         `).join('')}
                                     </div>
                                 </div>
-                            ` : ''}
+                            ` : '<p style="color: #9ca3af; font-size: 14px; margin-top: 16px;">No files uploaded yet</p>'}
                         </div>
                     `).join('')}
                 </div>
@@ -713,7 +680,7 @@
                     <p class="empty-description">
                         Your projects will appear here once we start working together.
                     </p>
-                    <a href="mailto:contact@smilecenter.com" class="contact-button">
+                    <a href="mailto:yoursmilecenter9@gmail.com" class="contact-button">
                         Contact Us
                     </a>
                 </div>
@@ -735,14 +702,19 @@
                 'image': '🖼️',
                 'excel': '📊',
                 'word': '📝',
-                'zip': '📦'
+                'zip': '📦',
+                'file': '📎'
             };
             return iconMap[type] || '📎';
         }
 
-        window.handleDownload = function(filename) {
-            alert(`Download feature coming in Step 5!\n\nFile: ${filename}\n\nThis will connect to Firebase Storage for real file downloads.`);
-        };
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
 
         window.handleLogout = async function() {
             try {
