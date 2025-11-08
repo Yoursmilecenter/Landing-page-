@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background: #000000;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -30,7 +30,7 @@
         .logo {
             font-size: 32px;
             font-weight: 600;
-            color: #0369a1;
+            color: #ffffff;
             margin-bottom: 16px;
             letter-spacing: -0.02em;
         }
@@ -42,30 +42,29 @@
         .tagline {
             font-size: 16px;
             font-weight: 400;
-            color: #0369a1;
+            color: #9ca3af;
             margin-bottom: 64px;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            opacity: 0.8;
         }
 
         h1 {
             font-size: 64px;
             font-weight: 300;
-            color: #0c4a6e;
+            color: #ffffff;
             line-height: 1.2;
             margin-bottom: 24px;
         }
 
         h1 strong {
             font-weight: 600;
-            color: #0369a1;
+            color: #38bdf8;
         }
 
         .subheadline {
             font-size: 22px;
             font-weight: 400;
-            color: #075985;
+            color: #d1d5db;
             margin-bottom: 48px;
             line-height: 1.6;
         }
@@ -80,42 +79,23 @@
         }
 
         .cta-button {
-            background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+            background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);
             color: #ffffff;
-            padding: 18px 48px;
+            padding: 18px 56px;
             font-size: 18px;
             font-weight: 500;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(3, 105, 161, 0.3);
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
             text-decoration: none;
             display: inline-block;
         }
 
         .cta-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(3, 105, 161, 0.4);
-        }
-
-        .cta-secondary {
-            background: #ffffff;
-            color: #0369a1;
-            padding: 18px 48px;
-            font-size: 18px;
-            font-weight: 500;
-            border: 2px solid #0369a1;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .cta-secondary:hover {
-            background: #f0f9ff;
-            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(56, 189, 248, 0.6);
         }
 
         .features {
@@ -127,15 +107,17 @@
 
         .feature {
             padding: 24px;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
         }
 
         .feature:hover {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
             transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.3);
         }
 
         .feature-icon {
@@ -146,13 +128,13 @@
         .feature-title {
             font-size: 20px;
             font-weight: 600;
-            color: #0c4a6e;
+            color: #ffffff;
             margin-bottom: 8px;
         }
 
         .feature-text {
             font-size: 15px;
-            color: #075985;
+            color: #9ca3af;
             line-height: 1.5;
         }
 
@@ -175,7 +157,7 @@
                 gap: 12px;
             }
 
-            .cta-button, .cta-secondary {
+            .cta-button {
                 width: 100%;
                 max-width: 300px;
             }
@@ -199,8 +181,8 @@
                 font-size: 14px;
             }
 
-            .cta-button, .cta-secondary {
-                padding: 16px 32px;
+            .cta-button {
+                padding: 16px 40px;
                 font-size: 16px;
             }
         }
@@ -228,12 +210,9 @@
             Experience the difference of personalized treatment.
         </p>
 
-        <!-- CTA Buttons -->
+        <!-- CTA Button -->
         <div class="cta-container">
-            <button class="cta-button" onclick="handleBooking()">
-                Book Appointment
-            </button>
-            <button class="cta-secondary" onclick="handleContact()">
+            <button class="cta-button" onclick="handleContact()">
                 Contact Us
             </button>
         </div>
@@ -261,16 +240,11 @@
     </div>
 
     <script>
-        function handleBooking() {
-            // Replace with your booking system link
-            alert('Booking system coming soon! Add your appointment scheduling link here.');
-            // Example: window.location.href = 'https://your-booking-link.com';
-        }
-
         function handleContact() {
-            // Replace with your contact page or phone number
-            alert('Contact us at: [Your Phone Number] or email: info@smilecenter.com');
-            // Example: window.location.href = 'tel:+1234567890';
+            // Contact information
+            alert('Contact us at: yoursmilecenter9@gmail.com');
+            // Optional: Automatically open email client
+            // window.location.href = 'mailto:yoursmilecenter9@gmail.com';
         }
     </script>
 </body>
