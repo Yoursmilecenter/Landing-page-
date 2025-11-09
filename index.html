@@ -1,412 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Smile Center</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smile Center - Welcome</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            cursor: pointer; /* Indicates it's clickable */
+            text-align: center;
+        }
+        .logo {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .logo span {
+            color: #38bdf8; /* Matches your portal accent color */
+        }
+        .instruction {
+            font-size: 20px;
+            color: #9ca3af;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+    </style>
 </head>
 <body>
-    <div id="app"></div>
-    
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, getDocs, updateDoc, doc, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    <div style="padding: 20px;">
+        <div class="logo">Smile <span>Center</span></div>
+        <div class="instruction">Click Anywhere to Enter</div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
-            authDomain: "smile-center-7c6f5.firebaseapp.com",
-            projectId: "smile-center-7c6f5",
-            storageBucket: "smile-center-7c6f5.firebasestorage.app",
-            messagingSenderId: "517098616907",
-            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
-        };
+    <script>
+        function redirectToPortal() {
+            // Redirects to your login page file
+            window.location.href = 'portal-login.html';
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const storage = getStorage(app);
-        const db = getFirestore(app);
-
-        let currentUser = null;
-        let allProjects = [];
-
-        // --- HARDCODED DESIGNER LIST (Used for dropdown options) ---
-        const designers = [
-            { email: 'designer1@smile.com', name: 'Designer 1' },
-            { email: 'designer2@smile.com', name: 'Designer 2' },
-        ];
-        // ---------------------------------------------------------
-        
-        // --- TEMPORARY LOGIN CHECK (Will be removed upon real upgrade) ---
-        // Note: Designer 1 uses 'designer1@smile.com'. If you want to use the generic
-        // '1234' password for a real account, you must create it in Firebase Auth first.
-        // I'm using the email defined in the 'designers' array for consistency.
-        const DESIGNER_EMAIL = 'designer1@smile.com';
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                // Redirect designers to their portal
-                if (designers.some(d => d.email === currentUser.email)) {
-                    window.location.href = 'designer-portal.html';
-                    return;
-                }
-                await loadData();
-            } else {
-                window.location.href = 'portal-login.html';
-            }
-        });
-        // ----------------------------------------------------------------------
-
-        async function loadData() {
-            try {
-                const projectsRef = collection(db, 'projects');
-                const q = query(projectsRef, orderBy('createdAt', 'desc'));
-                const snapshot = await getDocs(q);
-                
-                allProjects = [];
-                for (const docSnap of snapshot.docs) {
-                    const data = docSnap.data();
-                    const files = await loadFiles(docSnap.id);
-                    allProjects.push({ id: docSnap.id, ...data, files });
-                }
-                render();
-            } catch (error) {
-                console.error('Error:', error);
-                render();
-            }
-        }
-
-        async function loadFiles(projectId) {
-            try {
-                const filesRef = ref(storage, `projects/${projectId}`);
-                const list = await listAll(filesRef);
-                const files = await Promise.all(
-                    list.items.map(async (item) => {
-                        const url = await getDownloadURL(item);
-                        const meta = await getMetadata(item);
-                        return {
-                            name: item.name,
-                            url,
-                            path: item.fullPath,
-                            size: meta.size,
-                            date: new Date(meta.timeCreated).toLocaleDateString()
-                        };
-                    })
-                );
-                return files;
-            } catch {
-                return [];
-            }
-        }
-
-        function render() {
-            const stats = {
-                total: allProjects.length,
-                pending: allProjects.filter(p => p.status === 'pending').length,
-                inProgress: allProjects.filter(p => p.status === 'in-progress').length,
-                completed: allProjects.filter(p => p.status === 'completed').length
-            };
-
-            const designerOptions = designers.map(d => 
-                `<option value="${d.email}">${d.name}</option>`
-            ).join('');
-
-            document.getElementById('app').innerHTML = `
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; min-height: 100vh; }
-                    .header { background: #1a1a1a; border-bottom: 1px solid rgba(56,189,248,0.2); padding: 20px; position: sticky; top: 0; z-index: 100; }
-                    .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-                    .logo { font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
-                    .logo span { color: #38bdf8; }
-                    .admin-badge { background: rgba(139,92,246,0.2); color: #a78bfa; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(139,92,246,0.3); }
-                    .logout-btn { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 8px 20px; border-radius: 8px; cursor: pointer; }
-                    .main { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-                    .page-title { font-size: 32px; margin-bottom: 8px; }
-                    .page-subtitle { color: #9ca3af; margin-bottom: 40px; }
-                    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
-                    .stat-card { background: #1a1a1a; border: 1px solid rgba(56,189,248,0.2); border-radius: 16px; padding: 24px; }
-                    .stat-label { color: #9ca3af; font-size: 14px; margin-bottom: 8px; }
-                    .stat-value { font-size: 36px; font-weight: 600; }
-                    .section-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
-                    .projects-list { display: grid; gap: 20px; }
-                    .project-card { background: #1a1a1a; border: 1px solid rgba(56,189,248,0.2); border-radius: 16px; padding: 24px; }
-                    .project-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
-                    .project-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-                    .project-meta { color: #9ca3af; font-size: 14px; }
-                    .status-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 12px; cursor: pointer; }
-                    .project-actions { display: flex; gap: 10px; } /* New style for grouping selects */
-                    .project-desc { color: #d1d5db; margin-bottom: 20px; line-height: 1.6; }
-                    .btn-upload { background: linear-gradient(135deg, #0369a1, #38bdf8); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
-                    .files-section { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
-                    .files-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
-                    .file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 12px; }
-                    .file-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-                    .file-icon { width: 40px; height: 40px; background: rgba(56,189,248,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-                    .file-name { font-size: 14px; margin-bottom: 4px; }
-                    .file-meta { color: #9ca3af; font-size: 12px; }
-                    .file-actions { display: flex; gap: 8px; }
-                    .btn-download { background: rgba(56,189,248,0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; }
-                    .btn-delete { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; }
-                    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); overflow-y: auto; }
-                    .modal.active { display: flex; align-items: center; justify-content: center; padding: 20px; }
-                    .modal-content { background: #1a1a1a; border: 1px solid rgba(56,189,248,0.2); border-radius: 20px; padding: 40px; max-width: 600px; width: 100%; position: relative; }
-                    .close { position: absolute; right: 20px; top: 20px; font-size: 32px; color: #9ca3af; cursor: pointer; background: none; border: none; }
-                    .modal-title { font-size: 28px; margin-bottom: 10px; font-weight: 600; }
-                    .modal-subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 30px; }
-                    .upload-area { border: 2px dashed rgba(56,189,248,0.3); border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; margin: 20px 0; }
-                    .upload-area:hover { border-color: #38bdf8; background: rgba(56,189,248,0.05); }
-                    .file-list { margin-top: 20px; }
-                    .file-list-item { display: flex; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; }
-                    .btn-remove { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-                    .btn-primary { background: linear-gradient(135deg, #0369a1, #38bdf8); color: #fff; border: none; padding: 16px; border-radius: 50px; font-size: 18px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 20px; }
-                    .status-msg { padding: 16px; border-radius: 10px; font-size: 14px; margin-top: 20px; display: none; }
-                    .status-msg.active { display: block; }
-                    .status-msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
-                    .status-msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
-                </style>
-
-                <div class="header">
-                    <div class="header-content">
-                        <div class="logo">
-                            <span>Smile <span>Center</span></span>
-                            <span class="admin-badge">ADMIN</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <span style="color: #9ca3af; font-size: 14px;">${currentUser ? currentUser.email : 'Loading...'}</span>
-                            <button class="logout-btn" onclick="logout()">Logout</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="main">
-                    <h1 class="page-title">Admin Panel</h1>
-                    <p class="page-subtitle">Manage all client projects, assign designers, and upload designs</p>
-
-                    <div class="stats">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Projects</div>
-                            <div class="stat-value">${stats.total}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Pending</div>
-                            <div class="stat-value">${stats.pending}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">In Progress</div>
-                            <div class="stat-value">${stats.inProgress}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Completed</div>
-                            <div class="stat-value">${stats.completed}</div>
-                        </div>
-                    </div>
-
-                    <h2 class="section-title">All Projects</h2>
-
-                    ${allProjects.length > 0 ? `
-                        <div class="projects-list">
-                            ${allProjects.map(project => `
-                                <div class="project-card">
-                                    <div class="project-header">
-                                        <div>
-                                            <div class="project-title">${project.title}</div>
-                                            <div class="project-meta">
-                                            Client: ${project.clientEmail} • Created ${new Date(project.createdAt).toLocaleDateString()}
-                                            ${project.assignedDesignerEmail ? `<br>Assigned: ${project.assignedDesignerEmail}` : ''}
-                                        </div>
-                                        </div>
-                                        <div class="project-actions">
-                                            <select class="status-select" onchange="updateDesigner('${project.id}', this.value)">
-                                                <option value="" ${!project.assignedDesignerEmail ? 'selected' : ''}>🧑‍💻 Unassigned</option>
-                                                ${designers.map(d => `
-                                                    <option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>
-                                                        🧑‍💻 ${d.name}
-                                                    </option>
-                                                `).join('')}
-                                            </select>
-                                            <select class="status-select" onchange="updateStatus('${project.id}', this.value)">
-                                                <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>⏳ Pending</option>
-                                                <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>🔄 In Progress</option>
-                                                <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>✅ Completed</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    ${project.description ? `<div class="project-desc">${project.description}</div>` : ''}
-                                    <button class="btn-upload" onclick="openUpload('${project.id}')">📤 Upload Design Files</button>
-                                    ${project.files.length > 0 ? `
-                                        <div class="files-section">
-                                            <div class="files-header">
-                                                <div style="font-weight: 500;">Project Files</div>
-                                                <div style="color: #9ca3af; font-size: 14px;">${project.files.length} files</div>
-                                            </div>
-                                            ${project.files.map(file => `
-                                                <div class="file-item">
-                                                    <div class="file-info">
-                                                        <div class="file-icon">📄</div>
-                                                        <div>
-                                                            <div class="file-name">${file.name}</div>
-                                                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="file-actions">
-                                                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
-                                                        <button class="btn-delete" onclick="deleteFile('${project.id}', '${file.path}', '${file.name}')">🗑️ Delete</button>
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    ` : '<p style="color: #9ca3af; font-size: 14px;">No files yet</p>'}
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : '<p style="color: #9ca3af; text-align: center; padding: 60px;">No projects yet</p>'}
-                </div>
-
-                                <div id="uploadModal" class="modal">
-                    <div class="modal-content">
-                        <button class="close" onclick="closeUpload()">&times;</button>
-                        <h2 class="modal-title">📤 Upload Design Files</h2>
-                        <p class="modal-subtitle">Upload your finished designs for the client</p>
-                        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                            <div style="font-size:48px; margin-bottom:16px;">📁</div>
-                            <div style="font-size:18px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
-                            <div style="color:#9ca3af; font-size:14px;">or click to browse</div>
-                        </div>
-                        <input type="file" id="fileInput" multiple style="display:none;">
-                        <div id="fileList" class="file-list"></div>
-                        <div id="uploadStatus" class="status-msg"></div>
-                        <button class="btn-primary" id="uploadBtn" onclick="handleUpload()">Upload Files</button>
-                    </div>
-                </div>
-            `;
-
-            // Setup file input
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) {
-                fileInput.addEventListener('change', () => {
-                    const files = Array.from(fileInput.files);
-                    document.getElementById('fileList').innerHTML = files.map((f, i) => `
-                        <div class="file-list-item">
-                            <span>${f.name} (${formatSize(f.size)})</span>
-                            <button class="btn-remove" onclick="removeFile(${i})">Remove</button>
-                        </div>
-                    `).join('');
-                });
-            }
-        }
-
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-
-        window.openUpload = (projectId) => {
-            currentProjectId = projectId;
-            document.getElementById('uploadModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.closeUpload = () => {
-            document.getElementById('uploadModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            document.getElementById('fileInput').value = '';
-            document.getElementById('fileList').innerHTML = '';
-        };
-
-        window.handleUpload = async () => {
-            const files = document.getElementById('fileInput').files;
-            if (files.length === 0) {
-                showStatus('Please select files', 'error');
-                return;
-            }
-
-            const btn = document.getElementById('uploadBtn');
-            btn.disabled = true;
-            btn.textContent = 'Uploading...';
-
-            try {
-                for (let file of files) {
-                    const storageRef = ref(storage, `projects/${currentProjectId}/${file.name}`);
-                    await uploadBytesResumable(storageRef, file);
-                }
-
-                showStatus('✅ Files uploaded!', 'success');
-                setTimeout(async () => {
-                    closeUpload();
-                    await loadData();
-                }, 1500);
-            } catch (error) {
-                showStatus('❌ Error: ' + error.message, 'error');
-                btn.disabled = false;
-                btn.textContent = 'Upload Files';
-            }
-        };
-
-        window.removeFile = (index) => {
-            const dt = new DataTransfer();
-            const input = document.getElementById('fileInput');
-            const files = Array.from(input.files);
-            files.splice(index, 1);
-            files.forEach(f => dt.items.add(f));
-            input.files = dt.files;
-            input.dispatchEvent(new Event('change'));
-        };
-
-        // --- NEW FUNCTION: Update Designer Assignment ---
-        window.updateDesigner = async (projectId, newDesignerEmail) => {
-            try {
-                // Update the Firestore document with the new designer's email
-                await updateDoc(doc(db, 'projects', projectId), { 
-                    assignedDesignerEmail: newDesignerEmail 
-                });
-                await loadData(); // Reload data to reflect the change immediately
-            } catch (error) {
-                alert('Error updating designer assignment: ' + error.message);
-            }
-        };
-
-        // --- EXISTING FUNCTION: Update Status ---
-        window.updateStatus = async (projectId, newStatus) => {
-            try {
-                await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
-                await loadData();
-            } catch (error) {
-                alert('Error updating status: ' + error.message);
-            }
-        };
-
-        window.deleteFile = async (projectId, filePath, fileName) => {
-            if (!confirm(`Delete ${fileName}?`)) return;
-
-            try {
-                const fileRef = ref(storage, filePath);
-                await deleteObject(fileRef);
-                await loadData();
-            } catch (error) {
-                alert('Error deleting file: ' + error.message);
-            }
-        };
-
-        function showStatus(msg, type) {
-            const el = document.getElementById('uploadStatus');
-            el.textContent = msg;
-            el.className = `status-msg active ${type}`;
-        }
-
-        window.logout = async () => {
-            try {
-                await signOut(auth);
-                window.location.href = 'portal-login.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-            }
-        };
-    </script>
+        // Attaches the click event to the entire body to enable "Click Anywhere"
+        document.body.addEventListener('click', redirectToPortal);
+        document.body.addEventListener('touchend', redirectToPortal); // For mobile
+    </script>
 </body>
 </html>
