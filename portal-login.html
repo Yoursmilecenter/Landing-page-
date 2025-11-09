@@ -5,15 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Portal - Smile Center</title>
     <style>
+        /* CSS STYLES */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* Define new consistent accent color (Bright Blue) */
+        :root {
+            --color-accent: #0096ff;
+            --color-accent-dark: #0050aa;
+            --color-background-dark: #000000;
+            --color-card-dark: #1a1a1a;
+            --color-text-light: #ffffff;
+            --color-text-secondary: #9ca3af;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: #000000;
+            background: var(--color-background-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -30,37 +41,34 @@
             text-align: center;
             margin-bottom: 48px;
         }
-
-        .logo-text {
-            font-size: 36px;
-            font-weight: 600;
-            color: #ffffff;
-            letter-spacing: -0.02em;
-        }
-
-        .logo-accent {
-            color: #38bdf8;
+        
+        /* New style for the logo image */
+        .portal-logo-img {
+            height: 60px; /* Adjusted size */
+            width: auto;
+            margin-bottom: 8px; 
         }
 
         .logo-subtitle {
             font-size: 14px;
-            color: #9ca3af;
+            color: var(--color-text-secondary);
             margin-top: 8px;
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
 
         .login-card {
-            background: #1a1a1a;
-            border: 1px solid rgba(56, 189, 248, 0.2);
+            background: var(--color-card-dark);
+            /* Updated border and shadow to use consistent blue accent */
+            border: 1px solid rgba(0, 150, 255, 0.3);
             border-radius: 20px;
             padding: 48px 40px;
-            box-shadow: 0 10px 40px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 150, 255, 0.4);
         }
 
         .login-title {
             font-size: 28px;
-            color: #ffffff;
+            color: var(--color-text-light);
             margin-bottom: 8px;
             font-weight: 600;
             text-align: center;
@@ -68,7 +76,7 @@
 
         .login-subtitle {
             font-size: 14px;
-            color: #9ca3af;
+            color: var(--color-text-secondary);
             margin-bottom: 32px;
             text-align: center;
         }
@@ -91,14 +99,15 @@
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            color: #ffffff;
+            color: var(--color-text-light);
             font-size: 16px;
             transition: all 0.3s;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #38bdf8;
+            /* Updated focus color */
+            border-color: var(--color-accent);
             background: rgba(255, 255, 255, 0.08);
         }
 
@@ -112,21 +121,23 @@
         }
 
         .forgot-password a {
-            color: #38bdf8;
+            /* Updated link color */
+            color: var(--color-accent);
             font-size: 14px;
             text-decoration: none;
             transition: color 0.3s;
         }
 
         .forgot-password a:hover {
-            color: #0ea5e9;
+            color: #40c9ff; /* Brighter blue on hover */
         }
 
         .login-button {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);
-            color: #ffffff;
+            /* Updated gradient for consistent blue */
+            background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
+            color: var(--color-text-light);
             border: none;
             border-radius: 50px;
             font-size: 18px;
@@ -134,12 +145,13 @@
             cursor: pointer;
             margin-top: 32px;
             transition: all 0.3s;
-            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+            /* Updated shadow */
+            box-shadow: 0 4px 20px rgba(0, 150, 255, 0.5);
         }
 
         .login-button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(56, 189, 248, 0.6);
+            box-shadow: 0 6px 30px rgba(0, 150, 255, 0.7);
         }
 
         .login-button:disabled {
@@ -175,16 +187,18 @@
         }
 
         .back-link a {
-            color: #9ca3af;
+            color: var(--color-text-secondary);
             font-size: 14px;
             text-decoration: none;
             transition: color 0.3s;
         }
 
         .back-link a:hover {
-            color: #38bdf8;
+            /* Updated hover color */
+            color: var(--color-accent);
         }
 
+        /* Status Message Styles */
         .status-message {
             padding: 12px;
             border-radius: 8px;
@@ -215,8 +229,8 @@
                 padding: 36px 24px;
             }
 
-            .logo-text {
-                font-size: 28px;
+            .portal-logo-img {
+                height: 50px;
             }
 
             .login-title {
@@ -232,23 +246,23 @@
 </head>
 <body>
     <div class="login-container">
-        <!-- Logo -->
         <div class="logo">
-            <div class="logo-text">
-                Smile <span class="logo-accent">Center</span>
-            </div>
+            <a href="index.html">
+                <img 
+                    src="images/smile-center-logo.PNG" 
+                    alt="Smile Center Logo" 
+                    class="portal-logo-img"
+                >
+            </a>
             <div class="logo-subtitle">Client Portal</div>
         </div>
 
-        <!-- Login Card -->
         <div class="login-card">
             <h1 class="login-title">Welcome Back</h1>
             <p class="login-subtitle">Sign in to access your projects</p>
 
-            <!-- Status Message -->
             <div id="statusMessage" class="status-message"></div>
 
-            <!-- Login Form -->
             <form id="loginForm">
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
@@ -280,21 +294,18 @@
                 </button>
             </form>
 
-            <!-- Divider -->
             <div class="divider">
                 <div class="divider-line"></div>
                 <div class="divider-text">or</div>
                 <div class="divider-line"></div>
             </div>
 
-            <!-- Back to Main Site -->
             <div class="back-link">
                 <a href="index.html">← Back to Main Site</a>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -333,10 +344,11 @@
             }
         };
 
-        // Check if user is already logged in
+        // Check if user is already logged in (Role Check Placeholder)
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // User is logged in, redirect to dashboard
+                // For now, redirect all logged-in users to the main dashboard.
+                // You will replace this with role-based logic later.
                 window.location.href = 'portal-dashboard.html';
             }
         });
@@ -360,7 +372,7 @@
 
             if (result.success) {
                 showStatus('✅ Login successful! Redirecting...', 'success');
-                // Redirect will happen automatically via onAuthStateChanged
+                // Redirect happens automatically via onAuthStateChanged
             } else {
                 // Show error
                 let errorMessage = 'Login failed. Please check your credentials.';
