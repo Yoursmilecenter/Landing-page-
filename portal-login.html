@@ -3,88 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Portal - Smile Center</title>
+    <title>Smile Center Portal - Login</title>
     <style>
-        /* CSS STYLES */
-        * {
+        /* Base Styling */
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #000;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            padding: 20px;
         }
 
-        /* Define new consistent accent color (Bright Blue) */
+        /* Variables */
         :root {
-            --color-accent: #0096ff;
-            --color-accent-dark: #0050aa;
-            --color-background-dark: #000000;
+            --color-primary: #38bdf8;
             --color-card-dark: #1a1a1a;
-            --color-text-light: #ffffff;
             --color-text-secondary: #9ca3af;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: var(--color-background-dark);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
-
+        /* Container */
         .login-container {
-            max-width: 450px;
-            width: 100%;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-        
-        /* New style for the logo image */
-        .portal-logo-img {
-            height: 60px; /* Adjusted size */
-            width: auto;
-            margin-bottom: 8px; 
-        }
-
-        .logo-subtitle {
-            font-size: 14px;
-            color: var(--color-text-secondary);
-            margin-top: 8px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .login-card {
             background: var(--color-card-dark);
-            /* Updated border and shadow to use consistent blue accent */
-            border: 1px solid rgba(0, 150, 255, 0.3);
+            border: 1px solid rgba(56, 189, 248, 0.2);
             border-radius: 20px;
-            padding: 48px 40px;
-            box-shadow: 0 10px 40px rgba(0, 150, 255, 0.4);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
-        .login-title {
-            font-size: 28px;
-            color: var(--color-text-light);
+        /* Header */
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
             margin-bottom: 8px;
-            font-weight: 600;
-            text-align: center;
         }
-
-        .login-subtitle {
-            font-size: 14px;
+        .logo span {
+            color: var(--color-primary);
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 500;
             color: var(--color-text-secondary);
-            margin-bottom: 32px;
-            text-align: center;
+            margin-bottom: 30px;
         }
 
+        /* Form Elements */
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            text-align: left;
         }
-
         .form-label {
             display: block;
             color: #d1d5db;
@@ -92,226 +65,90 @@
             margin-bottom: 8px;
             font-weight: 500;
         }
-
         .form-input {
             width: 100%;
             padding: 14px 16px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            color: var(--color-text-light);
+            color: #fff;
             font-size: 16px;
-            transition: all 0.3s;
+            transition: border-color 0.2s;
         }
-
         .form-input:focus {
             outline: none;
-            /* Updated focus color */
-            border-color: var(--color-accent);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--color-primary);
         }
 
-        .form-input::placeholder {
-            color: #6b7280;
-        }
-
-        .forgot-password {
-            text-align: right;
-            margin-top: 8px;
-        }
-
-        .forgot-password a {
-            /* Updated link color */
-            color: var(--color-accent);
-            font-size: 14px;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .forgot-password a:hover {
-            color: #40c9ff; /* Brighter blue on hover */
-        }
-
-        .login-button {
+        /* Button */
+        .btn-login {
             width: 100%;
-            padding: 16px;
-            /* Updated gradient for consistent blue */
-            background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
-            color: var(--color-text-light);
+            background: linear-gradient(135deg, #0369a1, #38bdf8);
+            color: #fff;
             border: none;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 500;
+            padding: 15px 20px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 32px;
-            transition: all 0.3s;
-            /* Updated shadow */
-            box-shadow: 0 4px 20px rgba(0, 150, 255, 0.5);
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.3s, transform 0.2s;
         }
-
-        .login-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(0, 150, 255, 0.7);
+        .btn-login:hover {
+            background: #38bdf8;
+            transform: translateY(-1px);
         }
-
-        .login-button:disabled {
-            opacity: 0.5;
+        .btn-login:disabled {
+            background: #075985;
             cursor: not-allowed;
         }
 
-        .login-button:active {
-            transform: translateY(0);
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 32px 0;
-        }
-
-        .divider-line {
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider-text {
-            padding: 0 16px;
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .back-link {
-            text-align: center;
-            margin-top: 24px;
-        }
-
-        .back-link a {
-            color: var(--color-text-secondary);
-            font-size: 14px;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .back-link a:hover {
-            /* Updated hover color */
-            color: var(--color-accent);
-        }
-
-        /* Status Message Styles */
-        .status-message {
+        /* Status Message */
+        .status-msg {
             padding: 12px;
             border-radius: 8px;
             font-size: 14px;
-            margin-bottom: 24px;
+            margin-top: 20px;
             display: none;
+            text-align: left;
         }
-
-        .status-message.active {
+        .status-msg.active {
             display: block;
         }
-
-        .status-message.error {
+        .status-msg.error {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ef4444;
-        }
-
-        .status-message.success {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #22c55e;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 36px 24px;
-            }
-
-            .portal-logo-img {
-                height: 50px;
-            }
-
-            .login-title {
-                font-size: 24px;
-            }
-
-            .login-button {
-                padding: 14px;
-                font-size: 16px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="logo">
-            <a href="index.html">
-                <img 
-                    src="images/smile-center-logo.PNG" 
-                    alt="Smile Center Logo" 
-                    class="portal-logo-img"
-                >
-            </a>
-            <div class="logo-subtitle">Client Portal</div>
-        </div>
-
-        <div class="login-card">
-            <h1 class="login-title">Welcome Back</h1>
-            <p class="login-subtitle">Sign in to access your projects</p>
-
-            <div id="statusMessage" class="status-message"></div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        class="form-input" 
-                        placeholder="your@email.com"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        class="form-input" 
-                        placeholder="Enter your password"
-                        required
-                    >
-                    <div class="forgot-password">
-                        <a href="#" onclick="handleForgotPassword(); return false;">Forgot password?</a>
-                    </div>
-                </div>
-
-                <button type="submit" class="login-button" id="loginButton">
-                    Sign In
-                </button>
-            </form>
-
-            <div class="divider">
-                <div class="divider-line"></div>
-                <div class="divider-text">or</div>
-                <div class="divider-line"></div>
+        <div class="logo">Smile <span>Center</span></div>
+        <h2>Client & Admin Portal Access</h2>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email" class="form-label">Email (Clients) or Username (Admin)</label>
+                <input type="text" id="email" class="form-input" required placeholder="e.g., client@email.com or admin">
             </div>
-
-            <div class="back-link">
-                <a href="index.html">← Back to Main Site</a>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" required placeholder="••••••••">
             </div>
-        </div>
+            
+            <div id="loginMessage" class="status-msg"></div>
+
+            <button type="submit" class="btn-login" id="loginBtn">Log In</button>
+        </form>
     </div>
 
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-        // Your Firebase configuration
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
@@ -321,99 +158,84 @@
             appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // Make functions globally available
-        window.handleLogin = async function(email, password) {
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                return { success: true, user: userCredential.user };
-            } catch (error) {
-                return { success: false, error: error };
-            }
-        };
+        // --- UNIVERSAL ADMIN CONFIGURATION (NEW) ---
+        // Anyone using these credentials will be logged in as the Admin Email user.
+        const UNIVERSAL_ADMIN_USER = 'admin';       // <--- ADMIN USERNAME
+        const UNIVERSAL_ADMIN_PASS = '123456';      // <--- ADMIN PASSWORD
+        const ADMIN_EMAIL_PLACEHOLDER = 'yoursmilecenter9@gmail.com'; 
+        // NOTE: The 'yoursmilecenter9@gmail.com' account MUST exist in Firebase Auth 
+        // and have its password set to '123456' for the universal login to work.
+        // -------------------------------------------
 
-        window.handlePasswordReset = async function(email) {
-            try {
-                await sendPasswordResetEmail(auth, email);
-                return { success: true };
-            } catch (error) {
-                return { success: false, error: error };
-            }
-        };
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const msgEl = document.getElementById('loginMessage');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
 
-        // Check if user is already logged in (Role Check Placeholder)
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // For now, redirect all logged-in users to the main dashboard.
-                // You will replace this with role-based logic later.
-                window.location.href = 'portal-dashboard.html';
-            }
-        });
-    </script>
+        loginForm.addEventListener('submit', handleLogin);
 
-    <script>
-        // Form submission handler
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        async function handleLogin(e) {
             e.preventDefault();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const loginButton = document.getElementById('loginButton');
+            msgEl.style.display = 'none';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Authenticating...';
 
-            // Disable button and show loading
-            loginButton.disabled = true;
-            loginButton.textContent = 'Signing in...';
-
-            // Attempt login
-            const result = await window.handleLogin(email, password);
-
-            if (result.success) {
-                showStatus('✅ Login successful! Redirecting...', 'success');
-                // Redirect happens automatically via onAuthStateChanged
-            } else {
-                // Show error
-                let errorMessage = 'Login failed. Please check your credentials.';
-                
-                if (result.error.code === 'auth/user-not-found') {
-                    errorMessage = 'No account found with this email.';
-                } else if (result.error.code === 'auth/wrong-password') {
-                    errorMessage = 'Incorrect password.';
-                } else if (result.error.code === 'auth/invalid-email') {
-                    errorMessage = 'Invalid email address.';
-                } else if (result.error.code === 'auth/invalid-credential') {
-                    errorMessage = 'Invalid email or password.';
+            // --- 1. UNIVERSAL ADMIN CHECK (Checks for 'admin' username) ---
+            if (email === UNIVERSAL_ADMIN_USER && password === UNIVERSAL_ADMIN_PASS) {
+                try {
+                    // Attempt to log in to Firebase using the *actual* admin email and the universal password
+                    await signInWithEmailAndPassword(auth, ADMIN_EMAIL_PLACEHOLDER, UNIVERSAL_ADMIN_PASS);
+                    window.location.href = 'admin-panel.html';
+                } catch (error) {
+                    // This error means the ADMIN_EMAIL_PLACEHOLDER account does not exist or password is wrong in Firebase.
+                    msgEl.textContent = 'Admin login failed. Contact support to set up the admin Firebase account.';
+                    msgEl.className = 'status-msg error active';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Log In';
                 }
+                return; // Stop here if it was an attempt to log in as admin
+            }
+            // --- END UNIVERSAL ADMIN CHECK ---
+
+            // --- 2. REGULAR CLIENT LOGIN (Checks all other credentials against Firebase) ---
+            try {
+                // Attempt to log in with the user-provided email and password
+                await signInWithEmailAndPassword(auth, email, password);
                 
-                showStatus('❌ ' + errorMessage, 'error');
-                loginButton.disabled = false;
-                loginButton.textContent = 'Sign In';
-            }
-        });
+                // Success: Redirect regular user to client dashboard
+                window.location.href = 'portal-dashboard.html'; 
+                
+            } catch (error) {
+                // Handle client login errors
+                let errorMessage;
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        errorMessage = 'Invalid email or password.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Please enter a valid email address.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Access temporarily blocked due to too many failed attempts. Try again later.';
+                        break;
+                    default:
+                        errorMessage = 'Login failed. Please check your credentials.';
+                        console.error('Login Error:', error);
+                }
 
-        async function handleForgotPassword() {
-            const email = document.getElementById('email').value;
-            
-            if (!email) {
-                showStatus('Please enter your email address first.', 'error');
-                return;
+                msgEl.textContent = errorMessage;
+                msgEl.className = 'status-msg error active';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Log In';
             }
-
-            const result = await window.handlePasswordReset(email);
-            
-            if (result.success) {
-                showStatus('✅ Password reset email sent! Check your inbox.', 'success');
-            } else {
-                showStatus('❌ Failed to send reset email. Please check the email address.', 'error');
-            }
-        }
-
-        function showStatus(message, type) {
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = message;
-            statusMessage.className = 'status-message active ' + type;
         }
     </script>
 </body>
