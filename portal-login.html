@@ -47,10 +47,12 @@
             color: var(--color-primary);
         }
         h2 {
-            font-size: 20px;
+            /* Removed/Hidden: Used to be "Client & Admin Portal Access" */
+            font-size: 20px; 
             font-weight: 500;
             color: var(--color-text-secondary);
             margin-bottom: 30px;
+            display: none; /* Hide the subtitle completely */
         }
 
         /* Form Elements */
@@ -125,12 +127,10 @@
 <body>
     <div class="login-container">
         <div class="logo">Smile <span>Center</span></div>
-        <h2>Client & Admin Portal Access</h2>
-        
-        <form id="loginForm">
+        <h2 style="display:none;">Client & Admin Portal Access</h2> <form id="loginForm">
             <div class="form-group">
-                <label for="email" class="form-label">Email (Clients) or Username (Admin)</label>
-                <input type="text" id="email" class="form-input" required placeholder="e.g., client@email.com or admin">
+                <label for="email" class="form-label">Email or Username</label>
+                <input type="text" id="email" class="form-input" required placeholder="Enter Email or Username">
             </div>
             <div class="form-group">
                 <label for="password" class="form-label">Password</label>
@@ -161,10 +161,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // --- UNIVERSAL ADMIN CONFIGURATION (NEW) ---
-        // Anyone using these credentials will be logged in as the Admin Email user.
-        const UNIVERSAL_ADMIN_USER = 'admin';       // <--- ADMIN USERNAME
-        const UNIVERSAL_ADMIN_PASS = '123456';      // <--- ADMIN PASSWORD
+        // --- UNIVERSAL ADMIN CONFIGURATION ---
+        const UNIVERSAL_ADMIN_USER = 'admin';       // ADMIN USERNAME
+        const UNIVERSAL_ADMIN_PASS = '123456';      // ADMIN PASSWORD
         const ADMIN_EMAIL_PLACEHOLDER = 'yoursmilecenter9@gmail.com'; 
         // NOTE: The 'yoursmilecenter9@gmail.com' account MUST exist in Firebase Auth 
         // and have its password set to '123456' for the universal login to work.
@@ -190,21 +189,20 @@
             // --- 1. UNIVERSAL ADMIN CHECK (Checks for 'admin' username) ---
             if (email === UNIVERSAL_ADMIN_USER && password === UNIVERSAL_ADMIN_PASS) {
                 try {
-                    // Attempt to log in to Firebase using the *actual* admin email and the universal password
+                    // Log in using the dedicated admin email and the universal password
                     await signInWithEmailAndPassword(auth, ADMIN_EMAIL_PLACEHOLDER, UNIVERSAL_ADMIN_PASS);
                     window.location.href = 'admin-panel.html';
                 } catch (error) {
-                    // This error means the ADMIN_EMAIL_PLACEHOLDER account does not exist or password is wrong in Firebase.
-                    msgEl.textContent = 'Admin login failed. Contact support to set up the admin Firebase account.';
+                    msgEl.textContent = 'Admin login failed. Please ensure the admin Firebase account is set up correctly.';
                     msgEl.className = 'status-msg error active';
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Log In';
                 }
-                return; // Stop here if it was an attempt to log in as admin
+                return; 
             }
             // --- END UNIVERSAL ADMIN CHECK ---
 
-            // --- 2. REGULAR CLIENT LOGIN (Checks all other credentials against Firebase) ---
+            // --- 2. REGULAR CLIENT LOGIN ---
             try {
                 // Attempt to log in with the user-provided email and password
                 await signInWithEmailAndPassword(auth, email, password);
