@@ -3,228 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile Center - Let Us Master Your Smile</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #000;
-            color: #fff;
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: rgba(0, 0, 0, 0.95);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* ✨ CLICKABLE LOGO - NEW */
-        .logo-link {
-            text-decoration: none;
-            color: inherit;
-            display: inline-block;
-            transition: opacity 0.3s ease;
-        }
-
-        .logo-link:hover {
-            opacity: 0.8;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            cursor: pointer;
-        }
-
-        .logo-accent {
-            color: #38bdf8;
-            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .portal-button {
-            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-            color: #fff;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .portal-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3);
-        }
-
-        /* Hero Section */
-        .hero {
-            margin-top: 80px;
-            padding: 120px 24px 80px;
-            text-align: center;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero h1 {
-            font-size: 64px;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-subtitle {
-            font-size: 24px;
-            color: #94a3b8;
-            margin-bottom: 48px;
-            font-weight: 400;
-        }
-
-        /* Features */
-        .features {
-            max-width: 1200px;
-            margin: 80px auto;
-            padding: 0 24px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
-        }
-
-        .feature-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 32px;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(56, 189, 248, 0.1);
-        }
-
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .feature-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .feature-description {
-            color: #94a3b8;
-            line-height: 1.6;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 48px 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 80px;
-        }
-
-        .footer-text {
-            color: #64748b;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 40px;
-            }
-
-            .hero-subtitle {
-                font-size: 18px;
-            }
-
-            .features {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <title>Smile Center - Click to Enter</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <!-- ✨ WRAPPED LOGO IN LINK - CLICKABLE NOW -->
-            <a href="index.html" class="logo-link">
-                <div class="logo">
-                    Smile <span class="logo-accent">Center</span>
-                </div>
-            </a>
-            <a href="portal-login.html" class="portal-button">Client Portal</a>
-        </div>
-    </header>
+    <div id="landing-gateway">
+        
+        <div id="video-background">
+            </div>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Let Us Master Your Smile</h1>
-        <p class="hero-subtitle">We create stunning digital experiences that make your business shine</p>
-        <a href="portal-login.html" class="portal-button">Access Your Portal</a>
-    </section>
-
-    <!-- Features -->
-    <section class="features">
-        <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3 class="feature-title">Custom Design</h3>
-            <p class="feature-description">Tailored web solutions that perfectly match your brand and vision</p>
+        <div id="gateway-content">
+            <img 
+                src="images/smile-center-logo.png" 
+                alt="Smile Center Dental Logo" 
+                class="main-logo"
+            >
+            <p class="click-prompt">Click Anywhere to Enter</p>
         </div>
 
-        <div class="feature-card">
-            <div class="feature-icon">☁️</div>
-            <h3 class="feature-title">Cloud Storage</h3>
-            <p class="feature-description">Secure file sharing and permanent storage for all your project files</p>
-        </div>
+    </div>
 
-        <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3 class="feature-title">Fast Delivery</h3>
-            <p class="feature-description">Quick turnaround times without compromising on quality</p>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <p class="footer-text">© 2024 Smile Center. All rights reserved.</p>
-        <p class="footer-text">yoursmilecenter9@gmail.com</p>
-    </footer>
+    <script>
+        // JavaScript to make the entire div clickable and navigate to the portal
+        document.getElementById('landing-gateway').addEventListener('click', function() {
+            window.location.href = 'portal-login.html'; 
+        });
+    </script>
 </body>
 </html>
