@@ -1,0 +1,76 @@
+<!-- ============================================ -->
+<!-- ADMIN PANEL LOGO UPDATE SNIPPET -->
+<!-- Replace your current logo section with this -->
+<!-- ============================================ -->
+
+<!-- FIND THIS SECTION IN YOUR admin-panel.html: -->
+<!-- It's in the <header> tag, usually around line 20-40 -->
+
+<!-- OLD CODE TO REPLACE: -->
+<!--
+<div class="logo">
+    <div class="logo-text">
+        Smile <span class="logo-accent">Center</span>
+    </div>
+    <span class="admin-badge">ADMIN</span>
+</div>
+-->
+
+<!-- NEW CLICKABLE LOGO CODE: -->
+<div class="logo">
+    <a href="index.html" class="logo-link">
+        <div class="logo-text">
+            Smile <span class="logo-accent">Center</span>
+        </div>
+    </a>
+    <span class="admin-badge">ADMIN</span>
+</div>
+
+<!-- ============================================ -->
+<!-- ADD THIS CSS TO YOUR <style> SECTION -->
+<!-- ============================================ -->
+
+<style>
+/* Add this to your existing styles */
+
+/* Clickable Logo Styles */
+.logo-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    transition: opacity 0.3s ease;
+}
+
+.logo-link:hover {
+    opacity: 0.8;
+}
+
+.logo-text {
+    cursor: pointer;
+}
+</style>
+
+<!-- ============================================ -->
+<!-- COMPLETE HEADER EXAMPLE FOR ADMIN -->
+<!-- This is how your entire header should look -->
+<!-- ============================================ -->
+
+<header class="header">
+    <div class="header-content">
+        <!-- Clickable Logo with Admin Badge -->
+        <div class="logo">
+            <a href="index.html" class="logo-link">
+                <div class="logo-text">
+                    Smile <span class="logo-accent">Center</span>
+                </div>
+            </a>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        
+        <!-- User Info (keep your existing code here) -->
+        <div class="user-info">
+            <span class="user-email" id="userEmail">Loading...</span>
+            <button class="logout-button" onclick="handleLogout()">Logout</button>
+        </div>
+    </div>
+</header>
