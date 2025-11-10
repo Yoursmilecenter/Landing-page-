@@ -122,4 +122,123 @@
                 <div class="header">
                     <div class="header-content">
                         <div class="logo">Smile <span>Center</span></div> 
-                        <div style="display: flex; align-items: center; gap: 16px
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main">
+                    <h1 class="page-title">My Projects</h1>
+                    <p class="page-subtitle">View and manage your design projects.</p>
+
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Projects</div>
+                            <div class="stat-value">${stats.total}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">In Progress</div>
+                            <div class="stat-value">${stats.inProgress}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Completed</div>
+                            <div class="stat-value">${stats.completed}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Files</div>
+                            <div class="stat-value">${stats.totalFiles}</div>
+                        </div>
+                    </div>
+
+                    <div class="projects-list">
+                        ${userProjects.length > 0 ? userProjects.map(project => `
+                            <div class="project-card">
+                                <div class="project-header">
+                                    <div>
+                                        <h3 class="project-title">${project.title}</h3>
+                                        <p class="project-date">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
+                                </div>
+                                <p class="project-desc">${project.description}</p>
+                                ${project.assignedDesignerEmail ? `<p class="project-meta">Designer: ${project.assignedDesignerEmail}</p>` : '<p class="project-meta">No designer assigned yet</p>'}
+                                
+                                <div class="files-section">
+                                    <div class="files-header">
+                                        <h4>Project Files (${project.files.length})</h4>
+                                    </div>
+                                    <div class="file-list">
+                                        ${project.files.length > 0 ? project.files.map(file => `
+                                            <div class="file-item">
+                                                <div class="file-info">
+                                                    <div class="file-icon">
+                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '🖼️' : 
+                                                          file.name.match(/\\.(pdf)$/i) ? '📄' :
+                                                          file.name.match(/\\.(html|htm)$/i) ? '🌐' :
+                                                          file.name.match(/\\.(zip|rar)$/i) ? '📦' : '📎'}
+                                                    </div>
+                                                    <div>
+                                                        <div class="file-name">${file.name}</div>
+                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="file-actions">
+                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">👁️ Preview</button>` : ''}
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : `
+                            <div class="empty">
+                                <div class="empty-icon">📂</div>
+                                <div class="empty-title">No Projects Yet</div>
+                                <p class="empty-desc">Your projects will appear here once they are created.</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- HTML Preview Modal -->
+                <div id="previewModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closePreview()">&times;</button>
+                        <h2 class="modal-title">HTML Preview</h2>
+                        <p class="modal-subtitle" id="previewFileName"></p>
+                        <iframe id="previewFrame" class="preview-iframe"></iframe>
+                        <div style="text-align: center; margin-top: 16px;">
+                            <button class="btn-primary" onclick="closePreview()">Close Preview</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.viewHtmlFile = (url, filename) => {
+            document.getElementById('previewFileName').textContent = `File: ${filename}`;
+            document.getElementById('previewFrame').src = url;
+            document.getElementById('previewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closePreview = () => {
+            document.getElementById('previewModal').classList.remove('active');
+            document.getElementById('previewFrame').src = '';
+            document.body.style.overflow = 'auto';
+        };
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
