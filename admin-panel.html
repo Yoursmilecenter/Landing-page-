@@ -12,9 +12,9 @@
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, getDocs, updateDoc, doc, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, updateDoc, doc, orderBy, query, addDoc, serverTimestamp, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -34,14 +34,16 @@
         let allProjects = [];
         let currentProjectId = null;
         
-        const adminEmail = 'admin@smile.com'; // Admin Check
+        const adminEmail = 'admin@smile.com';
+        const designers = [
+            { email: 'designer1@smile.com', name: 'Designer 1' },
+            { email: 'designer2@smile.com', name: 'Designer 2' }
+        ];
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // Security check: Ensure the logged-in user is actually an admin
                 if (currentUser.email !== adminEmail) {
-                    // Redirect non-admin users
                     window.location.href = 'index.html'; 
                     return;
                 }
@@ -95,10 +97,7 @@
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
-
-            if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
-            }
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
 
             const units = si 
                 ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
@@ -124,3 +123,362 @@
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
+                    <div class="header-content">
+                        <div class="logo">Smile <span>Center</span> <span class="admin-badge">ADMIN</span></div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main">
+                    <div class="section-header">
+                        <div>
+                            <h1 class="page-title">Admin Panel</h1>
+                            <p class="page-subtitle">Manage all projects, clients, and designers.</p>
+                        </div>
+                        <button class="btn-primary" onclick="openNewProjectModal()">
+                            <i class="fas fa-plus"></i> New Project
+                        </button>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Projects</div>
+                            <div class="stat-value">${stats.total}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-value">${stats.pending}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">In Progress</div>
+                            <div class="stat-value">${stats.inProgress}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Completed</div>
+                            <div class="stat-value">${stats.completed}</div>
+                        </div>
+                    </div>
+
+                    <div class="projects-list">
+                        ${allProjects.length > 0 ? allProjects.map(project => `
+                            <div class="project-card">
+                                <div class="project-header">
+                                    <div>
+                                        <h3 class="project-title">${project.title}</h3>
+                                        <p class="project-meta">Client: ${project.clientEmail} • Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
+                                        <button class="btn-delete" onclick="deleteProject('${project.id}', '${project.title}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="project-desc">${project.description}</p>
+
+                                <div class="designer-assignment">
+                                    <label class="designer-label">Assigned Designer:</label>
+                                    <select class="designer-select" onchange="assignDesigner('${project.id}', this.value)">
+                                        <option value="">-- Select Designer --</option>
+                                        ${designers.map(d => `
+                                            <option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>
+                                                ${d.name} (${d.email})
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 16px;">
+                                    <label>Project Status:</label>
+                                    <select class="status-select" onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 10px;">
+                                        <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                        <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="awaiting-approval" ${project.status === 'awaiting-approval' ? 'selected' : ''}>Awaiting Approval</option>
+                                        <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                    </select>
+                                </div>
+
+                                <div class="files-section">
+                                    <div class="files-header">
+                                        <h4>Project Files (${project.files.length})</h4>
+                                        <button class="btn-upload" onclick="openUploadModal('${project.id}', '${project.title}')">
+                                            <i class="fas fa-upload"></i> Upload Files
+                                        </button>
+                                    </div>
+                                    <div class="file-list">
+                                        ${project.files.length > 0 ? project.files.map(file => `
+                                            <div class="file-item">
+                                                <div class="file-info">
+                                                    <div class="file-icon">
+                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '🖼️' : 
+                                                          file.name.match(/\\.(pdf)$/i) ? '📄' :
+                                                          file.name.match(/\\.(html|htm)$/i) ? '🌐' :
+                                                          file.name.match(/\\.(zip|rar)$/i) ? '📦' : '📎'}
+                                                    </div>
+                                                    <div>
+                                                        <div class="file-name">${file.name}</div>
+                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="file-actions">
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                    <button class="btn-delete" onclick="deleteFile('${project.id}', '${file.path}', '${file.name}')">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : `
+                            <div class="empty">
+                                <div class="empty-icon">📂</div>
+                                <div class="empty-title">No Projects Yet</div>
+                                <p class="empty-desc">Create your first project to get started.</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- New Project Modal -->
+                <div id="newProjectModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeNewProject()">&times;</button>
+                        <h2 class="modal-title">Create New Project</h2>
+                        <form id="newProjectForm" onsubmit="createProject(event)">
+                            <div class="form-group">
+                                <label class="form-label">Project Title *</label>
+                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter project title" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Client Email *</label>
+                                <input type="email" id="clientEmail" class="form-input" placeholder="client@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Description *</label>
+                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter project description" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Initial Status</label>
+                                <select id="projectStatus" class="form-input">
+                                    <option value="pending">Pending</option>
+                                    <option value="in-progress">In Progress</option>
+                                </select>
+                            </div>
+                            <div id="createStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Project</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Upload Modal -->
+                <div id="uploadModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeUpload()">&times;</button>
+                        <h2 class="modal-title">Upload Files</h2>
+                        <p class="modal-subtitle">Uploading to: <span id="currentProjectTitle"></span></p>
+                        
+                        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">☁️</div>
+                            <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px;">Drag & drop files here</div>
+                            <div style="color: var(--color-text-secondary); font-size: 14px;">or click to browse</div>
+                        </div>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                        <div id="fileList" class="file-list"></div>
+                        <div id="uploadStatus" class="status-msg"></div>
+                        <button class="btn-primary" style="width: 100%; padding: 16px; margin-top: 20px;" id="uploadBtn" onclick="handleUpload()">Upload Files</button>
+                    </div>
+                </div>
+            `;
+
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    renderFileList(e.target.files);
+                });
+            }
+        }
+
+        function renderFileList(files) {
+            const listEl = document.getElementById('fileList');
+            if (!listEl) return;
+            
+            listEl.innerHTML = Array.from(files).map((file, index) => `
+                <div class="file-list-item">
+                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <button class="btn-remove" onclick="removeFile(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        window.openNewProjectModal = () => {
+            document.getElementById('newProjectModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeNewProject = () => {
+            document.getElementById('newProjectModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('newProjectForm').reset();
+            document.getElementById('createStatus').className = 'status-msg';
+        };
+
+        window.createProject = async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('projectTitle').value;
+            const clientEmail = document.getElementById('clientEmail').value;
+            const description = document.getElementById('projectDescription').value;
+            const status = document.getElementById('projectStatus').value;
+            const statusEl = document.getElementById('createStatus');
+
+            try {
+                await addDoc(collection(db, 'projects'), {
+                    title,
+                    clientEmail,
+                    description,
+                    status,
+                    assignedDesignerEmail: null,
+                    createdAt: Date.now()
+                });
+
+                statusEl.textContent = '✅ Project created successfully!';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(() => {
+                    closeNewProject();
+                    loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.openUploadModal = (projectId, projectTitle) => {
+            currentProjectId = projectId;
+            document.getElementById('currentProjectTitle').textContent = projectTitle;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('uploadStatus').className = 'status-msg';
+            document.getElementById('uploadModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeUpload = () => {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.handleUpload = async () => {
+            const input = document.getElementById('fileInput');
+            const files = input.files;
+            const btn = document.getElementById('uploadBtn');
+            const statusEl = document.getElementById('uploadStatus');
+
+            if (files.length === 0) {
+                statusEl.textContent = 'Please select at least one file.';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+            statusEl.textContent = 'Starting upload...';
+            statusEl.className = 'status-msg active';
+
+            try {
+                for (const file of files) {
+                    const storageRef = ref(storage, `projects/${currentProjectId}/${file.name}`);
+                    await uploadBytesResumable(storageRef, file);
+                }
+
+                statusEl.textContent = '✅ Files uploaded successfully!';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(async () => {
+                    closeUpload();
+                    await loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+                btn.disabled = false;
+                btn.textContent = 'Upload Files';
+            }
+        };
+
+        window.removeFile = (index) => {
+            const dt = new DataTransfer();
+            const input = document.getElementById('fileInput');
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            files.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        };
+
+        window.assignDesigner = async (projectId, designerEmail) => {
+            try {
+                await updateDoc(doc(db, 'projects', projectId), { 
+                    assignedDesignerEmail: designerEmail || null 
+                });
+                await loadData();
+            } catch (error) {
+                alert('Error assigning designer: ' + error.message);
+            }
+        };
+
+        window.updateStatus = async (projectId, newStatus) => {
+            try {
+                await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
+                await loadData();
+            } catch (error) {
+                alert('Error updating status: ' + error.message);
+            }
+        };
+
+        window.deleteFile = async (projectId, filePath, fileName) => {
+            if (!confirm(`Delete file "${fileName}"?`)) return;
+            
+            try {
+                await deleteObject(ref(storage, filePath));
+                await loadData();
+            } catch (error) {
+                alert('Error deleting file: ' + error.message);
+            }
+        };
+
+        window.deleteProject = async (projectId, projectTitle) => {
+            if (!confirm(`Delete project "${projectTitle}"? This will also delete all associated files.`)) return;
+            
+            try {
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const list = await listAll(filesRef);
+                
+                for (const item of list.items) {
+                    await deleteObject(item);
+                }
+                
+                await deleteDoc(doc(db, 'projects', projectId));
+                await loadData();
+            } catch (error) {
+                alert('Error deleting project: ' + error.message);
+            }
+        };
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
