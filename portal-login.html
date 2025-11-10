@@ -4,147 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smile Center Portal - Login</title>
-    <style>
-        /* Base Styling */
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #000;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        /* Variables */
-        :root {
-            --color-primary: #38bdf8;
-            --color-card-dark: #1a1a1a;
-            --color-text-secondary: #9ca3af;
-        }
-
-        /* Container */
-        .login-container {
-            background: var(--color-card-dark);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-
-        /* Header */
-        .logo {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .logo span {
-            color: var(--color-primary);
-        }
-        h2 {
-            /* Removed/Hidden: Used to be "Client & Admin Portal Access" */
-            font-size: 20px; 
-            font-weight: 500;
-            color: var(--color-text-secondary);
-            margin-bottom: 30px;
-            display: none; /* Hide the subtitle completely */
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .form-label {
-            display: block;
-            color: #d1d5db;
-            font-size: 14px;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        .form-input {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: var(--color-primary);
-        }
-
-        /* Button */
-        .btn-login {
-            width: 100%;
-            background: linear-gradient(135deg, #0369a1, #38bdf8);
-            color: #fff;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: background 0.3s, transform 0.2s;
-        }
-        .btn-login:hover {
-            background: #38bdf8;
-            transform: translateY(-1px);
-        }
-        .btn-login:disabled {
-            background: #075985;
-            cursor: not-allowed;
-        }
-
-        /* Status Message */
-        .status-msg {
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-top: 20px;
-            display: none;
-            text-align: left;
-        }
-        .status-msg.active {
-            display: block;
-        }
-        .status-msg.error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">Smile <span>Center</span></div>
-        <h2 style="display:none;">Client & Admin Portal Access</h2> <form id="loginForm">
-            <div class="form-group">
-                <label for="email" class="form-label">Email or Username</label>
-                <input type="text" id="email" class="form-input" required placeholder="Enter Email or Username">
-            </div>
-            <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" id="password" class="form-input" required placeholder="••••••••">
-            </div>
-            
-            <div id="loginMessage" class="status-msg"></div>
-
-            <button type="submit" class="btn-login" id="loginBtn">Log In</button>
-        </form>
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+        <div class="login-container">
+            <div class="logo">Smile <span>Center</span></div>
+            <h2 style="display: none;">Client & Admin Portal Access</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="email" id="email" placeholder="Email Address" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <div id="loginStatus" class="status-msg"></div>
+                <button type="submit" id="loginBtn" class="btn-primary" style="width: 100%;">Log In</button>
+            </form>
+        </div>
     </div>
 
     <script type="module">
-        // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
@@ -157,58 +37,42 @@
             messagingSenderId: "517098616907",
             appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
         };
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        // ------------------------------
 
-        // --- UNIVERSAL ADMIN CONFIGURATION ---
-        const UNIVERSAL_ADMIN_USER = 'admin';       // ADMIN USERNAME
-        const UNIVERSAL_ADMIN_PASS = '123456';      // ADMIN PASSWORD
-        const ADMIN_EMAIL_PLACEHOLDER = 'yoursmilecenter9@gmail.com'; 
-        // NOTE: The 'yoursmilecenter9@gmail.com' account MUST exist in Firebase Auth 
-        // and have its password set to '123456' for the universal login to work.
-        // -------------------------------------------
-
-        const loginForm = document.getElementById('loginForm');
-        const loginBtn = document.getElementById('loginBtn');
-        const msgEl = document.getElementById('loginMessage');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-
-        loginForm.addEventListener('submit', handleLogin);
+        const adminEmail = 'admin@smile.com';
+        const designerEmails = ['designer1@smile.com', 'designer2@smile.com'];
+        
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
         async function handleLogin(e) {
             e.preventDefault();
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
             
-            msgEl.style.display = 'none';
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const msgEl = document.getElementById('loginStatus');
+
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Authenticating...';
-
-            // --- 1. UNIVERSAL ADMIN CHECK (Checks for 'admin' username) ---
-            if (email === UNIVERSAL_ADMIN_USER && password === UNIVERSAL_ADMIN_PASS) {
-                try {
-                    // Log in using the dedicated admin email and the universal password
-                    await signInWithEmailAndPassword(auth, ADMIN_EMAIL_PLACEHOLDER, UNIVERSAL_ADMIN_PASS);
-                    window.location.href = 'admin-panel.html';
-                } catch (error) {
-                    msgEl.textContent = 'Admin login failed. Please ensure the admin Firebase account is set up correctly.';
-                    msgEl.className = 'status-msg error active';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Log In';
-                }
-                return; 
-            }
-            // --- END UNIVERSAL ADMIN CHECK ---
-
-            // --- 2. REGULAR CLIENT LOGIN ---
+            loginBtn.textContent = 'Logging in...';
+            msgEl.className = 'status-msg'; // Clear previous status
+            msgEl.textContent = '';
+            
+            // --- FIREBASE LOGIN ---
             try {
                 // Attempt to log in with the user-provided email and password
                 await signInWithEmailAndPassword(auth, email, password);
                 
-                // Success: Redirect regular user to client dashboard
-                window.location.href = 'portal-dashboard.html'; 
+                // Success: Check role and redirect
+                if (email === adminEmail) {
+                    window.location.href = 'admin-panel.html';
+                } else if (designerEmails.includes(email)) {
+                    window.location.href = 'designer-portal.html';
+                } else {
+                    // Default: Redirect regular user to client dashboard
+                    window.location.href = 'portal-dashboard.html'; 
+                }
                 
             } catch (error) {
                 // Handle client login errors
@@ -230,7 +94,8 @@
                 }
 
                 msgEl.textContent = errorMessage;
-                msgEl.className = 'status-msg error active';
+                // Using status-msg error active classes from style.css
+                msgEl.className = 'status-msg error active'; 
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Log In';
             }
