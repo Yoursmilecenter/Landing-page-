@@ -4,44 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smile Center - Welcome</title>
-    <style>
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            cursor: pointer; /* Indicates it's clickable */
-            text-align: center;
-        }
-        .logo {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-        .logo span {
-            color: #38bdf8; /* Matches your portal accent color */
-        }
-        .instruction {
-            font-size: 20px;
-            color: #9ca3af;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.7; }
-            50% { opacity: 1; }
-            100% { opacity: 0.7; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <div style="padding: 20px;">
-        <div class="logo">Smile <span>Center</span></div>
-        <div class="instruction">Click Anywhere to Enter</div>
+    <div id="landing-gateway" onclick="redirectToPortal()">
+        <div>
+            <div class="logo">Smile <span>Center</span></div>
+            <div class="click-prompt">Click Anywhere to Enter</div>
+        </div>
     </div>
 
     <script>
@@ -49,10 +19,6 @@
             // Redirects to your login page file
             window.location.href = 'portal-login.html';
         }
-
-        // Attaches the click event to the entire body to enable "Click Anywhere"
-        document.body.addEventListener('click', redirectToPortal);
-        document.body.addEventListener('touchend', redirectToPortal); // For mobile
     </script>
 </body>
 </html>
