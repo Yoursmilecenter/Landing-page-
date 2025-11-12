@@ -208,7 +208,7 @@
                                                             </div>
                                                             <div style="display: flex; gap: 8px;">
                                                                 <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
-                                                                <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy Link</button>
+                                                                <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
                                                             </div>
                                                         </div>
                                                     `).join('')
@@ -238,7 +238,7 @@
                                                 <div class="file-actions" style="display: flex; gap: 8px;">
                                                     ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">👁️ Preview</button>` : ''}
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
-                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy</button>
+                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
