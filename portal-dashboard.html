@@ -37,6 +37,7 @@
         let currentUser = null;
         let userProjects = [];
         let currentProjectId = null;
+        let uploadFiles = [];
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -61,7 +62,7 @@
                 }
                 render();
             } catch (error) {
-                console.error('Error loading projects:', error);
+                console.error('Error loading patients:', error);
                 render();
             }
         }
@@ -91,24 +92,19 @@
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
-
-            if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
-            }
-
-            const units = si 
-                ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-                : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
             let u = -1;
-            const r = 10**dp;
-
             do {
                 bytes /= thresh;
                 ++u;
             } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-
             return bytes.toFixed(dp) + ' ' + units[u];
         }
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
+        };
 
         function render() {
             const stats = {
@@ -122,7 +118,7 @@
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <div class="logo">Smile <span>Center</span></div> 
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 40px;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
@@ -133,17 +129,17 @@
                 <div class="main">
                     <div class="section-header">
                         <div>
-                            <h1 class="page-title">My Projects</h1>
-                            <p class="page-subtitle">View and manage your design projects.</p>
+                            <h1 class="page-title">My Patients</h1>
+                            <p class="page-subtitle">View and manage your design patients.</p>
                         </div>
                         <button class="btn-primary" onclick="openNewProjectModal()">
-                            <i class="fas fa-plus"></i> New Project
+                            <i class="fas fa-plus"></i> New Patient
                         </button>
                     </div>
 
                     <div class="stats">
                         <div class="stat-card">
-                            <div class="stat-label">Total Projects</div>
+                            <div class="stat-label">Total Patients</div>
                             <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
@@ -210,7 +206,10 @@
                                                                     <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                                 </div>
                                                             </div>
-                                                            <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                            <div style="display: flex; gap: 8px;">
+                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                                <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy Link</button>
+                                                            </div>
                                                         </div>
                                                     `).join('')
                                                     : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">STL file will appear after designer upload</p>')
@@ -219,7 +218,7 @@
                                     </div>
                                     
                                     <div class="files-header" style="margin-top: 30px;">
-                                        <h4>All Project Files (${project.files.length})</h4>
+                                        <h4>All Patient Files (${project.files.length})</h4>
                                     </div>
                                     <div class="file-list">
                                         ${project.files.length > 0 ? project.files.map(file => `
@@ -236,9 +235,10 @@
                                                         <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                     </div>
                                                 </div>
-                                                <div class="file-actions">
+                                                <div class="file-actions" style="display: flex; gap: 8px;">
                                                     ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">👁️ Preview</button>` : ''}
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy</button>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
@@ -248,8 +248,8 @@
                         `).join('') : `
                             <div class="empty">
                                 <div class="empty-icon">📂</div>
-                                <div class="empty-title">No Projects Yet</div>
-                                <p class="empty-desc">Your projects will appear here once they are created.</p>
+                                <div class="empty-title">No Patients Yet</div>
+                                <p class="empty-desc">Your patients will appear here once they are created.</p>
                             </div>
                         `}
                     </div>
@@ -291,27 +291,95 @@
                     </div>
                 </div>
 
-                <!-- New Project Modal -->
+                <!-- New Patient Modal -->
                 <div id="newProjectModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeNewProject()">&times;</button>
-                        <h2 class="modal-title">Create New Project</h2>
+                        <h2 class="modal-title">Create New Patient</h2>
                         <form id="newProjectForm" onsubmit="createProject(event)">
                             <div class="form-group">
-                                <label class="form-label">Project Title *</label>
-                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter project title" required>
+                                <label class="form-label">Patient Name *</label>
+                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter patient name" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Description *</label>
-                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter project description" required></textarea>
+                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter patient description" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Upload Files (Optional)</label>
+                                <div class="upload-area" id="uploadDropZone" onclick="document.getElementById('projectFiles').click()">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
+                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
+                                    <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
+                                </div>
+                                <input type="file" id="projectFiles" multiple style="display:none;">
+                                <div id="uploadFileList" class="file-list" style="margin-top: 12px;"></div>
                             </div>
                             <div id="createStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Project</button>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Patient</button>
                         </form>
                     </div>
                 </div>
             `;
+
+            setupDragDrop();
         }
+
+        function setupDragDrop() {
+            const dropZone = document.getElementById('uploadDropZone');
+            const fileInput = document.getElementById('projectFiles');
+            const fileList = document.getElementById('uploadFileList');
+
+            if (!dropZone || !fileInput) return;
+
+            fileInput.addEventListener('change', (e) => {
+                uploadFiles = Array.from(e.target.files);
+                renderUploadList();
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'var(--color-primary)';
+                dropZone.style.background = 'rgba(99, 102, 241, 0.1)';
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = '';
+                dropZone.style.background = '';
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '';
+                dropZone.style.background = '';
+                uploadFiles = Array.from(e.dataTransfer.files);
+                renderUploadList();
+            });
+        }
+
+        function renderUploadList() {
+            const listEl = document.getElementById('uploadFileList');
+            if (!listEl) return;
+            listEl.innerHTML = uploadFiles.map((file, idx) => `
+                <div class="file-item" style="padding: 8px 12px;">
+                    <div class="file-info">
+                        <div class="file-icon">📎</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${formatSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-icon" onclick="removeUploadFile(${idx})">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.removeUploadFile = (idx) => {
+            uploadFiles.splice(idx, 1);
+            renderUploadList();
+        };
 
         let currentApprovalProjectId = null;
 
@@ -388,6 +456,7 @@
         };
 
         window.openNewProjectModal = () => {
+            uploadFiles = [];
             document.getElementById('newProjectModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -397,6 +466,8 @@
             document.body.style.overflow = 'auto';
             document.getElementById('newProjectForm').reset();
             document.getElementById('createStatus').className = 'status-msg';
+            uploadFiles = [];
+            document.getElementById('uploadFileList').innerHTML = '';
         };
 
         window.createProject = async (e) => {
@@ -407,7 +478,7 @@
             const statusEl = document.getElementById('createStatus');
 
             try {
-                await addDoc(collection(db, 'projects'), {
+                const docRef = await addDoc(collection(db, 'projects'), {
                     title,
                     clientEmail: currentUser.email,
                     description,
@@ -418,7 +489,17 @@
                     createdAt: Date.now()
                 });
 
-                statusEl.textContent = '✅ Project created successfully!';
+                if (uploadFiles.length > 0) {
+                    statusEl.textContent = 'Patient created! Uploading files...';
+                    statusEl.className = 'status-msg active warning';
+
+                    for (const file of uploadFiles) {
+                        const storageRef = ref(storage, `projects/${docRef.id}/${file.name}`);
+                        await uploadBytesResumable(storageRef, file);
+                    }
+                }
+
+                statusEl.textContent = '✅ Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
