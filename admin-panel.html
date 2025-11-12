@@ -7,48 +7,114 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        select {
+        select, input {
             background-color: var(--color-background) !important;
             color: var(--color-text-light) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
         }
         select option {
             background-color: var(--color-card) !important;
             color: var(--color-text-light) !important;
         }
-        .compact-card {
-            padding: 16px !important;
-            margin-bottom: 12px !important;
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
         }
-        .compact-card .project-header {
-            margin-bottom: 8px !important;
+        .ultra-compact-table thead {
+            background: rgba(99, 102, 241, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        .compact-card .project-title {
-            font-size: 18px !important;
+        .ultra-compact-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .compact-card .project-description {
-            font-size: 14px !important;
-            margin: 8px 0 !important;
+        .ultra-compact-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .compact-card .form-group {
-            margin: 12px 0 8px 0 !important;
+        .ultra-compact-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
         }
-        .compact-card select {
-            padding: 6px 10px !important;
-            font-size: 13px !important;
+        .urgent-row {
+            background: rgba(239, 68, 68, 0.1) !important;
+            border-left: 3px solid #ef4444;
+        }
+        .vip-row {
+            background: rgba(251, 191, 36, 0.1) !important;
+            border-left: 3px solid #fbbf24;
         }
         .filter-bar {
             display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
         }
-        .filter-bar select {
-            min-width: 180px;
+        .badge-urgent {
+            background: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-vip {
+            background: #fbbf24;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .action-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 6px 12px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .group-header {
+            background: rgba(167, 139, 250, 0.1);
+            padding: 8px 12px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            cursor: pointer;
+        }
+        .group-header:hover {
+            background: rgba(167, 139, 250, 0.15);
         }
     </style>
 </head>
@@ -58,6 +124,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -72,6 +139,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         let currentUser = null;
         let allProjects = [];
@@ -89,8 +157,15 @@
         let currentFilters = {
             status: 'all',
             designer: 'all',
-            sortBy: 'date-desc'
+            client: 'all',
+            priority: 'all',
+            sortBy: 'date-desc',
+            groupBy: 'none'
         };
+
+        let currentPage = 1;
+        let itemsPerPage = 50;
+        let currentProjectForFiles = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -100,6 +175,7 @@
                     return;
                 }
                 await loadData();
+                checkUrgentReminders();
             } else {
                 window.location.href = 'portal-login.html';
             }
@@ -111,10 +187,16 @@
                 const q = query(projectsRef, orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
                 
-                allProjects = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                allProjects = [];
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    const files = await loadFiles(docSnap.id);
+                    allProjects.push({
+                        id: docSnap.id,
+                        ...data,
+                        files
+                    });
+                }
                 
                 applyFilters();
             } catch (error) {
@@ -123,10 +205,52 @@
             }
         }
 
+        async function loadFiles(projectId) {
+            try {
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const list = await listAll(filesRef);
+                const files = await Promise.all(
+                    list.items.map(async (item) => {
+                        const url = await getDownloadURL(item);
+                        const meta = await getMetadata(item);
+                        return {
+                            name: item.name,
+                            url,
+                            path: item.fullPath,
+                            size: meta.size,
+                            date: new Date(meta.timeCreated).toLocaleDateString()
+                        };
+                    })
+                );
+                return files;
+            } catch {
+                return [];
+            }
+        }
+
+        function checkUrgentReminders() {
+            const urgentProjects = allProjects.filter(p => p.isUrgent && p.status !== 'completed');
+            urgentProjects.forEach(p => {
+                const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
+                if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
+                    console.warn(`⚠️ URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                }
+            });
+        }
+
         function applyFilters() {
             filteredProjects = allProjects.filter(p => {
                 if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
-                if (currentFilters.designer !== 'all' && p.assignedDesignerEmail !== currentFilters.designer) return false;
+                if (currentFilters.designer !== 'all') {
+                    if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
+                    if (currentFilters.designer !== 'null' && p.assignedDesignerEmail !== currentFilters.designer) return false;
+                }
+                if (currentFilters.client !== 'all' && p.clientEmail !== currentFilters.client) return false;
+                if (currentFilters.priority !== 'all') {
+                    if (currentFilters.priority === 'urgent' && !p.isUrgent) return false;
+                    if (currentFilters.priority === 'vip' && !p.isVIP) return false;
+                    if (currentFilters.priority === 'normal' && (p.isUrgent || p.isVIP)) return false;
+                }
                 return true;
             });
 
@@ -138,8 +262,11 @@
                 filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
             } else if (currentFilters.sortBy === 'name-desc') {
                 filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
+            } else if (currentFilters.sortBy === 'client-asc') {
+                filteredProjects.sort((a, b) => a.clientEmail.localeCompare(b.clientEmail));
             }
 
+            currentPage = 1;
             render();
         }
 
@@ -148,13 +275,37 @@
             applyFilters();
         };
 
+        function formatSize(bytes) {
+            const thresh = 1024;
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = ['KB', 'MB', 'GB'];
+            let u = -1;
+            do {
+                bytes /= thresh;
+                ++u;
+            } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
+        };
+
         function render() {
             const stats = {
                 total: allProjects.length,
                 pending: allProjects.filter(p => p.status === 'pending').length,
                 inProgress: allProjects.filter(p => p.status === 'in-progress').length,
-                completed: allProjects.filter(p => p.status === 'completed').length
+                completed: allProjects.filter(p => p.status === 'completed').length,
+                urgent: allProjects.filter(p => p.isUrgent).length,
+                vip: allProjects.filter(p => p.isVIP).length
             };
+
+            const clients = [...new Set(allProjects.map(p => p.clientEmail))];
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageProjects = filteredProjects.slice(startIdx, endIdx);
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
@@ -170,11 +321,11 @@
                 
                 <div class="main">
                     <h1 class="page-title">Admin Panel</h1>
-                    <p class="page-subtitle">Manage all patients and assign designers.</p>
+                    <p class="page-subtitle">Manage all patients and assignments.</p>
 
-                    <div class="stats">
+                    <div class="stats" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="stat-card">
-                            <div class="stat-label">Total Patients</div>
+                            <div class="stat-label">Total</div>
                             <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
@@ -189,81 +340,241 @@
                             <div class="stat-label">Completed</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
+                        <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
+                            <div class="stat-label">🔥 Urgent</div>
+                            <div class="stat-value">${stats.urgent}</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
+                            <div class="stat-label">⭐ VIP</div>
+                            <div class="stat-value">${stats.vip}</div>
+                        </div>
                     </div>
 
                     <div class="filter-bar">
-                        <div>
-                            <label style="display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-text-secondary);">Filter by Status:</label>
-                            <select onchange="updateFilter('status', this.value)">
-                                <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="awaiting-client-approval">Awaiting Approval</option>
-                                <option value="approved">Approved</option>
-                                <option value="changes-requested">Changes Requested</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-text-secondary);">Filter by Designer:</label>
-                            <select onchange="updateFilter('designer', this.value)">
-                                <option value="all">All Designers</option>
-                                <option value="null">Unassigned</option>
-                                ${designers.map(d => `<option value="${d.email}">${d.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-text-secondary);">Sort By:</label>
-                            <select onchange="updateFilter('sortBy', this.value)">
-                                <option value="date-desc">Date (Newest First)</option>
-                                <option value="date-asc">Date (Oldest First)</option>
-                                <option value="name-asc">Name (A-Z)</option>
-                                <option value="name-desc">Name (Z-A)</option>
-                            </select>
-                        </div>
-                        <div style="margin-left: auto; margin-top: 20px;">
-                            <span style="font-size: 14px; color: var(--color-text-secondary);">Showing ${filteredProjects.length} of ${allProjects.length} patients</span>
+                        <select onchange="updateFilter('status', this.value)">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="awaiting-client-approval">Awaiting Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="changes-requested">Changes Requested</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <select onchange="updateFilter('designer', this.value)">
+                            <option value="all">All Designers</option>
+                            <option value="null">Unassigned</option>
+                            ${designers.map(d => `<option value="${d.email}">${d.name}</option>`).join('')}
+                        </select>
+                        <select onchange="updateFilter('client', this.value)">
+                            <option value="all">All Clients</option>
+                            ${clients.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                        <select onchange="updateFilter('priority', this.value)">
+                            <option value="all">All Priorities</option>
+                            <option value="urgent">🔥 Urgent Only</option>
+                            <option value="vip">⭐ VIP Only</option>
+                            <option value="normal">Normal Only</option>
+                        </select>
+                        <select onchange="updateFilter('sortBy', this.value)">
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="client-asc">Client (A-Z)</option>
+                        </select>
+                        <select onchange="itemsPerPage = parseInt(this.value); applyFilters();">
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
+                        </select>
+                        <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
+                            Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}
                         </div>
                     </div>
 
-                    <div class="projects-list">
-                        ${filteredProjects.length > 0 ? filteredProjects.map(project => `
-                            <div class="project-card compact-card">
-                                <div class="project-header">
-                                    <h3 class="project-title">${project.title}</h3>
-                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase()}</span>
-                                </div>
-                                <p class="project-description">${project.description}</p>
-                                <div class="project-meta" style="font-size: 13px;">
-                                    Client: ${project.clientEmail} • Created ${new Date(project.createdAt).toLocaleDateString()}
-                                </div>
+                    <table class="ultra-compact-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Patient</th>
+                                <th style="width: 15%;">Client</th>
+                                <th style="width: 12%;">Designer</th>
+                                <th style="width: 10%;">Status</th>
+                                <th style="width: 8%;">Priority</th>
+                                <th style="width: 8%;">Files</th>
+                                <th style="width: 8%;">Date</th>
+                                <th style="width: 19%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageProjects.length > 0 ? pageProjects.map(project => {
+                                const rowClass = project.isUrgent ? 'urgent-row' : (project.isVIP ? 'vip-row' : '');
+                                const hoursSince = (Date.now() - project.createdAt) / (1000 * 60 * 60);
+                                const urgentAlert = project.isUrgent && hoursSince > 24 && !project.files.some(f => f.name.match(/\.html?$/i));
                                 
-                                <div class="admin-controls" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                                    <div class="form-group">
-                                        <label for="designer-${project.id}" style="font-size: 13px;">Assign Designer:</label>
-                                        <select id="designer-${project.id}" onchange="assignDesigner('${project.id}', this.value)">
+                                return `
+                                <tr class="${rowClass}">
+                                    <td>
+                                        <strong>${project.title}</strong>
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">⚠️ 24h exceeded!</span>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.clientEmail}</td>
+                                    <td>
+                                        <select onchange="assignDesigner('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 12px;">
                                             <option value="">Unassigned</option>
                                             ${designers.map(d => `<option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>${d.name}</option>`).join('')}
                                         </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="status-${project.id}" style="font-size: 13px;">Update Status:</label>
-                                        <select id="status-${project.id}" onchange="updateStatus('${project.id}', this.value)">
+                                    </td>
+                                    <td>
+                                        <select onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
                                             <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
                                             <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting Approval</option>
+                                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting</option>
                                             <option value="approved" ${project.status === 'approved' ? 'selected' : ''}>Approved</option>
-                                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''}>Changes Requested</option>
+                                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''}>Changes</option>
                                             <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
                                         </select>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('') : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">No Patients Found</div><p class="page-subtitle">No patients match the current filters.</p></div>'}
+                                    </td>
+                                    <td>
+                                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                                        ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
+                                        ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.files.length} files</td>
+                                    <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;">🔥</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};">⭐</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;">📁 Files</button>
+                                    </td>
+                                </tr>
+                            `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
+                        </tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+                        <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
+                    </div>
+                </div>
+
+                <!-- Files Modal -->
+                <div id="filesModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closeFilesModal()">&times;</button>
+                        <h2 class="modal-title">Manage Files</h2>
+                        <p class="modal-subtitle" id="filesPatientName"></p>
+                        
+                        <button class="btn-primary" onclick="document.getElementById('adminFileInput').click()" style="margin-bottom: 16px;">
+                            <i class="fas fa-upload"></i> Upload Files
+                        </button>
+                        <input type="file" id="adminFileInput" multiple style="display: none;">
+                        
+                        <div id="filesList" class="file-list"></div>
+                        <div id="uploadStatus" class="status-msg"></div>
                     </div>
                 </div>
             `;
+
+            setupFileUpload();
         }
+
+        function setupFileUpload() {
+            const input = document.getElementById('adminFileInput');
+            if (input) {
+                input.addEventListener('change', handleAdminUpload);
+            }
+        }
+
+        window.changePage = (page) => {
+            currentPage = page;
+            render();
+        };
+
+        window.openFilesModal = async (projectId) => {
+            currentProjectForFiles = allProjects.find(p => p.id === projectId);
+            document.getElementById('filesPatientName').textContent = `Patient: ${currentProjectForFiles.title}`;
+            document.getElementById('filesModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            renderFilesList();
+        };
+
+        window.closeFilesModal = () => {
+            document.getElementById('filesModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentProjectForFiles = null;
+        };
+
+        function renderFilesList() {
+            const listEl = document.getElementById('filesList');
+            if (!currentProjectForFiles || !listEl) return;
+
+            listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">👁️ View</button>` : ''}
+                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
+                    </div>
+                </div>
+            `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
+        }
+
+        async function handleAdminUpload(e) {
+            const files = e.target.files;
+            if (!files.length || !currentProjectForFiles) return;
+
+            const statusEl = document.getElementById('uploadStatus');
+            statusEl.textContent = 'Uploading...';
+            statusEl.className = 'status-msg active warning';
+
+            try {
+                for (const file of files) {
+                    const storageRef = ref(storage, `projects/${currentProjectForFiles.id}/${file.name}`);
+                    await uploadBytesResumable(storageRef, file);
+                }
+
+                statusEl.textContent = '✅ Files uploaded!';
+                statusEl.className = 'status-msg active success';
+                
+                await loadData();
+                currentProjectForFiles = allProjects.find(p => p.id === currentProjectForFiles.id);
+                renderFilesList();
+
+                setTimeout(() => {
+                    statusEl.className = 'status-msg';
+                    e.target.value = '';
+                }, 2000);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        }
+
+        window.togglePriority = async (projectId, type) => {
+            const project = allProjects.find(p => p.id === projectId);
+            const updates = {};
+            
+            if (type === 'urgent') {
+                updates.isUrgent = !project.isUrgent;
+            } else if (type === 'vip') {
+                updates.isVIP = !project.isVIP;
+            }
+
+            try {
+                await updateDoc(doc(db, 'projects', projectId), updates);
+                await loadData();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
 
         window.assignDesigner = async (projectId, designerEmail) => {
             try {
