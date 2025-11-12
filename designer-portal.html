@@ -13,9 +13,8 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        // We will use 'where' for filtering, so we need to add it to the import
-        import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -34,20 +33,17 @@
         let currentUser = null;
         let myProjects = [];
         let currentProjectId = null;
+        let currentPatientName = null;
         
-        // --- Hardcoded designer list for redirect logic ---
         const designers = [
             { email: 'designer1@smile.com', name: 'Designer 1' },
             { email: 'designer2@smile.com', name: 'Designer 2' },
         ];
-        // ------------------------------------------------
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // Security check: Ensure the logged-in user is actually a designer
                 if (!designers.some(d => d.email === currentUser.email)) {
-                    // If it's an admin/client trying to access the designer portal, redirect them
                     window.location.href = 'index.html'; 
                     return;
                 }
@@ -60,10 +56,9 @@
         async function loadData() {
             try {
                 const projectsRef = collection(db, 'projects');
-                // --- KEY CHANGE: Filter projects assigned to this designer ---
                 const q = query(
                     projectsRef, 
-                    where('assignedDesignerEmail', '==', currentUser.email), // Filter by current user's email
+                    where('assignedDesignerEmail', '==', currentUser.email),
                     orderBy('createdAt', 'desc')
                 );
                 const snapshot = await getDocs(q);
@@ -82,7 +77,6 @@
         }
 
         async function loadFiles(projectId) {
-            // (loadFiles remains the same)
             try {
                 const filesRef = ref(storage, `projects/${projectId}`);
                 const list = await listAll(filesRef);
@@ -107,24 +101,19 @@
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
-
-            if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
-            }
-
-            const units = si 
-                ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-                : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
             let u = -1;
-            const r = 10**dp;
-
             do {
                 bytes /= thresh;
                 ++u;
             } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-
             return bytes.toFixed(dp) + ' ' + units[u];
         }
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
+        };
 
         function render() {
             const stats = {
@@ -137,16 +126,17 @@
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <div class="logo">Smile <span>Center</span> <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border-color: rgba(167, 139, 250, 0.3);">DESIGNER</span></div>
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 40px;">
                         <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">DESIGNER</span>
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
                     </div>
                 </div>
                 <div class="main">
-                    <h1 class="page-title">My Assigned Projects</h1>
-                    <p class="page-subtitle">View and manage projects assigned to you.</p>
+                    <h1 class="page-title">My Assigned Patients</h1>
+                    <p class="page-subtitle">View and manage patients assigned to you.</p>
 
                     <div class="stats">
                         <div class="stat-card">
@@ -176,19 +166,7 @@
                                 </div>
                                 <p class="project-description">${project.description}</p>
                                 <div class="project-meta">
-                                    Created ${new Date(project.createdAt).toLocaleDateString()}
-                                </div>
-                                
-                                <div class="admin-controls">
-                                    <div class="form-group">
-                                        <label for="status-${project.id}">Update Status:</label>
-                                        <select id="status-${project.id}" onchange="updateStatus('${project.id}', this.value)">
-                                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                                            <option value="awaiting-approval" ${project.status === 'awaiting-approval' ? 'selected' : ''}>Awaiting Approval</option>
-                                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
-                                        </select>
-                                    </div>
+                                    Client: ${project.clientEmail} • Created ${new Date(project.createdAt).toLocaleDateString()}
                                 </div>
 
                                 <div class="files-section">
@@ -210,7 +188,7 @@
                                         </div>
                                     ` : ''}
                                     <div class="files-header">
-                                        <h4>Project Files (${project.files.length})</h4>
+                                        <h4>Patient Files (${project.files.length})</h4>
                                         <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})">
                                             <i class="fas fa-upload"></i> Upload Files
                                         </button>
@@ -225,15 +203,16 @@
                                                         <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                     </div>
                                                 </div>
-                                                <div class="file-actions">
+                                                <div class="file-actions" style="display: flex; gap: 8px;">
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy</button>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
                                     </div>
                                 </div>
                             </div>
-                        `).join('') : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">No Projects Assigned</div><p class="page-subtitle">You have no projects currently assigned for design work.</p></div>'}
+                        `).join('') : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
                     </div>
                 </div>
                 
@@ -241,7 +220,7 @@
                     <div class="modal-content">
                         <button class="close" onclick="closeUpload()">&times;</button>
                         <h2 class="modal-title">Upload Files</h2>
-                        <p class="modal-subtitle">Uploading to project: <span id="currentProjectTitle"></span></p>
+                        <p class="modal-subtitle">Uploading to patient: <span id="currentProjectTitle"></span></p>
                         
                         <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
@@ -259,7 +238,6 @@
                 </div>
             `;
 
-            // Drag/drop and file change listeners
             const fileInput = document.getElementById('fileInput');
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
@@ -270,14 +248,17 @@
                 if (uploadArea) {
                     uploadArea.addEventListener('dragover', (e) => {
                         e.preventDefault();
-                        uploadArea.classList.add('dragover');
+                        uploadArea.style.borderColor = 'var(--color-primary)';
+                        uploadArea.style.background = 'rgba(99, 102, 241, 0.1)';
                     });
                     uploadArea.addEventListener('dragleave', () => {
-                        uploadArea.classList.remove('dragover');
+                        uploadArea.style.borderColor = '';
+                        uploadArea.style.background = '';
                     });
                     uploadArea.addEventListener('drop', (e) => {
                         e.preventDefault();
-                        uploadArea.classList.remove('dragover');
+                        uploadArea.style.borderColor = '';
+                        uploadArea.style.background = '';
                         fileInput.files = e.dataTransfer.files;
                         fileInput.dispatchEvent(new Event('change'));
                     });
@@ -298,11 +279,10 @@
                 </div>
             `).join('');
         }
-        
-        // Global functions exposed to the window for inline onclick handlers
 
         window.openUploadModal = (projectId, projectTitle, isApproved) => {
             currentProjectId = projectId;
+            currentPatientName = projectTitle;
             document.getElementById('currentProjectTitle').textContent = projectTitle;
             document.getElementById('fileInput').value = '';
             document.getElementById('fileList').innerHTML = '';
@@ -340,6 +320,7 @@
 
             const project = myProjects.find(p => p.id === currentProjectId);
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
+            const hasHTML = Array.from(files).some(f => f.name.match(/\.html?$/i));
             
             if (hasSTL && !project.htmlApproved) {
                 showStatus('❌ Cannot upload STL files until client approves HTML preview.', 'error');
@@ -352,12 +333,21 @@
 
             try {
                 for (const file of files) {
-                    const storageRef = ref(storage, `projects/${currentProjectId}/${file.name}`);
+                    const ext = file.name.substring(file.name.lastIndexOf('.'));
+                    const newFileName = currentPatientName + ext;
+                    const storageRef = ref(storage, `projects/${currentProjectId}/${newFileName}`);
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                if (hasSTL) {
-                    await updateDoc(doc(db, 'projects', currentProjectId), { status: 'completed' });
+                let newStatus = project.status;
+                if (hasHTML && !project.htmlApproved) {
+                    newStatus = 'awaiting-client-approval';
+                } else if (hasSTL && project.htmlApproved) {
+                    newStatus = 'completed';
+                }
+
+                if (newStatus !== project.status) {
+                    await updateDoc(doc(db, 'projects', currentProjectId), { status: newStatus });
                 }
 
                 showStatus('✅ Files uploaded!', 'success');
@@ -380,15 +370,6 @@
             files.forEach(f => dt.items.add(f));
             input.files = dt.files;
             input.dispatchEvent(new Event('change'));
-        };
-
-        window.updateStatus = async (projectId, newStatus) => {
-            try {
-                await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
-                await loadData();
-            } catch (error) {
-                alert('Error updating status: ' + error.message);
-            }
         };
 
         function showStatus(msg, type) {
