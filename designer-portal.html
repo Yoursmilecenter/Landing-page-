@@ -161,7 +161,11 @@
                         ${myProjects.length > 0 ? myProjects.map(project => `
                             <div class="project-card">
                                 <div class="project-header">
-                                    <h3 class="project-title">${project.title}</h3>
+                                    <h3 class="project-title">
+                                        ${project.title}
+                                        ${project.isUrgent ? ' <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">🔥 URGENT - 24H GUARANTEE</span>' : ''}
+                                        ${project.isVIP ? ' <span style="background: #fbbf24; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⭐ VIP</span>' : ''}
+                                    </h3>
                                     <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase()}</span>
                                 </div>
                                 <p class="project-description">${project.description}</p>
@@ -205,7 +209,7 @@
                                                 </div>
                                                 <div class="file-actions" style="display: flex; gap: 8px;">
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
-                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: var(--color-secondary);">📋 Copy</button>
+                                                    <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
