@@ -11,6 +11,26 @@
             0%, 100% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
             50% { filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.8)); }
         }
+        .header img, .header-content img {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .timer-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        .project-card {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +137,23 @@
             return bytes.toFixed(dp) + ' ' + units[u];
         }
 
+        function getTimeElapsed(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours === 0) {
+                return `${minutes}m ago`;
+            } else if (hours < 24) {
+                return `${hours}h ${minutes}m ago`;
+            } else {
+                const days = Math.floor(hours / 24);
+                const remainHours = hours % 24;
+                return `${days}d ${remainHours}h ago`;
+            }
+        }
+
         window.copyLink = (url) => {
             navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
         };
@@ -166,6 +203,7 @@
                     <div class="projects-list">
                         ${myProjects.length > 0 ? myProjects.map(project => `
                             <div class="project-card">
+                                <div class="timer-badge">⏱️ ${getTimeElapsed(project.createdAt)}</div>
                                 <div class="project-header">
                                     <h3 class="project-title">
                                         ${project.title}
@@ -176,7 +214,7 @@
                                 </div>
                                 <p class="project-description">${project.description}</p>
                                 <div class="project-meta">
-                                    Client: ${project.clientEmail} • Created ${new Date(project.createdAt).toLocaleDateString()}
+                                    Created ${new Date(project.createdAt).toLocaleDateString()}
                                 </div>
 
                                 <div class="files-section">
