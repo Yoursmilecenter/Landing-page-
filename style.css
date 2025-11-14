@@ -92,7 +92,6 @@ html, body {
 
 .header img {
     height: 55px;
-    animation: logoGlow 3s ease-in-out infinite;
 }
 
 .admin-badge {

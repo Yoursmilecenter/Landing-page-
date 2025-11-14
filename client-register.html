@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Smile Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-container">
+        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
+        <h2 style="margin-bottom: 30px; color: var(--color-text);">Client Registration</h2>
+        
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <input type="text" id="username" class="form-input" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="email" class="form-input" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" class="form-input" placeholder="Password" required>
+            </div>
+            <div id="registerStatus" class="status-msg"></div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Register</button>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="portal-login.html" style="color: var(--color-primary); text-decoration: none;">Already have an account? Login</a>
+            </div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+            authDomain: "smile-center-7c6f5.firebaseapp.com",
+            projectId: "smile-center-7c6f5",
+            storageBucket: "smile-center-7c6f5.firebasestorage.app",
+            messagingSenderId: "517098616907",
+            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.handleRegister = async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const statusEl = document.getElementById('registerStatus');
+
+            try {
+                // Check if username already exists
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('username', '==', username));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    statusEl.textContent = '❌ Username already taken';
+                    statusEl.className = 'status-msg active error';
+                    return;
+                }
+
+                // Create Firebase Auth user with username@smile.local
+                const loginEmail = username + '@smile.local';
+                const userCredential = await createUserWithEmailAndPassword(auth, loginEmail, password);
+                
+                // Store user info in Firestore with pending status
+                await addDoc(collection(db, 'users'), {
+                    uid: userCredential.user.uid,
+                    username: username,
+                    email: email,
+                    loginEmail: loginEmail,
+                    role: 'client',
+                    status: 'pending-approval',
+                    createdAt: Date.now()
+                });
+
+                statusEl.textContent = '✅ Registration submitted! Awaiting admin approval.';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(() => {
+                    window.location.href = 'portal-login.html';
+                }, 2000);
+            } catch (error) {
+                let msg = '❌ Registration failed';
+                if (error.code === 'auth/email-already-in-use') {
+                    msg = '❌ Username already registered';
+                } else if (error.code === 'auth/weak-password') {
+                    msg = '❌ Password should be at least 6 characters';
+                }
+                statusEl.textContent = msg;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+    </script>
+</body>
+</html>
