@@ -13,7 +13,7 @@
         
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <input type="email" id="email" class="form-input" placeholder="Email" required>
+                <input type="text" id="email" class="form-input" placeholder="Username or Email" required>
             </div>
             <div class="form-group">
                 <input type="password" id="password" class="form-input" placeholder="Password" required>
@@ -49,12 +49,19 @@
             const admins = ['admin@smile.com'];
             const designers = ['designer1@smile.com', 'designer2@smile.com'];
 
+            let loginEmail = email;
+            
+            // If no @ symbol, treat as username and convert to email format
+            if (!email.includes('@')) {
+                loginEmail = email + '@smile.local';
+            }
+
             try {
-                await signInWithEmailAndPassword(auth, email, password);
+                await signInWithEmailAndPassword(auth, loginEmail, password);
                 
-                if (admins.includes(email)) {
+                if (admins.includes(loginEmail)) {
                     window.location.href = 'admin-panel.html';
-                } else if (designers.includes(email)) {
+                } else if (designers.includes(loginEmail)) {
                     window.location.href = 'designer-portal.html';
                 } else {
                     window.location.href = 'portal-dashboard.html';
