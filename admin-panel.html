@@ -242,7 +242,7 @@
             urgentProjects.forEach(p => {
                 const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
                 if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
-                    console.warn(`âš ï¸ URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                    console.warn(`Ã¢Å¡Â Ã¯Â¸Â URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
                 }
             });
         }
@@ -353,11 +353,11 @@
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label">ðŸ”¥ Urgent</div>
+                            <div class="stat-label">Ã°Å¸âÂ¥ Urgent</div>
                             <div class="stat-value">${stats.urgent}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
-                            <div class="stat-label">â­ VIP</div>
+                            <div class="stat-label">Ã¢Â­Â VIP</div>
                             <div class="stat-value">${stats.vip}</div>
                         </div>
                     </div>
@@ -384,8 +384,8 @@
                         </select>
                         <select onchange="updateFilter('priority', this.value)">
                             <option value="all">All Priorities</option>
-                            <option value="urgent">ðŸ”¥ Urgent Only</option>
-                            <option value="vip">â­ VIP Only</option>
+                            <option value="urgent">Ã°Å¸âÂ¥ Urgent Only</option>
+                            <option value="vip">Ã¢Â­Â VIP Only</option>
                             <option value="normal">Normal Only</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)">
@@ -428,7 +428,7 @@
                                 <tr class="${rowClass}">
                                     <td>
                                         <strong>${project.title}</strong>
-                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">âš ï¸ 24h exceeded!</span>' : ''}
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">Ã¢Å¡Â Ã¯Â¸Â 24h exceeded!</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>
@@ -456,10 +456,10 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">ðŸ”¥</button>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">â­</button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">ðŸ“</button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">ðŸ—‘ï¸</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">Ã°Å¸âÂ¥</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">Ã¢Â­Â</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">Ã°Å¸âÂ</button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">Ã°Å¸ââÃ¯Â¸Â</button>
                                     </td>
                                 </tr>
                             `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
@@ -467,9 +467,9 @@
                     </table>
 
                     <div class="pagination">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>â† Previous</button>
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Ã¢â Â Previous</button>
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next â†’</button>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next Ã¢â â</button>
                     </div>
                 </div>
 
@@ -553,16 +553,16 @@
             listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
                 <div class="file-item">
                     <div class="file-info">
-                        <div class="file-icon">ðŸ“„</div>
+                        <div class="file-icon">Ã°Å¸ââ</div>
                         <div>
                             <div class="file-name">${file.name}</div>
-                            <div class="file-meta">${formatSize(file.size)} â€¢ ${file.date}</div>
+                            <div class="file-meta">${formatSize(file.size)} Ã¢â¬Â¢ ${file.date}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">ðŸ‘ï¸ View</button>` : ''}
-                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">â¬‡ï¸ Download</a>
-                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">ðŸ“‹ Copy</button>
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">Ã°Å¸âÂÃ¯Â¸Â View</button>` : ''}
+                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Ã¢Â¬â¡Ã¯Â¸Â Download</a>
+                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Ã°Å¸ââ¹ Copy</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
@@ -582,7 +582,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = 'âœ… Files uploaded!';
+                statusEl.textContent = 'Ã¢Åâ¦ Files uploaded!';
                 statusEl.className = 'status-msg active success';
                 
                 await loadData();
@@ -594,7 +594,7 @@
                     e.target.value = '';
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'âŒ Error: ' + error.message;
+                statusEl.textContent = 'Ã¢ÂÅ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         }
@@ -694,7 +694,7 @@
 
                 await createUserWithEmailAndPassword(auth, email, password);
                 
-                statusEl.textContent = '✅ Client created successfully!';
+                statusEl.textContent = 'â Client created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -709,7 +709,7 @@
                 } else if (error.code === 'auth/invalid-email') {
                     errorMsg = 'Invalid email format';
                 }
-                statusEl.textContent = '❌ ' + errorMsg;
+                statusEl.textContent = 'â ' + errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
