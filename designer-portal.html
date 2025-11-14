@@ -13,7 +13,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -34,19 +34,15 @@
         let myProjects = [];
         let currentProjectId = null;
         
-        // --- Hardcoded designer list for redirect logic ---
         const designers = [
             { email: 'designer1@smile.com', name: 'Designer 1' },
             { email: 'designer2@smile.com', name: 'Designer 2' },
         ];
-        // ------------------------------------------------
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // Security check: Ensure the logged-in user is actually a designer
                 if (!designers.some(d => d.email === currentUser.email)) {
-                    // If it's an admin/client trying to access the designer portal, redirect them
                     window.location.href = 'index.html'; 
                     return;
                 }
@@ -59,10 +55,9 @@
         async function loadData() {
             try {
                 const projectsRef = collection(db, 'projects');
-                // --- Filter projects assigned to this designer ---
                 const q = query(
                     projectsRef, 
-                    where('assignedDesignerEmail', '==', currentUser.email), 
+                    where('assignedDesignerEmail', '==', currentUser.email),
                     orderBy('createdAt', 'desc')
                 );
                 const snapshot = await getDocs(q);
@@ -105,23 +100,11 @@
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
-
-            if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
-            }
-
-            const units = si 
-                ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-                : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
             let u = -1;
-            const r = 10**dp;
-
-            do {
-                bytes /= thresh;
-                ++u;
-            } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-
-            return bytes.toFixed(dp) + ' ' + units[u];
+            do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
         }
 
         function render() {
@@ -129,24 +112,23 @@
                 total: myProjects.length,
                 pending: myProjects.filter(p => p.status === 'pending').length,
                 inProgress: myProjects.filter(p => p.status === 'in-progress').length,
-                completed: myProjects.filter(p => p.status === 'completed').length,
-                changesRequested: myProjects.filter(p => p.status === 'changes-requested').length,
-                awaitingApproval: myProjects.filter(p => p.status === 'awaiting-approval').length,
+                completed: myProjects.filter(p => p.status === 'completed').length
             };
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <div class="logo">Smile <span>Center</span> <span class="admin-badge">DESIGNER</span></div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
+                        <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border-color: rgba(167, 139, 250, 0.3);">DESIGNER</span>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
                     </div>
                 </div>
                 <div class="main">
-                    <h1 class="page-title">My Assigned Projects</h1>
-                    <p class="page-subtitle">View and manage projects assigned to you.</p>
+                    <h1 class="page-title">My Assigned Patients</h1>
+                    <p class="page-subtitle">View and manage patients assigned to you.</p>
 
                     <div class="stats">
                         <div class="stat-card">
@@ -162,63 +144,45 @@
                             <div class="stat-value">${stats.inProgress}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Awaiting Review</div>
-                            <div class="stat-value">${stats.awaitingApproval}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Changes Requested</div>
-                            <div class="stat-value">${stats.changesRequested}</div>
-                        </div>
-                        <div class="stat-card">
                             <div class="stat-label">Completed</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                     </div>
 
                     <div class="projects-list">
-                        ${myProjects.length > 0 ? myProjects.map(project => `
+                        ${myProjects.length > 0 ? myProjects.map(project => {
+                            const elapsed = Math.floor((Date.now() - project.createdAt) / (1000 * 60 * 60));
+                            return `
                             <div class="project-card">
                                 <div class="project-header">
                                     <h3 class="project-title">${project.title}</h3>
-                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
+                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase()}</span>
                                 </div>
                                 <p class="project-description">${project.description}</p>
                                 <div class="project-meta">
-                                    Client: ${project.clientEmail} • Created ${new Date(project.createdAt).toLocaleDateString()}
+                                    ⏱️ ${elapsed}h elapsed • Created ${new Date(project.createdAt).toLocaleDateString()}
                                 </div>
                                 
-                                <div class="admin-controls">
-                                    <div class="form-group">
-                                        <label for="status-${project.id}">Update Status:</label>
-                                        <select id="status-${project.id}" onchange="updateStatus('${project.id}', this.value)" class="form-select">
-                                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                                            <option value="awaiting-approval" ${project.status === 'awaiting-approval' ? 'selected' : ''}>Awaiting Client Approval</option>
-                                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <div class="files-section">
                                     ${project.clientRemarks ? `
                                         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-error); margin-bottom: 8px;"><i class="fas fa-times-circle"></i> Client Requested Changes:</h4>
+                                            <h4 style="color: var(--color-error); margin-bottom: 8px;">❌ Client Requested Changes:</h4>
                                             <p style="color: var(--color-text-light);">${project.clientRemarks}</p>
                                         </div>
                                     ` : ''}
                                     ${project.htmlApproved ? `
                                         <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-success); margin-bottom: 8px;"><i class="fas fa-check-circle"></i> Client Approved HTML</h4>
+                                            <h4 style="color: var(--color-success); margin-bottom: 8px;">✅ Client Approved HTML</h4>
                                             <p style="color: var(--color-text-light);">You can now upload STL file.</p>
                                         </div>
                                     ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
                                         <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: #fbbf24; margin-bottom: 8px;"><i class="fas fa-clock"></i> Awaiting Client Approval</h4>
+                                            <h4 style="color: #fbbf24; margin-bottom: 8px;">⏳ Awaiting Client Approval</h4>
                                             <p style="color: var(--color-text-light);">Client must approve HTML before STL upload.</p>
                                         </div>
                                     ` : ''}
                                     <div class="files-header">
-                                        <h4>Project Files (${project.files.length})</h4>
+                                        <h4>Patient Files (${project.files.length})</h4>
                                         <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})">
                                             <i class="fas fa-upload"></i> Upload Files
                                         </button>
@@ -227,42 +191,22 @@
                                         ${project.files.length > 0 ? project.files.map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
-                                                    <div class="file-icon">
-                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '<i class="fas fa-image"></i>' : 
-                                                          file.name.match(/\\.(pdf)$/i) ? '<i class="fas fa-file-pdf"></i>' :
-                                                          file.name.match(/\\.(html|htm)$/i) ? '<i class="fas fa-globe"></i>' :
-                                                          file.name.match(/\\.(stl)$/i) ? '<i class="fas fa-cube"></i>' :
-                                                          file.name.match(/\\.(zip|rar)$/i) ? '<i class="fas fa-file-archive"></i>' : 
-                                                          '<i class="fas fa-file"></i>'}
-                                                    </div>
+                                                    <div class="file-icon">📄</div>
                                                     <div>
                                                         <div class="file-name">${file.name}</div>
                                                         <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')"><i class="fas fa-eye"></i> Preview</button>` : ''}
-                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank"><i class="fas fa-download"></i> Download</a>
+                                                    <button class="btn-view" onclick="copyLink('${file.url}')">🔗 Copy Link</button>
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
                                     </div>
                                 </div>
                             </div>
-                        `).join('') : '<div class="empty"><div class="empty-icon"><i class="fas fa-folder-open"></i></div><div class="empty-title">No Projects Assigned</div><p class="page-subtitle">You have no projects currently assigned for design work.</p></div>'}
-                    </div>
-                </div>
-                
-                <!-- HTML Preview Modal -->
-                <div id="previewModal" class="modal">
-                    <div class="modal-content large">
-                        <button class="close" onclick="closePreview()">&times;</button>
-                        <h2 class="modal-title">HTML Preview</h2>
-                        <p class="modal-subtitle" id="previewFileName"></p>
-                        <iframe id="previewFrame" class="preview-iframe"></iframe>
-                        <div style="text-align: center; margin-top: 16px;">
-                            <button class="btn-primary" onclick="closePreview()">Close Preview</button>
-                        </div>
+                        `}).join('') : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
                     </div>
                 </div>
                 
@@ -270,7 +214,7 @@
                     <div class="modal-content">
                         <button class="close" onclick="closeUpload()">&times;</button>
                         <h2 class="modal-title">Upload Files</h2>
-                        <p class="modal-subtitle">Uploading to project: <span id="currentProjectTitle"></span></p>
+                        <p class="modal-subtitle">Uploading to patient: <span id="currentProjectTitle"></span></p>
                         
                         <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
@@ -278,7 +222,7 @@
                             <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
                         </div>
                         <div id="stlWarning" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; color: var(--color-error); font-size: 14px;">
-                            <i class="fas fa-exclamation-triangle"></i> Client must approve HTML preview before you can upload STL files.
+                            ⚠️ Client must approve HTML preview before you can upload STL files.
                         </div>
                         <input type="file" id="fileInput" multiple style="display:none;">
                         <div id="fileList" class="file-list"></div>
@@ -288,7 +232,6 @@
                 </div>
             `;
 
-            // Drag/drop and file change listeners
             const fileInput = document.getElementById('fileInput');
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
@@ -328,23 +271,11 @@
             `).join('');
         }
         
-        // Global functions exposed to the window for inline onclick handlers
-
-        window.viewHtmlFile = (url, filename) => {
-            document.getElementById('previewFileName').textContent = `File: ${filename}`;
-            document.getElementById('previewFrame').src = url;
-            document.getElementById('previewModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.closePreview = () => {
-            document.getElementById('previewModal').classList.remove('active');
-            document.getElementById('previewFrame').src = '';
-            document.body.style.overflow = 'auto';
-        };
+        let currentPatientTitle = '';
 
         window.openUploadModal = (projectId, projectTitle, isApproved) => {
             currentProjectId = projectId;
+            currentPatientTitle = projectTitle;
             document.getElementById('currentProjectTitle').textContent = projectTitle;
             document.getElementById('fileInput').value = '';
             document.getElementById('fileList').innerHTML = '';
@@ -381,10 +312,11 @@
             }
 
             const project = myProjects.find(p => p.id === currentProjectId);
+            const hasHTML = Array.from(files).some(f => f.name.match(/\.html?$/i));
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
             
             if (hasSTL && !project.htmlApproved) {
-                showStatus('<i class="fas fa-times"></i> Cannot upload STL files until client approves HTML preview.', 'error');
+                showStatus('❌ Cannot upload STL files until client approves HTML preview.', 'error');
                 return;
             }
 
@@ -394,24 +326,31 @@
 
             try {
                 for (const file of files) {
-                    const storageRef = ref(storage, `projects/${currentProjectId}/${file.name}`);
+                    const ext = file.name.substring(file.name.lastIndexOf('.'));
+                    const newFileName = `${currentPatientTitle}${ext}`;
+                    const storageRef = ref(storage, `projects/${currentProjectId}/${newFileName}`);
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                // Update status based on uploaded file types
+                const updateData = {};
+                if (hasHTML) {
+                    updateData.status = 'awaiting-client-approval';
+                }
                 if (hasSTL) {
-                    await updateDoc(doc(db, 'projects', currentProjectId), { status: 'completed' });
-                } else if (Array.from(files).some(f => f.name.match(/\.html?$/i))) {
-                    await updateDoc(doc(db, 'projects', currentProjectId), { status: 'awaiting-approval' });
+                    updateData.status = 'completed';
+                }
+                
+                if (Object.keys(updateData).length > 0) {
+                    await updateDoc(doc(db, 'projects', currentProjectId), updateData);
                 }
 
-                showStatus('<i class="fas fa-check"></i> Files uploaded!', 'success');
+                showStatus('✅ Files uploaded!', 'success');
                 setTimeout(async () => {
                     closeUpload();
                     await loadData();
                 }, 1500);
             } catch (error) {
-                showStatus('<i class="fas fa-times"></i> Error: ' + error.message, 'error');
+                showStatus('❌ Error: ' + error.message, 'error');
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
             }
@@ -427,18 +366,15 @@
             input.dispatchEvent(new Event('change'));
         };
 
-        window.updateStatus = async (projectId, newStatus) => {
-            try {
-                await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
-                await loadData();
-            } catch (error) {
-                alert('Error updating status: ' + error.message);
-            }
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied to clipboard!');
+            });
         };
 
         function showStatus(msg, type) {
             const el = document.getElementById('uploadStatus');
-            el.innerHTML = msg;
+            el.textContent = msg;
             el.className = `status-msg active ${type}`;
         }
 

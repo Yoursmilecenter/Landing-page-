@@ -3,24 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile Center - Welcome</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>Smile Center Portal</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="landing-gateway" onclick="redirectToPortal()">
-        <div>
-            <svg width="320" height="100" viewBox="0 0 320 100">
-                <text x="10" y="60" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#38bdf8">SMILE <tspan fill="#a78bfa">CENTER</tspan></text>
-                <path d="M250,50 C250,35 265,25 280,30 C295,35 305,50 295,65 C285,80 265,80 255,70" stroke="#38bdf8" stroke-width="6" fill="none" />
-            </svg>
-            <div style="text-align: center; color: #9ca3af; font-size: 16px; margin-top: 20px;">Click to enter portal</div>
-        </div>
+    <div id="landing-gateway" onclick="window.location.href='portal-login.html'">
+        <img src="smile-center-logo.png" alt="Smile Center" class="main-logo">
     </div>
-
-    <script>
-        function redirectToPortal() {
-            window.location.href = 'portal-login.html';
-        }
-    </script>
 </body>
 </html>

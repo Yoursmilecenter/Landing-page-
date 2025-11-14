@@ -91,23 +91,11 @@
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
-
-            if (Math.abs(bytes) < thresh) {
-                return bytes + ' B';
-            }
-
-            const units = si 
-                ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-                : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
             let u = -1;
-            const r = 10**dp;
-
-            do {
-                bytes /= thresh;
-                ++u;
-            } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-
-            return bytes.toFixed(dp) + ' ' + units[u];
+            do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
         }
 
         function render() {
@@ -115,14 +103,14 @@
                 total: userProjects.length,
                 completed: userProjects.filter(p => p.status === 'completed').length,
                 inProgress: userProjects.filter(p => p.status === 'in-progress').length,
-                awaitingApproval: userProjects.filter(p => p.status === 'awaiting-approval').length,
+                awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
             };
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <div class="logo">Smile <span>Center</span></div> 
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
@@ -133,17 +121,17 @@
                 <div class="main">
                     <div class="section-header">
                         <div>
-                            <h1 class="page-title">My Projects</h1>
-                            <p class="page-subtitle">View and manage your design projects.</p>
+                            <h1 class="page-title">My Patients</h1>
+                            <p class="page-subtitle">View and manage your patient designs.</p>
                         </div>
                         <button class="btn-primary" onclick="openNewProjectModal()">
-                            <i class="fas fa-plus"></i> New Project
+                            <i class="fas fa-plus"></i> New Patient
                         </button>
                     </div>
 
                     <div class="stats">
                         <div class="stat-card">
-                            <div class="stat-label">Total Projects</div>
+                            <div class="stat-label">Total Patients</div>
                             <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
@@ -185,13 +173,13 @@
                                                 project.files.filter(f => f.name.match(/\.html?$/i)).map(file => `
                                                     <div class="file-item">
                                                         <div class="file-info">
-                                                            <div class="file-icon"><i class="fas fa-globe"></i></div>
+                                                            <div class="file-icon">🌐</div>
                                                             <div>
                                                                 <div class="file-name">${file.name}</div>
                                                                 <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                             </div>
                                                         </div>
-                                                        <button class="btn-view" onclick="viewHtmlForApproval('${project.id}', '${file.url}', '${file.name}')"><i class="fas fa-eye"></i> Preview & Review</button>
+                                                        <button class="btn-view" onclick="viewHtmlForApproval('${project.id}', '${file.url}', '${file.name}')">👁️ Preview & Review</button>
                                                     </div>
                                                 `).join('') 
                                                 : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No preview uploaded yet</p>'}
@@ -204,32 +192,35 @@
                                                     project.files.filter(f => f.name.match(/\.stl$/i)).map(file => `
                                                         <div class="file-item">
                                                             <div class="file-info">
-                                                                <div class="file-icon"><i class="fas fa-cube"></i></div>
+                                                                <div class="file-icon">📦</div>
                                                                 <div>
                                                                     <div class="file-name">${file.name}</div>
                                                                     <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                                 </div>
                                                             </div>
-                                                            <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank"><i class="fas fa-download"></i> Download</a>
+                                                            <div class="file-actions">
+                                                                <button class="btn-view" onclick="copyLink('${file.url}')">🔗 Copy Link</button>
+                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                            </div>
                                                         </div>
                                                     `).join('')
                                                     : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">STL file will appear after designer upload</p>')
-                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;"><i class="fas fa-lock"></i> Approve HTML preview first to unlock STL files</p>'}
+                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;">🔒 Approve HTML preview first to unlock STL files</p>'}
                                         </div>
                                     </div>
                                     
                                     <div class="files-header" style="margin-top: 30px;">
-                                        <h4>All Project Files (${project.files.length})</h4>
+                                        <h4>All Patient Files (${project.files.length})</h4>
                                     </div>
                                     <div class="file-list">
                                         ${project.files.length > 0 ? project.files.map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
                                                     <div class="file-icon">
-                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '<i class="fas fa-image"></i>' : 
-                                                          file.name.match(/\\.(pdf)$/i) ? '<i class="fas fa-file-pdf"></i>' :
-                                                          file.name.match(/\\.(html|htm)$/i) ? '<i class="fas fa-globe"></i>' :
-                                                          file.name.match(/\\.(zip|rar)$/i) ? '<i class="fas fa-file-archive"></i>' : '<i class="fas fa-file"></i>'}
+                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '🖼️' : 
+                                                          file.name.match(/\\.(pdf)$/i) ? '📄' :
+                                                          file.name.match(/\\.(html|htm)$/i) ? '🌐' :
+                                                          file.name.match(/\\.(zip|rar)$/i) ? '📦' : '📎'}
                                                     </div>
                                                     <div>
                                                         <div class="file-name">${file.name}</div>
@@ -237,8 +228,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')"><i class="fas fa-eye"></i> Preview</button>` : ''}
-                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank"><i class="fas fa-download"></i> Download</a>
+                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">👁️ Preview</button>` : ''}
+                                                    <button class="btn-view" onclick="copyLink('${file.url}')">🔗 Copy Link</button>
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
@@ -247,15 +239,14 @@
                             </div>
                         `).join('') : `
                             <div class="empty">
-                                <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
-                                <div class="empty-title">No Projects Yet</div>
-                                <p class="empty-desc">Your projects will appear here once they are created.</p>
+                                <div class="empty-icon">📂</div>
+                                <div class="empty-title">No Patients Yet</div>
+                                <p class="empty-desc">Your patients will appear here once they are created.</p>
                             </div>
                         `}
                     </div>
                 </div>
 
-                <!-- HTML Preview Modal -->
                 <div id="previewModal" class="modal">
                     <div class="modal-content large">
                         <button class="close" onclick="closePreview()">&times;</button>
@@ -268,7 +259,6 @@
                     </div>
                 </div>
 
-                <!-- Approval Modal -->
                 <div id="approvalModal" class="modal">
                     <div class="modal-content large">
                         <button class="close" onclick="closeApproval()">&times;</button>
@@ -278,8 +268,8 @@
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;"><i class="fas fa-check"></i> Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;"><i class="fas fa-times"></i> Request Changes</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">❌ Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -291,27 +281,87 @@
                     </div>
                 </div>
 
-                <!-- New Project Modal -->
                 <div id="newProjectModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeNewProject()">&times;</button>
-                        <h2 class="modal-title">Create New Project</h2>
+                        <h2 class="modal-title">Create New Patient</h2>
                         <form id="newProjectForm" onsubmit="createProject(event)">
                             <div class="form-group">
-                                <label class="form-label">Project Title *</label>
-                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter project title" required>
+                                <label class="form-label">Patient Name *</label>
+                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter patient name" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Description *</label>
-                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter project description" required></textarea>
+                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter patient description" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Upload Files (Optional)</label>
+                                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
+                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
+                                    <div style="color:var(--color-text-secondary); font-size:13px;">or click to browse</div>
+                                </div>
+                                <input type="file" id="fileInput" multiple style="display:none;">
+                                <div id="fileList" class="file-list" style="margin-top: 12px;"></div>
                             </div>
                             <div id="createStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Project</button>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Patient</button>
                         </form>
                     </div>
                 </div>
             `;
+
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            
+            fileInput.addEventListener('change', (e) => renderFileList(e.target.files));
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--color-primary)';
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            });
         }
+
+        function renderFileList(files) {
+            const listEl = document.getElementById('fileList');
+            if (!listEl || files.length === 0) {
+                if (listEl) listEl.innerHTML = '';
+                return;
+            }
+            listEl.innerHTML = Array.from(files).map((file, i) => `
+                <div class="file-list-item">
+                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <button class="btn-icon" onclick="removeFile(${i})" type="button">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.removeFile = (index) => {
+            const dt = new DataTransfer();
+            const input = document.getElementById('fileInput');
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            files.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        };
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        };
 
         let currentApprovalProjectId = null;
 
@@ -346,14 +396,14 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = '✓ Design approved! Designer can now upload STL file.';
+                statusEl.textContent = '✅ Design approved! Designer can now upload STL file.';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -375,14 +425,14 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = '✓ Feedback sent to designer';
+                statusEl.textContent = '✅ Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -396,6 +446,7 @@
             document.getElementById('newProjectModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('newProjectForm').reset();
+            document.getElementById('fileList').innerHTML = '';
             document.getElementById('createStatus').className = 'status-msg';
         };
 
@@ -404,10 +455,11 @@
             
             const title = document.getElementById('projectTitle').value;
             const description = document.getElementById('projectDescription').value;
+            const files = document.getElementById('fileInput').files;
             const statusEl = document.getElementById('createStatus');
 
             try {
-                await addDoc(collection(db, 'projects'), {
+                const docRef = await addDoc(collection(db, 'projects'), {
                     title,
                     clientEmail: currentUser.email,
                     description,
@@ -418,7 +470,17 @@
                     createdAt: Date.now()
                 });
 
-                statusEl.textContent = '✓ Project created successfully!';
+                if (files.length > 0) {
+                    statusEl.textContent = 'Patient created! Uploading files...';
+                    statusEl.className = 'status-msg active warning';
+                    
+                    for (const file of files) {
+                        const storageRef = ref(storage, `projects/${docRef.id}/${file.name}`);
+                        await uploadBytesResumable(storageRef, file);
+                    }
+                }
+
+                statusEl.textContent = '✅ Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -426,7 +488,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };

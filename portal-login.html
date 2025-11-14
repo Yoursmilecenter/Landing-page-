@@ -3,141 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile Center Portal - Login</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --color-primary: #38bdf8;
-            --color-secondary: #a78bfa;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000;
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        @keyframes logoGlow {
-            0%, 100% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5)); }
-            50% { filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.9)); }
-        }
-
-        .login-wrapper {
-            width: 100%;
-            max-width: 450px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .logo-container {
-            margin-bottom: 50px;
-        }
-
-        .logo-container img {
-            width: 85%;
-            max-width: 400px;
-            animation: logoGlow 3s ease-in-out infinite;
-        }
-
-        .form-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        input {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            color: #fff;
-            font-size: 16px;
-            margin-bottom: 16px;
-            transition: all 0.3s ease;
-        }
-
-        input:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(56, 189, 248, 0.5);
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
-        }
-
-        input::placeholder {
-            color: #9ca3af;
-        }
-
-        button {
-            width: 100%;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(167, 139, 250, 0.2));
-            backdrop-filter: blur(10px);
-            color: var(--color-primary);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(167, 139, 250, 0.3));
-            border-color: rgba(56, 189, 248, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.3);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .status-msg {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            display: none;
-        }
-
-        .status-msg.active {
-            display: block;
-        }
-
-        .status-msg.error {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-    </style>
+    <title>Login - Smile Center</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="logo-container">
-            <img src="smile-center-logo.png" alt="Smile Center">
-        </div>
+    <div class="login-container">
+        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
+        <h2 style="margin-bottom: 30px; color: var(--color-text);">Portal Login</h2>
         
-        <div class="form-container">
-            <form id="loginForm">
-                <input type="email" id="email" placeholder="Email Address" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <div id="loginStatus" class="status-msg"></div>
-                <button type="submit" id="loginBtn">Log In</button>
-            </form>
-        </div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <input type="email" id="email" class="form-input" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" class="form-input" placeholder="Password" required>
+            </div>
+            <div id="loginStatus" class="status-msg"></div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
+        </form>
     </div>
 
     <script type="module">
@@ -152,59 +35,35 @@
             messagingSenderId: "517098616907",
             appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
         };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        const adminEmail = 'admin@smile.com';
-        const designerEmails = ['designer1@smile.com', 'designer2@smile.com'];
-        
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        window.handleLogin = async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const msgEl = document.getElementById('loginStatus');
+            const statusEl = document.getElementById('loginStatus');
 
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Logging in...';
-            msgEl.className = 'status-msg';
-            msgEl.textContent = '';
-            
+            const admins = ['admin@smile.com'];
+            const designers = ['designer1@smile.com', 'designer2@smile.com'];
+
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 
-                if (email === adminEmail) {
+                if (admins.includes(email)) {
                     window.location.href = 'admin-panel.html';
-                } else if (designerEmails.includes(email)) {
+                } else if (designers.includes(email)) {
                     window.location.href = 'designer-portal.html';
                 } else {
-                    window.location.href = 'portal-dashboard.html'; 
+                    window.location.href = 'portal-dashboard.html';
                 }
-                
             } catch (error) {
-                let errorMessage;
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        errorMessage = 'Invalid email or password.';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Please enter a valid email address.';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Access temporarily blocked. Try again later.';
-                        break;
-                    default:
-                        errorMessage = 'Login failed. Please check your credentials.';
-                }
-
-                msgEl.textContent = errorMessage;
-                msgEl.className = 'status-msg error active'; 
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Log In';
+                statusEl.textContent = '❌ Invalid credentials';
+                statusEl.className = 'status-msg active error';
             }
-        });
+        };
     </script>
 </body>
 </html>
