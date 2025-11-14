@@ -163,24 +163,24 @@
                                 </div>
                                 <p class="project-description">${project.description}</p>
                                 <div class="project-meta">
-                                    ⏱️ ${timeStr} elapsed • Created ${new Date(project.createdAt).toLocaleDateString()}
+                                    â±ï¸ ${timeStr} elapsed â€¢ Created ${new Date(project.createdAt).toLocaleDateString()}
                                 </div>
                                 
                                 <div class="files-section">
                                     ${project.clientRemarks ? `
                                         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-error); margin-bottom: 8px;">❌ Client Requested Changes:</h4>
+                                            <h4 style="color: var(--color-error); margin-bottom: 8px;">âŒ Client Requested Changes:</h4>
                                             <p style="color: var(--color-text-light);">${project.clientRemarks}</p>
                                         </div>
                                     ` : ''}
                                     ${project.htmlApproved ? `
                                         <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-success); margin-bottom: 8px;">✅ Client Approved HTML</h4>
+                                            <h4 style="color: var(--color-success); margin-bottom: 8px;">âœ… Client Approved HTML</h4>
                                             <p style="color: var(--color-text-light);">You can now upload STL file.</p>
                                         </div>
                                     ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
                                         <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: #fbbf24; margin-bottom: 8px;">⏳ Awaiting Client Approval</h4>
+                                            <h4 style="color: #fbbf24; margin-bottom: 8px;">â³ Awaiting Client Approval</h4>
                                             <p style="color: var(--color-text-light);">Client must approve HTML before STL upload.</p>
                                         </div>
                                     ` : ''}
@@ -194,22 +194,22 @@
                                         ${project.files.length > 0 ? project.files.map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
-                                                    <div class="file-icon">📄</div>
+                                                    <div class="file-icon">ðŸ“„</div>
                                                     <div>
                                                         <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                                                        <div class="file-meta">${formatSize(file.size)} â€¢ ${file.date}</div>
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    <button class="btn-view" onclick="copyLink('${file.url}')">🔗 Copy Link</button>
-                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                                                    <button class="btn-view" onclick="copyLink('${file.url}')">ðŸ”— Copy Link</button>
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">â¬‡ï¸ Download</a>
                                                 </div>
                                             </div>
                                         `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
                                     </div>
                                 </div>
                             </div>
-                        `}).join('') : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
+                        `}).join('') : '<div class="empty"><div class="empty-icon">ðŸ“‚</div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
                     </div>
                 </div>
                 
@@ -225,7 +225,7 @@
                             <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
                         </div>
                         <div id="stlWarning" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; color: var(--color-error); font-size: 14px;">
-                            ⚠️ Client must approve HTML preview before you can upload STL files.
+                            âš ï¸ Client must approve HTML preview before you can upload STL files.
                         </div>
                         <input type="file" id="fileInput" multiple style="display:none;">
                         <div id="fileList" class="file-list"></div>
@@ -319,7 +319,7 @@
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
             
             if (hasSTL && !project.htmlApproved) {
-                showStatus('❌ Cannot upload STL files until client approves HTML preview.', 'error');
+                showStatus('âŒ Cannot upload STL files until client approves HTML preview.', 'error');
                 return;
             }
 
@@ -347,13 +347,13 @@
                     await updateDoc(doc(db, 'projects', currentProjectId), updateData);
                 }
 
-                showStatus('✅ Files uploaded!', 'success');
+                showStatus('âœ… Files uploaded!', 'success');
                 setTimeout(async () => {
                     closeUpload();
                     await loadData();
                 }, 1500);
             } catch (error) {
-                showStatus('❌ Error: ' + error.message, 'error');
+                showStatus('âŒ Error: ' + error.message, 'error');
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
             }
