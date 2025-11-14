@@ -132,7 +132,7 @@
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
@@ -242,7 +242,7 @@
             urgentProjects.forEach(p => {
                 const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
                 if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
-                    console.warn(`Ã¢Å¡Â Ã¯Â¸Â URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                    console.warn(`⚠️ URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
                 }
             });
         }
@@ -322,9 +322,6 @@
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
-                            <button class="btn-primary btn-small" onclick="openAddClientModal()">
-                                <i class="fas fa-user-plus"></i> Add Client
-                            </button>
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
@@ -353,11 +350,11 @@
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label">Ã°Å¸âÂ¥ Urgent</div>
+                            <div class="stat-label">🔥 Urgent</div>
                             <div class="stat-value">${stats.urgent}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
-                            <div class="stat-label">Ã¢Â­Â VIP</div>
+                            <div class="stat-label">⭐ VIP</div>
                             <div class="stat-value">${stats.vip}</div>
                         </div>
                     </div>
@@ -384,8 +381,8 @@
                         </select>
                         <select onchange="updateFilter('priority', this.value)">
                             <option value="all">All Priorities</option>
-                            <option value="urgent">Ã°Å¸âÂ¥ Urgent Only</option>
-                            <option value="vip">Ã¢Â­Â VIP Only</option>
+                            <option value="urgent">🔥 Urgent Only</option>
+                            <option value="vip">⭐ VIP Only</option>
                             <option value="normal">Normal Only</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)">
@@ -428,7 +425,7 @@
                                 <tr class="${rowClass}">
                                     <td>
                                         <strong>${project.title}</strong>
-                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">Ã¢Å¡Â Ã¯Â¸Â 24h exceeded!</span>' : ''}
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">⚠️ 24h exceeded!</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>
@@ -456,10 +453,10 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">Ã°Å¸âÂ¥</button>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">Ã¢Â­Â</button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">Ã°Å¸âÂ</button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">Ã°Å¸ââÃ¯Â¸Â</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">🔥</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑️</button>
                                     </td>
                                 </tr>
                             `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
@@ -467,9 +464,9 @@
                     </table>
 
                     <div class="pagination">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Ã¢â Â Previous</button>
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next Ã¢â â</button>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
                     </div>
                 </div>
 
@@ -487,32 +484,6 @@
                         
                         <div id="filesList" class="file-list"></div>
                         <div id="uploadStatus" class="status-msg"></div>
-                    </div>
-                </div>
-
-                <!-- Add Client Modal -->
-                <div id="addClientModal" class="modal">
-                    <div class="modal-content">
-                        <button class="close" onclick="closeAddClientModal()">&times;</button>
-                        <h2 class="modal-title">Add New Client</h2>
-                        <p class="modal-subtitle">Create a new client account</p>
-                        
-                        <form id="addClientForm" onsubmit="handleAddClient(event)">
-                            <div class="form-group">
-                                <label class="form-label">Username *</label>
-                                <input type="text" id="clientUsername" class="form-input" placeholder="Enter username" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email *</label>
-                                <input type="email" id="clientEmail" class="form-input" placeholder="Enter email" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Password *</label>
-                                <input type="password" id="clientPassword" class="form-input" placeholder="Enter password" required minlength="6">
-                            </div>
-                            <div id="addClientStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Client</button>
-                        </form>
                     </div>
                 </div>
             `;
@@ -553,16 +524,16 @@
             listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
                 <div class="file-item">
                     <div class="file-info">
-                        <div class="file-icon">Ã°Å¸ââ</div>
+                        <div class="file-icon">📄</div>
                         <div>
                             <div class="file-name">${file.name}</div>
-                            <div class="file-meta">${formatSize(file.size)} Ã¢â¬Â¢ ${file.date}</div>
+                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">Ã°Å¸âÂÃ¯Â¸Â View</button>` : ''}
-                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Ã¢Â¬â¡Ã¯Â¸Â Download</a>
-                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Ã°Å¸ââ¹ Copy</button>
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">👁️ View</button>` : ''}
+                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
@@ -582,7 +553,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = 'Ã¢Åâ¦ Files uploaded!';
+                statusEl.textContent = '✅ Files uploaded!';
                 statusEl.className = 'status-msg active success';
                 
                 await loadData();
@@ -594,7 +565,7 @@
                     e.target.value = '';
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'Ã¢ÂÅ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         }
@@ -665,52 +636,6 @@
                 window.location.href = 'portal-login.html';
             } catch (error) {
                 console.error('Logout error:', error);
-            }
-        };
-
-        window.openAddClientModal = () => {
-            document.getElementById('addClientModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            document.getElementById('addClientForm').reset();
-            document.getElementById('addClientStatus').className = 'status-msg';
-        };
-
-        window.closeAddClientModal = () => {
-            document.getElementById('addClientModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        };
-
-        window.handleAddClient = async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('clientUsername').value.trim();
-            const email = document.getElementById('clientEmail').value.trim();
-            const password = document.getElementById('clientPassword').value;
-            const statusEl = document.getElementById('addClientStatus');
-
-            try {
-                statusEl.textContent = 'Creating client...';
-                statusEl.className = 'status-msg active warning';
-
-                await createUserWithEmailAndPassword(auth, email, password);
-                
-                statusEl.textContent = 'â Client created successfully!';
-                statusEl.className = 'status-msg active success';
-                
-                setTimeout(() => {
-                    closeAddClientModal();
-                }, 1500);
-            } catch (error) {
-                let errorMsg = 'Error creating client';
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMsg = 'Email already in use';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMsg = 'Password too weak (min 6 characters)';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMsg = 'Invalid email format';
-                }
-                statusEl.textContent = 'â ' + errorMsg;
-                statusEl.className = 'status-msg active error';
             }
         };
     </script>
