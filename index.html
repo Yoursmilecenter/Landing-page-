@@ -9,13 +9,16 @@
 <body>
     <div id="landing-gateway" onclick="redirectToPortal()">
         <div>
-            <img src="smile-center-logo.png" alt="Smile Center" style="width: 80%; max-width: 450px; margin-bottom: 30px; animation: fadeIn 2s ease-out;">
+            <svg width="320" height="100" viewBox="0 0 320 100">
+                <text x="10" y="60" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#38bdf8">SMILE <tspan fill="#a78bfa">CENTER</tspan></text>
+                <path d="M250,50 C250,35 265,25 280,30 C295,35 305,50 295,65 C285,80 265,80 255,70" stroke="#38bdf8" stroke-width="6" fill="none" />
+            </svg>
+            <div style="text-align: center; color: #9ca3af; font-size: 16px; margin-top: 20px;">Click to enter portal</div>
         </div>
     </div>
 
     <script>
         function redirectToPortal() {
-            // Redirects to your login page file
             window.location.href = 'portal-login.html';
         }
     </script>
