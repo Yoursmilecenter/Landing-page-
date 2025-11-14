@@ -271,14 +271,14 @@ html, body {
 .projects-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .project-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 8px;
+    padding: 12px;
     transition: all 0.3s ease;
 }
 
@@ -291,26 +291,26 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .project-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--color-text);
 }
 
 .project-date, .project-meta {
     color: var(--color-text-secondary);
-    font-size: 14px;
-    margin-top: 4px;
+    font-size: 12px;
+    margin-top: 2px;
 }
 
 .project-desc, .project-description {
     color: var(--color-text-light);
-    margin-bottom: 12px;
-    line-height: 1.5;
-    font-size: 14px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-size: 13px;
 }
 
 .status-badge {
@@ -358,7 +358,7 @@ html, body {
 }
 
 .files-section {
-    margin-top: 12px;
+    margin-top: 8px;
 }
 
 .files-header {
@@ -376,17 +376,17 @@ html, body {
 .file-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .file-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
+    padding: 6px 10px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    border-radius: 6px;
     transition: all 0.3s ease;
 }
 
@@ -652,17 +652,17 @@ html, body {
 }
 
 .upload-section {
-    padding: 20px;
+    padding: 12px;
     background: rgba(139, 92, 246, 0.08);
     border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 10px;
-    margin-bottom: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
 }
 
 .upload-section-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 select {
