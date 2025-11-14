@@ -151,8 +151,7 @@
 
                     <div class="projects-list">
                         ${myProjects.length > 0 ? myProjects.map(project => {
-                            const createdAt = project.createdAt || Date.now();
-                            const elapsed = Date.now() - createdAt;
+                            const elapsed = Date.now() - project.createdAt;
                             const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
                             const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                             const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
@@ -164,7 +163,7 @@
                                 </div>
                                 <p class="project-description">${project.description}</p>
                                 <div class="project-meta">
-                                    ⏱️ ${timeStr} elapsed • Created ${new Date(createdAt).toLocaleDateString()}
+                                    ⏱️ ${timeStr} elapsed • Created ${new Date(project.createdAt).toLocaleDateString()}
                                 </div>
                                 
                                 <div class="files-section">

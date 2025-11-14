@@ -20,16 +20,12 @@
             </div>
             <div id="loginStatus" class="status-msg"></div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="client-register.html" style="color: var(--color-primary); text-decoration: none;">New client? Register here</a>
-            </div>
         </form>
     </div>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -42,7 +38,6 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
         window.handleLogin = async (e) => {
             e.preventDefault();
@@ -63,29 +58,6 @@
 
             try {
                 await signInWithEmailAndPassword(auth, loginEmail, password);
-                
-                // Check if user is approved (for clients only)
-                if (!admins.includes(loginEmail) && !designers.includes(loginEmail)) {
-                    const usersRef = collection(db, 'users');
-                    const q = query(usersRef, where('loginEmail', '==', loginEmail));
-                    const snapshot = await getDocs(q);
-                    
-                    if (!snapshot.empty) {
-                        const userData = snapshot.docs[0].data();
-                        if (userData.status === 'pending-approval') {
-                            await auth.signOut();
-                            statusEl.textContent = '⏳ Your account is pending admin approval';
-                            statusEl.className = 'status-msg active warning';
-                            return;
-                        }
-                        if (userData.status === 'rejected') {
-                            await auth.signOut();
-                            statusEl.textContent = '❌ Your registration was rejected';
-                            statusEl.className = 'status-msg active error';
-                            return;
-                        }
-                    }
-                }
                 
                 if (admins.includes(loginEmail)) {
                     window.location.href = 'admin-panel.html';

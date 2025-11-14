@@ -6,14 +6,135 @@
     <title>Admin Panel - Smile Center</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
+            50% { filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.8)); }
+        }
+        .header img, .header-content img {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        select, input {
+            background-color: var(--color-background) !important;
+            color: var(--color-text-light) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        select option {
+            background-color: var(--color-card) !important;
+            color: var(--color-text-light) !important;
+        }
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ultra-compact-table thead {
+            background: rgba(99, 102, 241, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .ultra-compact-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ultra-compact-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ultra-compact-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .urgent-row {
+            background: rgba(239, 68, 68, 0.1) !important;
+            border-left: 3px solid #ef4444;
+        }
+        .vip-row {
+            background: rgba(251, 191, 36, 0.1) !important;
+            border-left: 3px solid #fbbf24;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .badge-urgent {
+            background: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-vip {
+            background: #fbbf24;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .action-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 6px 12px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .group-header {
+            background: rgba(167, 139, 250, 0.1);
+            padding: 8px 12px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            cursor: pointer;
+        }
+        .group-header:hover {
+            background: rgba(167, 139, 250, 0.15);
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -27,20 +148,43 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         let currentUser = null;
-        let allUsers = [];
+        let allProjects = [];
+        let filteredProjects = [];
+        
+        const admins = [
+            { email: 'admin@smile.com', name: 'Admin' },
+        ];
 
-        const admins = ['admin@smile.com'];
+        const designers = [
+            { email: 'designer1@smile.com', name: 'Designer 1' },
+            { email: 'designer2@smile.com', name: 'Designer 2' },
+        ];
+
+        let currentFilters = {
+            status: 'all',
+            designer: 'all',
+            client: 'all',
+            priority: 'all',
+            sortBy: 'date-desc',
+            groupBy: 'none'
+        };
+
+        let currentPage = 1;
+        let itemsPerPage = 50;
+        let currentProjectForFiles = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                if (!admins.includes(currentUser.email)) {
+                if (!admins.some(a => a.email === currentUser.email)) {
                     window.location.href = 'index.html';
                     return;
                 }
                 await loadData();
+                checkUrgentReminders();
             } else {
                 window.location.href = 'portal-login.html';
             }
@@ -48,26 +192,136 @@
 
         async function loadData() {
             try {
-                const usersRef = collection(db, 'users');
-                const snapshot = await getDocs(usersRef);
-                allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                render();
+                const projectsRef = collection(db, 'projects');
+                const q = query(projectsRef, orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                
+                allProjects = [];
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    const files = await loadFiles(docSnap.id);
+                    allProjects.push({
+                        id: docSnap.id,
+                        ...data,
+                        files
+                    });
+                }
+                
+                applyFilters();
             } catch (error) {
                 console.error('Error:', error);
                 render();
             }
         }
 
+        async function loadFiles(projectId) {
+            try {
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const list = await listAll(filesRef);
+                const files = await Promise.all(
+                    list.items.map(async (item) => {
+                        const url = await getDownloadURL(item);
+                        const meta = await getMetadata(item);
+                        return {
+                            name: item.name,
+                            url,
+                            path: item.fullPath,
+                            size: meta.size,
+                            date: new Date(meta.timeCreated).toLocaleDateString()
+                        };
+                    })
+                );
+                return files;
+            } catch {
+                return [];
+            }
+        }
+
+        function checkUrgentReminders() {
+            const urgentProjects = allProjects.filter(p => p.isUrgent && p.status !== 'completed');
+            urgentProjects.forEach(p => {
+                const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
+                if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
+                    console.warn(`⚠️ URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                }
+            });
+        }
+
+        function applyFilters() {
+            filteredProjects = allProjects.filter(p => {
+                if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
+                if (currentFilters.designer !== 'all') {
+                    if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
+                    if (currentFilters.designer !== 'null' && p.assignedDesignerEmail !== currentFilters.designer) return false;
+                }
+                if (currentFilters.client !== 'all' && p.clientEmail !== currentFilters.client) return false;
+                if (currentFilters.priority !== 'all') {
+                    if (currentFilters.priority === 'urgent' && !p.isUrgent) return false;
+                    if (currentFilters.priority === 'vip' && !p.isVIP) return false;
+                    if (currentFilters.priority === 'normal' && (p.isUrgent || p.isVIP)) return false;
+                }
+                return true;
+            });
+
+            if (currentFilters.sortBy === 'date-asc') {
+                filteredProjects.sort((a, b) => a.createdAt - b.createdAt);
+            } else if (currentFilters.sortBy === 'date-desc') {
+                filteredProjects.sort((a, b) => b.createdAt - a.createdAt);
+            } else if (currentFilters.sortBy === 'name-asc') {
+                filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
+            } else if (currentFilters.sortBy === 'name-desc') {
+                filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
+            } else if (currentFilters.sortBy === 'client-asc') {
+                filteredProjects.sort((a, b) => a.clientEmail.localeCompare(b.clientEmail));
+            }
+
+            currentPage = 1;
+            render();
+        }
+
+        window.updateFilter = (type, value) => {
+            currentFilters[type] = value;
+            applyFilters();
+        };
+
+        function formatSize(bytes) {
+            const thresh = 1024;
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = ['KB', 'MB', 'GB'];
+            let u = -1;
+            do {
+                bytes /= thresh;
+                ++u;
+            } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
+        };
+
         function render() {
-            const pendingUsers = allUsers.filter(u => u.status === 'pending-approval');
-            const activeUsers = allUsers.filter(u => u.status === 'active');
+            const stats = {
+                total: allProjects.length,
+                pending: allProjects.filter(p => p.status === 'pending').length,
+                inProgress: allProjects.filter(p => p.status === 'in-progress').length,
+                completed: allProjects.filter(p => p.status === 'completed').length,
+                urgent: allProjects.filter(p => p.isUrgent).length,
+                vip: allProjects.filter(p => p.isVIP).length
+            };
+
+            const clients = [...new Set(allProjects.map(p => p.clientEmail))];
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageProjects = filteredProjects.slice(startIdx, endIdx);
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
-                        <span class="admin-badge">ADMIN</span>
-                        <div style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
@@ -75,176 +329,304 @@
                 </div>
                 
                 <div class="main">
-                    <div class="section-header">
-                        <div>
-                            <h1 class="page-title">User Management</h1>
-                            <p class="page-subtitle">Manage clients and approve registrations.</p>
-                        </div>
-                        <button class="btn-primary" onclick="openAddClientModal()">
-                            <i class="fas fa-user-plus"></i> Add Client
-                        </button>
-                    </div>
+                    <h1 class="page-title">Admin Panel</h1>
+                    <p class="page-subtitle">Manage all patients and assignments.</p>
 
-                    <div class="stats">
+                    <div class="stats" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="stat-card">
-                            <div class="stat-label">Pending Approval</div>
-                            <div class="stat-value">${pendingUsers.length}</div>
+                            <div class="stat-label">Total</div>
+                            <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Active Clients</div>
-                            <div class="stat-value">${activeUsers.length}</div>
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-value">${stats.pending}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">In Progress</div>
+                            <div class="stat-value">${stats.inProgress}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Completed</div>
+                            <div class="stat-value">${stats.completed}</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
+                            <div class="stat-label">🔥 Urgent</div>
+                            <div class="stat-value">${stats.urgent}</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
+                            <div class="stat-label">⭐ VIP</div>
+                            <div class="stat-value">${stats.vip}</div>
                         </div>
                     </div>
 
-                    ${pendingUsers.length > 0 ? `
-                        <h3 style="margin: 30px 0 20px;">Pending Registrations</h3>
-                        <div class="projects-list">
-                            ${pendingUsers.map(user => `
-                                <div class="project-card">
-                                    <div class="project-header">
-                                        <div>
-                                            <h3 class="project-title">${user.username}</h3>
-                                            <p class="project-meta">${user.email}</p>
-                                        </div>
-                                        <span class="status-badge status-pending">PENDING</span>
-                                    </div>
-                                    <div style="display: flex; gap: 12px; margin-top: 12px;">
-                                        <button class="btn-primary" onclick="approveUser('${user.id}')" style="background: var(--color-success);">
-                                            ✅ Approve
-                                        </button>
-                                        <button class="btn-secondary" onclick="rejectUser('${user.id}')">
-                                            ❌ Reject
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
+                    <div class="filter-bar">
+                        <select onchange="updateFilter('status', this.value)">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="awaiting-client-approval">Awaiting Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="changes-requested">Changes Requested</option>
+                            <option value="completed">Completed</option>
+                            <option value="canceled">Canceled</option>
+                        </select>
+                        <select onchange="updateFilter('designer', this.value)">
+                            <option value="all">All Designers</option>
+                            <option value="null">Unassigned</option>
+                            ${designers.map(d => `<option value="${d.email}">${d.name}</option>`).join('')}
+                        </select>
+                        <select onchange="updateFilter('client', this.value)">
+                            <option value="all">All Clients</option>
+                            ${clients.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                        <select onchange="updateFilter('priority', this.value)">
+                            <option value="all">All Priorities</option>
+                            <option value="urgent">🔥 Urgent Only</option>
+                            <option value="vip">⭐ VIP Only</option>
+                            <option value="normal">Normal Only</option>
+                        </select>
+                        <select onchange="updateFilter('sortBy', this.value)">
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="client-asc">Client (A-Z)</option>
+                        </select>
+                        <select onchange="itemsPerPage = parseInt(this.value); applyFilters();">
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
+                        </select>
+                        <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
+                            Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}
                         </div>
-                    ` : ''}
+                    </div>
 
-                    <h3 style="margin: 30px 0 20px;">Active Clients</h3>
-                    <div class="projects-list">
-                        ${activeUsers.length > 0 ? activeUsers.map(user => `
-                            <div class="project-card">
-                                <div class="project-header">
-                                    <div>
-                                        <h3 class="project-title">${user.username}</h3>
-                                        <p class="project-meta">${user.email || 'No email'}</p>
-                                    </div>
-                                    <span class="status-badge status-completed">ACTIVE</span>
-                                </div>
-                            </div>
-                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px;">No active clients yet</p>'}
+                    <table class="ultra-compact-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Patient</th>
+                                <th style="width: 15%;">Client</th>
+                                <th style="width: 12%;">Designer</th>
+                                <th style="width: 10%;">Status</th>
+                                <th style="width: 8%;">Priority</th>
+                                <th style="width: 8%;">Files</th>
+                                <th style="width: 8%;">Date</th>
+                                <th style="width: 19%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageProjects.length > 0 ? pageProjects.map(project => {
+                                const rowClass = project.isUrgent ? 'urgent-row' : (project.isVIP ? 'vip-row' : '');
+                                const hoursSince = (Date.now() - project.createdAt) / (1000 * 60 * 60);
+                                const urgentAlert = project.isUrgent && hoursSince > 24 && !project.files.some(f => f.name.match(/\.html?$/i));
+                                
+                                return `
+                                <tr class="${rowClass}">
+                                    <td>
+                                        <strong>${project.title}</strong>
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">⚠️ 24h exceeded!</span>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.clientEmail}</td>
+                                    <td>
+                                        <select onchange="assignDesigner('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 12px;">
+                                            <option value="">Unassigned</option>
+                                            ${designers.map(d => `<option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>${d.name}</option>`).join('')}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
+                                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting</option>
+                                            <option value="approved" ${project.status === 'approved' ? 'selected' : ''}>Approved</option>
+                                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''}>Changes</option>
+                                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                            <option value="canceled" ${project.status === 'canceled' ? 'selected' : ''}>Canceled</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                                        ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
+                                        ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.files.length} files</td>
+                                    <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">🔥</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑️</button>
+                                    </td>
+                                </tr>
+                            `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
+                        </tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+                        <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
                     </div>
                 </div>
 
-                <div id="addClientModal" class="modal">
-                    <div class="modal-content">
-                        <button class="close" onclick="closeAddClient()">&times;</button>
-                        <h2 class="modal-title">Add New Client</h2>
-                        <form id="addClientForm" onsubmit="addClient(event)">
-                            <div class="form-group">
-                                <label class="form-label">Username *</label>
-                                <input type="text" id="newUsername" class="form-input" placeholder="Enter username" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email *</label>
-                                <input type="email" id="newEmail" class="form-input" placeholder="Enter email" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Password *</label>
-                                <input type="password" id="newPassword" class="form-input" placeholder="Enter password (min 6 chars)" required>
-                            </div>
-                            <div id="addClientStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Client</button>
-                        </form>
+                <!-- Files Modal -->
+                <div id="filesModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closeFilesModal()">&times;</button>
+                        <h2 class="modal-title">Manage Files</h2>
+                        <p class="modal-subtitle" id="filesPatientName"></p>
+                        
+                        <button class="btn-primary" onclick="document.getElementById('adminFileInput').click()" style="margin-bottom: 16px;">
+                            <i class="fas fa-upload"></i> Upload Files
+                        </button>
+                        <input type="file" id="adminFileInput" multiple style="display: none;">
+                        
+                        <div id="filesList" class="file-list"></div>
+                        <div id="uploadStatus" class="status-msg"></div>
                     </div>
                 </div>
             `;
+
+            setupFileUpload();
         }
 
-        window.openAddClientModal = () => {
-            document.getElementById('addClientModal').classList.add('active');
+        function setupFileUpload() {
+            const input = document.getElementById('adminFileInput');
+            if (input) {
+                input.addEventListener('change', handleAdminUpload);
+            }
+        }
+
+        window.changePage = (page) => {
+            currentPage = page;
+            render();
+        };
+
+        window.openFilesModal = async (projectId) => {
+            currentProjectForFiles = allProjects.find(p => p.id === projectId);
+            document.getElementById('filesPatientName').textContent = `Patient: ${currentProjectForFiles.title}`;
+            document.getElementById('filesModal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            renderFilesList();
         };
 
-        window.closeAddClient = () => {
-            document.getElementById('addClientModal').classList.remove('active');
+        window.closeFilesModal = () => {
+            document.getElementById('filesModal').classList.remove('active');
             document.body.style.overflow = 'auto';
-            document.getElementById('addClientForm').reset();
-            document.getElementById('addClientStatus').className = 'status-msg';
+            currentProjectForFiles = null;
         };
 
-        window.addClient = async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('newUsername').value.trim();
-            const email = document.getElementById('newEmail').value.trim();
-            const password = document.getElementById('newPassword').value;
-            const statusEl = document.getElementById('addClientStatus');
+        function renderFilesList() {
+            const listEl = document.getElementById('filesList');
+            if (!currentProjectForFiles || !listEl) return;
+
+            listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">👁️ View</button>` : ''}
+                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">⬇️ Download</a>
+                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">📋 Copy</button>
+                    </div>
+                </div>
+            `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
+        }
+
+        async function handleAdminUpload(e) {
+            const files = e.target.files;
+            if (!files.length || !currentProjectForFiles) return;
+
+            const statusEl = document.getElementById('uploadStatus');
+            statusEl.textContent = 'Uploading...';
+            statusEl.className = 'status-msg active warning';
 
             try {
-                // Check if username exists
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('username', '==', username));
-                const snapshot = await getDocs(q);
-                
-                if (!snapshot.empty) {
-                    statusEl.textContent = '❌ Username already exists';
-                    statusEl.className = 'status-msg active error';
-                    return;
+                for (const file of files) {
+                    const storageRef = ref(storage, `projects/${currentProjectForFiles.id}/${file.name}`);
+                    await uploadBytesResumable(storageRef, file);
                 }
 
-                // Create Firebase Auth user
-                const loginEmail = username + '@smile.local';
-                const userCredential = await createUserWithEmailAndPassword(auth, loginEmail, password);
-                
-                // Store in Firestore
-                await addDoc(collection(db, 'users'), {
-                    uid: userCredential.user.uid,
-                    username: username,
-                    email: email,
-                    loginEmail: loginEmail,
-                    role: 'client',
-                    status: 'active',
-                    createdAt: Date.now()
-                });
-
-                statusEl.textContent = '✅ Client created successfully!';
+                statusEl.textContent = '✅ Files uploaded!';
                 statusEl.className = 'status-msg active success';
                 
+                await loadData();
+                currentProjectForFiles = allProjects.find(p => p.id === currentProjectForFiles.id);
+                renderFilesList();
+
                 setTimeout(() => {
-                    closeAddClient();
-                    loadData();
-                }, 1500);
+                    statusEl.className = 'status-msg';
+                    e.target.value = '';
+                }, 2000);
             } catch (error) {
-                let msg = '❌ Error creating client';
-                if (error.code === 'auth/email-already-in-use') {
-                    msg = '❌ Username already registered';
-                } else if (error.code === 'auth/weak-password') {
-                    msg = '❌ Password must be at least 6 characters';
-                }
-                statusEl.textContent = msg;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
-        };
+        }
 
-        window.approveUser = async (userId) => {
+        window.togglePriority = async (projectId, type) => {
+            const project = allProjects.find(p => p.id === projectId);
+            const updates = {};
+            
+            if (type === 'urgent') {
+                updates.isUrgent = !project.isUrgent;
+            } else if (type === 'vip') {
+                updates.isVIP = !project.isVIP;
+            }
+
             try {
-                await updateDoc(doc(db, 'users', userId), { status: 'active' });
+                await updateDoc(doc(db, 'projects', projectId), updates);
                 await loadData();
             } catch (error) {
-                alert('Error approving user: ' + error.message);
+                alert('Error: ' + error.message);
             }
         };
 
-        window.rejectUser = async (userId) => {
-            if (confirm('Are you sure you want to reject this registration?')) {
-                try {
-                    await updateDoc(doc(db, 'users', userId), { status: 'rejected' });
-                    await loadData();
-                } catch (error) {
-                    alert('Error rejecting user: ' + error.message);
-                }
+        window.assignDesigner = async (projectId, designerEmail) => {
+            try {
+                await updateDoc(doc(db, 'projects', projectId), {
+                    assignedDesignerEmail: designerEmail || null,
+                    status: designerEmail ? 'in-progress' : 'pending'
+                });
+                await loadData();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+
+        window.updateStatus = async (projectId, newStatus) => {
+            try {
+                await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
+                await loadData();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+
+        window.deletePatient = async (projectId, patientName) => {
+            if (!confirm(`Are you sure you want to delete patient "${patientName}"?\n\nThis will also delete all associated files. This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                // Delete all files from storage
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const list = await listAll(filesRef);
+                await Promise.all(list.items.map(item => deleteObject(item)));
+
+                // Delete Firestore document
+                await deleteDoc(doc(db, 'projects', projectId));
+                
+                alert('Patient deleted successfully');
+                await loadData();
+            } catch (error) {
+                alert('Error deleting patient: ' + error.message);
             }
         };
 
