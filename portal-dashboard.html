@@ -110,7 +110,7 @@
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
+                        <img src="smilecenterlogo.png" alt="Smile Center" style="height: 55px;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
@@ -172,10 +172,10 @@
                                                 project.files.filter(f => f.name.match(/\.html?$/i)).map(file => `
                                                     <div class="file-item">
                                                         <div class="file-info">
-                                                            <div class="file-icon"></div>
+                                                            <div class="file-icon">📄</div>
                                                             <div>
                                                                 <div class="file-name">${file.name}</div>
-                                                                <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
+                                                                <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                             </div>
                                                         </div>
                                                         <button class="btn-view" onclick="viewHtmlForApproval('${project.id}', '${file.url}', '${file.name}')">Preview & Review</button>
@@ -191,10 +191,10 @@
                                                     project.files.filter(f => f.name.match(/\.stl$/i)).map(file => `
                                                         <div class="file-item">
                                                             <div class="file-info">
-                                                                <div class="file-icon"></div>
+                                                                <div class="file-icon">📄</div>
                                                                 <div>
                                                                     <div class="file-name">${file.name}</div>
-                                                                    <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
+                                                                    <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                                 </div>
                                                             </div>
                                                             <div class="file-actions">
@@ -204,7 +204,7 @@
                                                         </div>
                                                     `).join('')
                                                     : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">STL file will appear after designer upload</p>')
-                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;"> Approve HTML preview first to unlock STL files</p>'}
+                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;">⚠ Approve HTML preview first to unlock STL files</p>'}
                                         </div>
                                     </div>
                                     
@@ -219,18 +219,18 @@
                                             <div class="file-item">
                                                 <div class="file-info">
                                                     <div class="file-icon">
-                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '' : 
-                                                          file.name.match(/\\.(pdf)$/i) ? '' :
-                                                          file.name.match(/\\.(html|htm)$/i) ? '' :
-                                                          file.name.match(/\\.(zip|rar)$/i) ? '' : ''}
+                                                        ${file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? '🖼' : 
+                                                          file.name.match(/\.(pdf)$/i) ? '📄' :
+                                                          file.name.match(/\.(html|htm)$/i) ? '🌐' :
+                                                          file.name.match(/\.(zip|rar)$/i) ? '📦' : '📄'}
                                                     </div>
                                                     <div>
                                                         <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
+                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">Preview</button>` : ''}
+                                                    ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">Preview</button>` : ''}
                                                     <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
                                                 </div>
@@ -241,7 +241,7 @@
                             </div>
                         `).join('') : `
                             <div class="empty">
-                                <div class="empty-icon"></div>
+                                <div class="empty-icon">📋</div>
                                 <div class="empty-title">No Patients Yet</div>
                                 <p class="empty-desc">Your patients will appear here once they are created.</p>
                             </div>
@@ -270,8 +270,8 @@
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;"> Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;"> Request Changes</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">⚠ Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -439,14 +439,14 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = ' Design approved! Designer can now upload STL file.';
+                statusEl.textContent = '✅ Design approved! Designer can now upload STL file.';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = ' Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -468,14 +468,14 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = ' Feedback sent to designer';
+                statusEl.textContent = '✅ Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = ' Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -523,7 +523,7 @@
                     }
                 }
 
-                statusEl.textContent = ' Patient created successfully!';
+                statusEl.textContent = '✅ Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -531,7 +531,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = ' Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -620,7 +620,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = ' Files uploaded successfully!';
+                statusEl.textContent = '✅ Files uploaded successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
@@ -628,7 +628,7 @@
                     await loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = ' Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';

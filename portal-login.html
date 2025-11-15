@@ -8,15 +8,15 @@
 </head>
 <body>
     <div class="login-container">
-        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
+        <img src="smilecenterlogo.png" alt="Smile Center" class="login-logo">
         <h2 style="margin-bottom: 30px; color: var(--color-text);">Portal Login</h2>
         
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <input type="text" id="email" class="form-input" placeholder="Username or Email" required>
+                <input type="text" id="email" class="form-input" placeholder="Username or Email" required autocomplete="username">
             </div>
             <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password" required>
+                <input type="password" id="password" class="form-input" placeholder="Password" required autocomplete="current-password">
             </div>
             <div id="loginStatus" class="status-msg"></div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
@@ -42,7 +42,8 @@
         window.handleLogin = async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const emailInput = document.getElementById('email');
+            const email = emailInput.value.trim();
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('loginStatus');
 
@@ -53,10 +54,13 @@
             
             // If no @ symbol, treat as username and convert to email format
             if (!email.includes('@')) {
-                loginEmail = email + '@smile.local';
+                loginEmail = email + '@smile.com';
             }
 
             try {
+                statusEl.textContent = 'Logging in...';
+                statusEl.className = 'status-msg active warning';
+                
                 await signInWithEmailAndPassword(auth, loginEmail, password);
                 
                 if (admins.includes(loginEmail)) {
@@ -67,7 +71,8 @@
                     window.location.href = 'portal-dashboard.html';
                 }
             } catch (error) {
-                statusEl.textContent = 'âŒ Invalid credentials';
+                console.error('Login error:', error);
+                statusEl.textContent = '❌ Invalid credentials';
                 statusEl.className = 'status-msg active error';
             }
         };
