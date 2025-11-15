@@ -36,6 +36,8 @@
 
         let currentUser = null;
         let userProjects = [];
+        let filteredProjects = [];
+        let searchQuery = '';
         let currentProjectId = null;
 
         onAuthStateChanged(auth, async (user) => {
@@ -99,6 +101,16 @@
         }
 
         function render() {
+            filteredProjects = userProjects.filter(p => {
+                if (searchQuery) {
+                    const searchLower = searchQuery.toLowerCase();
+                    return p.title.toLowerCase().includes(searchLower) ||
+                           p.description.toLowerCase().includes(searchLower) ||
+                           p.status.toLowerCase().includes(searchLower);
+                }
+                return true;
+            });
+
             const stats = {
                 total: userProjects.length,
                 completed: userProjects.filter(p => p.status === 'completed').length,
@@ -129,6 +141,10 @@
                         </button>
                     </div>
 
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 100%; max-width: 400px; padding: 10px 16px;" oninput="handleSearch(this.value)">
+                    </div>
+
                     <div class="stats">
                         <div class="stat-card">
                             <div class="stat-label">Total Patients</div>
@@ -153,7 +169,7 @@
                     </div>
 
                     <div class="projects-list">
-                        ${userProjects.length > 0 ? userProjects.map(project => `
+                        ${filteredProjects.length > 0 ? filteredProjects.map(project => `
                             <div class="project-card">
                                 <div class="project-header">
                                     <div>
@@ -633,6 +649,11 @@
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
             }
+        };
+
+        window.handleSearch = (value) => {
+            searchQuery = value;
+            render();
         };
 
         window.logout = async () => {
