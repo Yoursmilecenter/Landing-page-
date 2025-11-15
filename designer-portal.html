@@ -177,9 +177,11 @@
             render();
         }
 
+        let searchTimeout;
         window.handleSearch = (e) => {
             searchQuery = e.target.value;
-            applyFilters();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => applyFilters(), 300);
         };
 
         function formatSize(bytes, si = true, dp = 1) {

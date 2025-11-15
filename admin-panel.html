@@ -299,9 +299,11 @@
             applyFilters();
         };
 
+        let searchTimeout;
         window.handleSearch = (e) => {
             currentFilters.search = e.target.value;
-            applyFilters();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => applyFilters(), 300);
         };
 
         function formatSize(bytes) {
