@@ -6,69 +6,6 @@
     <title>Designer Panel - Smile Center</title>
     <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .search-bar input {
-            flex: 1;
-            padding: 10px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-        }
-        .search-bar input:focus {
-            outline: none;
-            border-color: rgba(56, 189, 248, 0.5);
-        }
-        .compact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 12px;
-        }
-        .compact-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 12px;
-            transition: all 0.3s ease;
-        }
-        .compact-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(56, 189, 248, 0.3);
-        }
-        .compact-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .compact-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--color-text);
-        }
-        .compact-meta {
-            font-size: 11px;
-            color: var(--color-text-secondary);
-            margin-bottom: 6px;
-        }
-        .compact-desc {
-            font-size: 12px;
-            color: var(--color-text-light);
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-        .compact-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
-    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -95,9 +32,7 @@
 
         let currentUser = null;
         let myProjects = [];
-        let filteredProjects = [];
         let currentProjectId = null;
-        let searchQuery = '';
         
         const designers = [
             { email: 'designer1@smile.com', name: 'Designer 1' },
@@ -133,7 +68,7 @@
                     const files = await loadFiles(docSnap.id);
                     myProjects.push({ id: docSnap.id, ...data, files });
                 }
-                applyFilters();
+                render();
             } catch (error) {
                 console.error('Error:', error);
                 render();
@@ -162,25 +97,6 @@
                 return [];
             }
         }
-
-        function applyFilters() {
-            if (searchQuery) {
-                const search = searchQuery.toLowerCase();
-                filteredProjects = myProjects.filter(p => 
-                    p.title.toLowerCase().includes(search) ||
-                    p.description.toLowerCase().includes(search) ||
-                    p.status.toLowerCase().includes(search)
-                );
-            } else {
-                filteredProjects = myProjects;
-            }
-            render();
-        }
-
-        window.handleSearch = (e) => {
-            searchQuery = e.target.value;
-            applyFilters();
-        };
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
@@ -233,65 +149,70 @@
                         </div>
                     </div>
 
-                    <div class="search-bar">
-                        <input type="text" placeholder="Search patients by name, description, or status..." oninput="handleSearch(event)" value="${searchQuery}">
-                    </div>
-
-                    <div class="compact-grid">
-                        ${filteredProjects.length > 0 ? filteredProjects.map(project => {
+                    <div class="projects-list">
+                        ${myProjects.length > 0 ? myProjects.map(project => {
                             const elapsed = Date.now() - project.createdAt;
                             const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
                             const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                             const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
                             return `
-                            <div class="compact-card">
-                                <div class="compact-header">
-                                    <h3 class="compact-title">${project.title}</h3>
-                                    <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                            <div class="project-card">
+                                <div class="project-header">
+                                    <h3 class="project-title">${project.title}</h3>
+                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase()}</span>
                                 </div>
-                                <p class="compact-meta">${timeStr} elapsed | Created ${new Date(project.createdAt).toLocaleDateString()} | ${project.files.length} files</p>
-                                <p class="compact-desc">${project.description}</p>
+                                <p class="project-description">${project.description}</p>
+                                <div class="project-meta">
+                                     ${timeStr} elapsed  Created ${new Date(project.createdAt).toLocaleDateString()}
+                                </div>
                                 
-                                ${project.clientRemarks ? `
-                                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
-                                        <h4 style="color: var(--color-error); margin-bottom: 4px; font-size: 12px;">Client Requested Changes:</h4>
-                                        <p style="color: var(--color-text-light); font-size: 11px;">${project.clientRemarks}</p>
+                                <div class="files-section">
+                                    ${project.clientRemarks ? `
+                                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                                            <h4 style="color: var(--color-error); margin-bottom: 8px;"> Client Requested Changes:</h4>
+                                            <p style="color: var(--color-text-light);">${project.clientRemarks}</p>
+                                        </div>
+                                    ` : ''}
+                                    ${project.htmlApproved ? `
+                                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                                            <h4 style="color: var(--color-success); margin-bottom: 8px;"> Client Approved HTML</h4>
+                                            <p style="color: var(--color-text-light);">You can now upload STL file.</p>
+                                        </div>
+                                    ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
+                                        <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                                            <h4 style="color: #fbbf24; margin-bottom: 8px;"> Awaiting Client Approval</h4>
+                                            <p style="color: var(--color-text-light);">Client must approve HTML before STL upload.</p>
+                                        </div>
+                                    ` : ''}
+                                    <div class="files-header">
+                                        <h4>Patient Files (${project.files.length})</h4>
+                                        <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})">
+                                            <i class="fas fa-upload"></i> Upload Files
+                                        </button>
                                     </div>
-                                ` : ''}
-                                ${project.htmlApproved ? `
-                                    <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
-                                        <p style="color: var(--color-success); font-size: 11px;">Client Approved HTML - Upload STL now</p>
+                                    <div class="file-list">
+                                        ${project.files.length > 0 ? project.files.map(file => `
+                                            <div class="file-item">
+                                                <div class="file-info">
+                                                    <div class="file-icon"></div>
+                                                    <div>
+                                                        <div class="file-name">${file.name}</div>
+                                                        <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="file-actions">
+                                                    <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
+                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
                                     </div>
-                                ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
-                                    <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
-                                        <p style="color: #fbbf24; font-size: 11px;">Awaiting Client Approval</p>
-                                    </div>
-                                ` : ''}
-                                
-                                <div class="compact-actions">
-                                    <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" style="flex: 1;">
-                                        <i class="fas fa-upload"></i> Upload
-                                    </button>
-                                    <button class="btn-view" onclick="viewFiles('${project.id}')" style="flex: 1;">
-                                        <i class="fas fa-folder"></i> Files
-                                    </button>
                                 </div>
                             </div>
                         `}).join('') : '<div class="empty"><div class="empty-icon"></div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
                     </div>
                 </div>
                 
-                <!-- Files View Modal -->
-                <div id="filesModal" class="modal">
-                    <div class="modal-content large">
-                        <button class="close" onclick="closeFilesView()">&times;</button>
-                        <h2 class="modal-title">Patient Files</h2>
-                        <p class="modal-subtitle" id="filesPatientTitle"></p>
-                        <div id="filesListView" class="file-list"></div>
-                    </div>
-                </div>
-
-                <!-- Upload Modal -->
                 <div id="uploadModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeUpload()">&times;</button>
@@ -304,7 +225,7 @@
                             <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
                         </div>
                         <div id="stlWarning" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; color: var(--color-error); font-size: 14px;">
-                            Client must approve HTML preview before you can upload STL files.
+                             Client must approve HTML preview before you can upload STL files.
                         </div>
                         <input type="file" id="fileInput" multiple style="display:none;">
                         <div id="fileList" class="file-list"></div>
@@ -354,42 +275,10 @@
         }
         
         let currentPatientTitle = '';
-        let currentPatientApproved = false;
-
-        window.viewFiles = (projectId) => {
-            const project = myProjects.find(p => p.id === projectId);
-            document.getElementById('filesPatientTitle').textContent = `Patient: ${project.title}`;
-            const listEl = document.getElementById('filesListView');
-            
-            listEl.innerHTML = project.files.length > 0 ? project.files.map(file => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <div class="file-icon"></div>
-                        <div>
-                            <div class="file-name">${file.name}</div>
-                            <div class="file-meta">${formatSize(file.size)} ${file.date}</div>
-                        </div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
-                    </div>
-                </div>
-            `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>';
-            
-            document.getElementById('filesModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.closeFilesView = () => {
-            document.getElementById('filesModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        };
 
         window.openUploadModal = (projectId, projectTitle, isApproved) => {
             currentProjectId = projectId;
             currentPatientTitle = projectTitle;
-            currentPatientApproved = isApproved;
             document.getElementById('currentProjectTitle').textContent = projectTitle;
             document.getElementById('fileInput').value = '';
             document.getElementById('fileList').innerHTML = '';
@@ -430,7 +319,7 @@
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
             
             if (hasSTL && !project.htmlApproved) {
-                showStatus('Cannot upload STL files until client approves HTML preview.', 'error');
+                showStatus(' Cannot upload STL files until client approves HTML preview.', 'error');
                 return;
             }
 
@@ -458,13 +347,13 @@
                     await updateDoc(doc(db, 'projects', currentProjectId), updateData);
                 }
 
-                showStatus('Files uploaded!', 'success');
+                showStatus(' Files uploaded!', 'success');
                 setTimeout(async () => {
                     closeUpload();
                     await loadData();
                 }, 1500);
             } catch (error) {
-                showStatus('Error: ' + error.message, 'error');
+                showStatus(' Error: ' + error.message, 'error');
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
             }

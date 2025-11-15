@@ -6,26 +6,6 @@
     <title>Dashboard - Smile Center Portal</title>
     <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .search-bar input {
-            flex: 1;
-            padding: 10px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-        }
-        .search-bar input:focus {
-            outline: none;
-            border-color: rgba(56, 189, 248, 0.5);
-        }
-    </style>
 </head>
 <body>
     <div id="app">
@@ -56,9 +36,7 @@
 
         let currentUser = null;
         let userProjects = [];
-        let filteredProjects = [];
         let currentProjectId = null;
-        let searchQuery = '';
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -81,7 +59,7 @@
                     const files = await loadFiles(doc.id);
                     userProjects.push({ id: doc.id, ...data, files });
                 }
-                applyFilters();
+                render();
             } catch (error) {
                 console.error('Error loading projects:', error);
                 render();
@@ -110,25 +88,6 @@
                 return [];
             }
         }
-
-        function applyFilters() {
-            if (searchQuery) {
-                const search = searchQuery.toLowerCase();
-                filteredProjects = userProjects.filter(p => 
-                    p.title.toLowerCase().includes(search) ||
-                    p.description.toLowerCase().includes(search) ||
-                    p.status.toLowerCase().includes(search)
-                );
-            } else {
-                filteredProjects = userProjects;
-            }
-            render();
-        }
-
-        window.handleSearch = (e) => {
-            searchQuery = e.target.value;
-            applyFilters();
-        };
 
         function formatSize(bytes, si = true, dp = 1) {
             const thresh = si ? 1000 : 1024;
@@ -193,19 +152,15 @@
                         </div>
                     </div>
 
-                    <div class="search-bar">
-                        <input type="text" placeholder="Search patients by name, description, or status..." oninput="handleSearch(event)" value="${searchQuery}">
-                    </div>
-
                     <div class="projects-list">
-                        ${filteredProjects.length > 0 ? filteredProjects.map(project => `
+                        ${userProjects.length > 0 ? userProjects.map(project => `
                             <div class="project-card">
                                 <div class="project-header">
                                     <div>
                                         <h3 class="project-title">${project.title}</h3>
                                         <p class="project-date">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
                                 </div>
                                 <p class="project-desc">${project.description}</p>
                                 
@@ -220,7 +175,7 @@
                                                             <div class="file-icon"></div>
                                                             <div>
                                                                 <div class="file-name">${file.name}</div>
-                                                                <div class="file-meta">${formatSize(file.size)} ${file.date}</div>
+                                                                <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
                                                             </div>
                                                         </div>
                                                         <button class="btn-view" onclick="viewHtmlForApproval('${project.id}', '${file.url}', '${file.name}')">Preview & Review</button>
@@ -239,7 +194,7 @@
                                                                 <div class="file-icon"></div>
                                                                 <div>
                                                                     <div class="file-name">${file.name}</div>
-                                                                    <div class="file-meta">${formatSize(file.size)} ${file.date}</div>
+                                                                    <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
                                                                 </div>
                                                             </div>
                                                             <div class="file-actions">
@@ -249,7 +204,7 @@
                                                         </div>
                                                     `).join('')
                                                     : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">STL file will appear after designer upload</p>')
-                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;">Approve HTML preview first to unlock STL files</p>'}
+                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;"> Approve HTML preview first to unlock STL files</p>'}
                                         </div>
                                     </div>
                                     
@@ -263,14 +218,19 @@
                                         ${project.files.length > 0 ? project.files.map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
-                                                    <div class="file-icon"></div>
+                                                    <div class="file-icon">
+                                                        ${file.name.match(/\\.(jpg|jpeg|png|gif|webp)$/i) ? '' : 
+                                                          file.name.match(/\\.(pdf)$/i) ? '' :
+                                                          file.name.match(/\\.(html|htm)$/i) ? '' :
+                                                          file.name.match(/\\.(zip|rar)$/i) ? '' : ''}
+                                                    </div>
                                                     <div>
                                                         <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${formatSize(file.size)} ${file.date}</div>
+                                                        <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
                                                     </div>
                                                 </div>
                                                 <div class="file-actions">
-                                                    ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">Preview</button>` : ''}
+                                                    ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">Preview</button>` : ''}
                                                     <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
                                                     <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
                                                 </div>
@@ -310,8 +270,8 @@
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">Request Changes</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;"> Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;"> Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -479,14 +439,14 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = 'Design approved! Designer can now upload STL file.';
+                statusEl.textContent = ' Design approved! Designer can now upload STL file.';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.textContent = ' Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -508,14 +468,14 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = 'Feedback sent to designer';
+                statusEl.textContent = ' Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.textContent = ' Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -563,7 +523,7 @@
                     }
                 }
 
-                statusEl.textContent = 'Patient created successfully!';
+                statusEl.textContent = ' Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -571,7 +531,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.textContent = ' Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -660,7 +620,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = 'Files uploaded successfully!';
+                statusEl.textContent = ' Files uploaded successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
@@ -668,7 +628,7 @@
                     await loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.textContent = ' Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
