@@ -13,7 +13,7 @@
         
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <input type="text" id="email" class="form-input" placeholder="Username or Email" required>
+                <input type="text" id="email" class="form-input" placeholder="Username, Email, or Mobile" required>
             </div>
             <div class="form-group">
                 <input type="password" id="password" class="form-input" placeholder="Password" required>
@@ -42,18 +42,22 @@
         window.handleLogin = async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const input = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('loginStatus');
 
             const admins = ['admin@smile.com'];
             const designers = ['designer1@smile.com', 'designer2@smile.com'];
 
-            let loginEmail = email;
+            let loginEmail = input;
             
-            // If no @ symbol, treat as username and convert to email format
-            if (!email.includes('@')) {
-                loginEmail = email + '@smile.local';
+            // Mobile number (10 digits) -> convert to email
+            if (/^\d{10}$/.test(input)) {
+                loginEmail = input + '@smile.mobile';
+            }
+            // Username (no @ symbol) -> convert to email
+            else if (!input.includes('@')) {
+                loginEmail = input + '@smile.local';
             }
 
             try {
@@ -67,7 +71,7 @@
                     window.location.href = 'portal-dashboard.html';
                 }
             } catch (error) {
-                statusEl.textContent = 'âŒ Invalid credentials';
+                statusEl.textContent = 'Invalid credentials';
                 statusEl.className = 'status-msg active error';
             }
         };

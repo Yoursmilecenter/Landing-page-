@@ -16,6 +16,24 @@
             box-shadow: none !important;
             padding: 0 !important;
         }
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: rgba(56, 189, 248, 0.5);
+        }
         select, input {
             background-color: var(--color-background) !important;
             color: var(--color-text-light) !important;
@@ -115,16 +133,6 @@
             opacity: 0.4;
             cursor: not-allowed;
         }
-        .group-header {
-            background: rgba(167, 139, 250, 0.1);
-            padding: 8px 12px;
-            font-weight: 600;
-            color: var(--color-secondary);
-            cursor: pointer;
-        }
-        .group-header:hover {
-            background: rgba(167, 139, 250, 0.15);
-        }
     </style>
 </head>
 <body>
@@ -169,7 +177,7 @@
             client: 'all',
             priority: 'all',
             sortBy: 'date-desc',
-            groupBy: 'none'
+            search: ''
         };
 
         let currentPage = 1;
@@ -242,13 +250,20 @@
             urgentProjects.forEach(p => {
                 const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
                 if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
-                    console.warn(` URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                    console.warn(`URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
                 }
             });
         }
 
         function applyFilters() {
             filteredProjects = allProjects.filter(p => {
+                if (currentFilters.search) {
+                    const search = currentFilters.search.toLowerCase();
+                    const matches = p.title.toLowerCase().includes(search) || 
+                                  p.clientEmail.toLowerCase().includes(search) ||
+                                  p.description.toLowerCase().includes(search);
+                    if (!matches) return false;
+                }
                 if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
                 if (currentFilters.designer !== 'all') {
                     if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
@@ -281,6 +296,11 @@
 
         window.updateFilter = (type, value) => {
             currentFilters[type] = value;
+            applyFilters();
+        };
+
+        window.handleSearch = (e) => {
+            currentFilters.search = e.target.value;
             applyFilters();
         };
 
@@ -322,6 +342,9 @@
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
+                            <button class="btn-primary btn-small" onclick="openAddDesignerModal()">
+                                <i class="fas fa-user-tie"></i> Add Designer
+                            </button>
                             <button class="btn-primary btn-small" onclick="openAddClientModal()">
                                 <i class="fas fa-user-plus"></i> Add Client
                             </button>
@@ -353,13 +376,17 @@
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label"> Urgent</div>
+                            <div class="stat-label">Urgent</div>
                             <div class="stat-value">${stats.urgent}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
-                            <div class="stat-label"> VIP</div>
+                            <div class="stat-label">VIP</div>
                             <div class="stat-value">${stats.vip}</div>
                         </div>
+                    </div>
+
+                    <div class="search-bar">
+                        <input type="text" placeholder="Search patients by name, email, or description..." oninput="handleSearch(event)" value="${currentFilters.search}">
                     </div>
 
                     <div class="filter-bar">
@@ -384,8 +411,8 @@
                         </select>
                         <select onchange="updateFilter('priority', this.value)">
                             <option value="all">All Priorities</option>
-                            <option value="urgent"> Urgent Only</option>
-                            <option value="vip"> VIP Only</option>
+                            <option value="urgent">Urgent Only</option>
+                            <option value="vip">VIP Only</option>
                             <option value="normal">Normal Only</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)">
@@ -428,7 +455,7 @@
                                 <tr class="${rowClass}">
                                     <td>
                                         <strong>${project.title}</strong>
-                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;"> 24h exceeded!</span>' : ''}
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">24h exceeded!</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>
@@ -456,10 +483,10 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent"></button>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP"></button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files"></button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient"></button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">!</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">V</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">F</button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">X</button>
                                     </td>
                                 </tr>
                             `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
@@ -467,9 +494,9 @@
                     </table>
 
                     <div class="pagination">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}> Previous</button>
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next </button>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
                     </div>
                 </div>
 
@@ -490,6 +517,32 @@
                     </div>
                 </div>
 
+                <!-- Add Designer Modal -->
+                <div id="addDesignerModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeAddDesignerModal()">&times;</button>
+                        <h2 class="modal-title">Add New Designer</h2>
+                        <p class="modal-subtitle">Create a new designer account</p>
+                        
+                        <form id="addDesignerForm" onsubmit="handleAddDesigner(event)">
+                            <div class="form-group">
+                                <label class="form-label">Name *</label>
+                                <input type="text" id="designerName" class="form-input" placeholder="Enter designer name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email *</label>
+                                <input type="email" id="designerEmail" class="form-input" placeholder="Enter email" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password *</label>
+                                <input type="password" id="designerPassword" class="form-input" placeholder="Enter password" required minlength="6">
+                            </div>
+                            <div id="addDesignerStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Designer</button>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Add Client Modal -->
                 <div id="addClientModal" class="modal">
                     <div class="modal-content">
@@ -505,6 +558,10 @@
                             <div class="form-group">
                                 <label class="form-label">Email *</label>
                                 <input type="email" id="clientEmail" class="form-input" placeholder="Enter email" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Mobile (Optional)</label>
+                                <input type="tel" id="clientMobile" class="form-input" placeholder="10-digit mobile number" pattern="[0-9]{10}">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Password *</label>
@@ -556,11 +613,11 @@
                         <div class="file-icon"></div>
                         <div>
                             <div class="file-name">${file.name}</div>
-                            <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
+                            <div class="file-meta">${formatSize(file.size)} ${file.date}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
+                        ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
                         <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
                         <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
@@ -582,7 +639,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = ' Files uploaded!';
+                statusEl.textContent = 'Files uploaded!';
                 statusEl.className = 'status-msg active success';
                 
                 await loadData();
@@ -594,7 +651,7 @@
                     e.target.value = '';
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = ' Error: ' + error.message;
+                statusEl.textContent = 'Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         }
@@ -644,12 +701,9 @@
             }
 
             try {
-                // Delete all files from storage
                 const filesRef = ref(storage, `projects/${projectId}`);
                 const list = await listAll(filesRef);
                 await Promise.all(list.items.map(item => deleteObject(item)));
-
-                // Delete Firestore document
                 await deleteDoc(doc(db, 'projects', projectId));
                 
                 alert('Patient deleted successfully');
@@ -665,6 +719,52 @@
                 window.location.href = 'portal-login.html';
             } catch (error) {
                 console.error('Logout error:', error);
+            }
+        };
+
+        window.openAddDesignerModal = () => {
+            document.getElementById('addDesignerModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('addDesignerForm').reset();
+            document.getElementById('addDesignerStatus').className = 'status-msg';
+        };
+
+        window.closeAddDesignerModal = () => {
+            document.getElementById('addDesignerModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.handleAddDesigner = async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('designerName').value.trim();
+            const email = document.getElementById('designerEmail').value.trim();
+            const password = document.getElementById('designerPassword').value;
+            const statusEl = document.getElementById('addDesignerStatus');
+
+            try {
+                statusEl.textContent = 'Creating designer...';
+                statusEl.className = 'status-msg active warning';
+
+                await createUserWithEmailAndPassword(auth, email, password);
+                
+                statusEl.textContent = 'Designer created successfully!';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(() => {
+                    closeAddDesignerModal();
+                }, 1500);
+            } catch (error) {
+                let errorMsg = 'Error creating designer';
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg = 'Email already in use';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg = 'Password too weak (min 6 characters)';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMsg = 'Invalid email format';
+                }
+                statusEl.textContent = errorMsg;
+                statusEl.className = 'status-msg active error';
             }
         };
 
@@ -685,6 +785,7 @@
             
             const username = document.getElementById('clientUsername').value.trim();
             const email = document.getElementById('clientEmail').value.trim();
+            const mobile = document.getElementById('clientMobile').value.trim();
             const password = document.getElementById('clientPassword').value;
             const statusEl = document.getElementById('addClientStatus');
 
@@ -692,9 +793,17 @@
                 statusEl.textContent = 'Creating client...';
                 statusEl.className = 'status-msg active warning';
 
-                await createUserWithEmailAndPassword(auth, email, password);
+                // Username login email
+                const loginEmail = username + '@smile.local';
+                await createUserWithEmailAndPassword(auth, loginEmail, password);
                 
-                statusEl.textContent = ' Client created successfully!';
+                // If mobile provided, also create mobile login
+                if (mobile && /^\d{10}$/.test(mobile)) {
+                    const mobileEmail = mobile + '@smile.mobile';
+                    await createUserWithEmailAndPassword(auth, mobileEmail, password);
+                }
+                
+                statusEl.textContent = 'Client created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -703,13 +812,11 @@
             } catch (error) {
                 let errorMsg = 'Error creating client';
                 if (error.code === 'auth/email-already-in-use') {
-                    errorMsg = 'Email already in use';
+                    errorMsg = 'Username or mobile already in use';
                 } else if (error.code === 'auth/weak-password') {
                     errorMsg = 'Password too weak (min 6 characters)';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMsg = 'Invalid email format';
                 }
-                statusEl.textContent = ' ' + errorMsg;
+                statusEl.textContent = errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
