@@ -299,11 +299,9 @@
             applyFilters();
         };
 
-        let searchTimeout;
         window.handleSearch = (e) => {
             currentFilters.search = e.target.value;
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => applyFilters(), 300);
+            applyFilters();
         };
 
         function formatSize(bytes) {
@@ -748,7 +746,14 @@
                 statusEl.textContent = 'Creating designer...';
                 statusEl.className = 'status-msg active warning';
 
+                // Save current admin user
+                const adminUser = auth.currentUser;
+
                 await createUserWithEmailAndPassword(auth, email, password);
+                
+                // Restore admin session
+                await signOut(auth);
+                await auth.updateCurrentUser(adminUser);
                 
                 statusEl.textContent = 'Designer created successfully!';
                 statusEl.className = 'status-msg active success';
@@ -795,14 +800,23 @@
                 statusEl.textContent = 'Creating client...';
                 statusEl.className = 'status-msg active warning';
 
+                // Save current admin user
+                const adminUser = auth.currentUser;
+
                 // Username login email
                 const loginEmail = username + '@smile.local';
-                await createUserWithEmailAndPassword(auth, loginEmail, password);
+                const userCred = await createUserWithEmailAndPassword(auth, loginEmail, password);
+                
+                // Sign out the newly created user and restore admin
+                await signOut(auth);
+                await auth.updateCurrentUser(adminUser);
                 
                 // If mobile provided, also create mobile login
                 if (mobile && /^\d{10}$/.test(mobile)) {
                     const mobileEmail = mobile + '@smile.mobile';
                     await createUserWithEmailAndPassword(auth, mobileEmail, password);
+                    await signOut(auth);
+                    await auth.updateCurrentUser(adminUser);
                 }
                 
                 statusEl.textContent = 'Client created successfully!';

@@ -125,11 +125,9 @@
             render();
         }
 
-        let searchTimeout;
         window.handleSearch = (e) => {
             searchQuery = e.target.value;
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => applyFilters(), 300);
+            applyFilters();
         };
 
         function formatSize(bytes, si = true, dp = 1) {
