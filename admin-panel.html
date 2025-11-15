@@ -291,7 +291,7 @@
             }
 
             currentPage = 1;
-            render();
+            updateTableOnly();
         }
 
         window.updateFilter = (type, value) => {
@@ -319,6 +319,78 @@
         window.copyLink = (url) => {
             navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
         };
+
+        function updateTableOnly() {
+            const tableBody = document.querySelector('.ultra-compact-table tbody');
+            if (!tableBody) {
+                render();
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageProjects = filteredProjects.slice(startIdx, endIdx);
+
+            tableBody.innerHTML = pageProjects.length > 0 ? pageProjects.map(project => {
+                const rowClass = project.isUrgent ? 'urgent-row' : (project.isVIP ? 'vip-row' : '');
+                const hoursSince = (Date.now() - project.createdAt) / (1000 * 60 * 60);
+                const urgentAlert = project.isUrgent && hoursSince > 24 && !project.files.some(f => f.name.match(/\.html?$/i));
+                
+                return `
+                <tr class="${rowClass}">
+                    <td>
+                        <strong>${project.title}</strong>
+                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">24h exceeded!</span>' : ''}
+                    </td>
+                    <td style="font-size: 12px;">${project.clientEmail}</td>
+                    <td>
+                        <select onchange="assignDesigner('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 12px;">
+                            <option value="">Unassigned</option>
+                            ${designers.map(d => `<option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>${d.name}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
+                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting</option>
+                            <option value="approved" ${project.status === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''}>Changes</option>
+                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="canceled" ${project.status === 'canceled' ? 'selected' : ''}>Canceled</option>
+                        </select>
+                    </td>
+                    <td>
+                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                        ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
+                        ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                    </td>
+                    <td style="font-size: 12px;">${project.files.length} files</td>
+                    <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">!</button>
+                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">V</button>
+                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">F</button>
+                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">X</button>
+                    </td>
+                </tr>
+            `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>';
+
+            const paginationEl = document.querySelector('.pagination');
+            if (paginationEl) {
+                paginationEl.innerHTML = `
+                    <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                    <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
+                    <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                `;
+            }
+
+            const filterInfo = document.querySelector('.filter-bar > div:last-child');
+            if (filterInfo) {
+                filterInfo.textContent = `Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}`;
+            }
+        }
 
         function render() {
             const stats = {

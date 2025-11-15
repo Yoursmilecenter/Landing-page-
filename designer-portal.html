@@ -174,7 +174,56 @@
             } else {
                 filteredProjects = myProjects;
             }
-            render();
+            updateCardsOnly();
+        }
+
+        function updateCardsOnly() {
+            const grid = document.querySelector('.compact-grid');
+            if (!grid) {
+                render();
+                return;
+            }
+
+            grid.innerHTML = filteredProjects.length > 0 ? filteredProjects.map(project => {
+                const elapsed = Date.now() - project.createdAt;
+                const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+                return `
+                <div class="compact-card">
+                    <div class="compact-header">
+                        <h3 class="compact-title">${project.title}</h3>
+                        <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                    </div>
+                    <p class="compact-meta">${timeStr} elapsed | Created ${new Date(project.createdAt).toLocaleDateString()} | ${project.files.length} files</p>
+                    <p class="compact-desc">${project.description}</p>
+                    
+                    ${project.clientRemarks ? `
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                            <h4 style="color: var(--color-error); margin-bottom: 4px; font-size: 12px;">Client Requested Changes:</h4>
+                            <p style="color: var(--color-text-light); font-size: 11px;">${project.clientRemarks}</p>
+                        </div>
+                    ` : ''}
+                    ${project.htmlApproved ? `
+                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                            <p style="color: var(--color-success); font-size: 11px;">Client Approved HTML - Upload STL now</p>
+                        </div>
+                    ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
+                        <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                            <p style="color: #fbbf24; font-size: 11px;">Awaiting Client Approval</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="compact-actions">
+                        <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" style="flex: 1;">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                        <button class="btn-view" onclick="viewFiles('${project.id}')" style="flex: 1;">
+                            <i class="fas fa-folder"></i> Files
+                        </button>
+                    </div>
+                </div>
+            `}).join('') : '<div class="empty"><div class="empty-icon"></div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>';
         }
 
         window.handleSearch = (e) => {
