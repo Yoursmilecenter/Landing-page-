@@ -27,6 +27,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -39,6 +40,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         window.handleLogin = async (e) => {
             e.preventDefault();
@@ -48,7 +50,6 @@
             const statusEl = document.getElementById('loginStatus');
 
             const admins = ['admin@smile.com'];
-            const designers = ['designer1@smile.com', 'designer2@smile.com'];
 
             let loginEmail = input;
             
@@ -62,15 +63,30 @@
             }
 
             try {
-                await signInWithEmailAndPassword(auth, loginEmail, password);
+                const userCred = await signInWithEmailAndPassword(auth, loginEmail, password);
                 
+                // Check if admin
                 if (admins.includes(loginEmail)) {
                     window.location.href = 'admin-panel.html';
-                } else if (designers.includes(loginEmail)) {
-                    window.location.href = 'designer-portal.html';
-                } else {
-                    window.location.href = 'portal-dashboard.html';
+                    return;
                 }
+
+                // Check user role in Firestore
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('uid', '==', userCred.user.uid));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const userData = snapshot.docs[0].data();
+                    if (userData.role === 'designer') {
+                        window.location.href = 'designer-portal.html';
+                        return;
+                    }
+                }
+
+                // Default to client dashboard
+                window.location.href = 'portal-dashboard.html';
+                
             } catch (error) {
                 statusEl.textContent = 'Invalid credentials';
                 statusEl.className = 'status-msg active error';

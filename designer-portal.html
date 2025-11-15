@@ -99,19 +99,21 @@
         let filteredProjects = [];
         let currentProjectId = null;
         let searchQuery = '';
-        
-        const designers = [
-            { email: 'designer1@smile.com', name: 'Designer 1' },
-            { email: 'designer2@smile.com', name: 'Designer 2' },
-        ];
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                if (!designers.some(d => d.email === currentUser.email)) {
-                    window.location.href = 'index.html'; 
+                
+                // Check if user is designer in Firestore
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('uid', '==', user.uid));
+                const snapshot = await getDocs(q);
+                
+                if (snapshot.empty || snapshot.docs[0].data().role !== 'designer') {
+                    window.location.href = 'index.html';
                     return;
                 }
+                
                 await loadData();
             } else {
                 window.location.href = 'portal-login.html';
