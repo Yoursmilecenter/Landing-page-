@@ -165,6 +165,7 @@
         let currentPage = 1;
         let itemsPerPage = 50;
         let currentProjectForFiles = null;
+        let searchInputWasFocused = false;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -283,6 +284,7 @@
         };
 
         window.handleSearch = (searchValue) => {
+            searchInputWasFocused = true;
             currentFilters.search = searchValue;
             applyFilters();
         };
@@ -366,7 +368,7 @@
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 250px; padding: 8px 12px;" oninput="handleSearch(this.value)">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 250px; padding: 8px 12px;" oninput="handleSearch(this.value)" autocomplete="off" value="${currentFilters.search || ''}">
                         <select onchange="updateFilter('status', this.value)" value="${currentFilters.status}">
                             <option value="all" ${currentFilters.status === 'all' ? 'selected' : ''}>All Status</option>
                             <option value="pending" ${currentFilters.status === 'pending' ? 'selected' : ''}>Pending</option>
@@ -522,6 +524,18 @@
             `;
 
             setupFileUpload();
+            
+            // Restore search input focus if it was focused before render
+            if (searchInputWasFocused) {
+                setTimeout(() => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+                    }
+                    searchInputWasFocused = false;
+                }, 0);
+            }
         }
 
         function setupFileUpload() {

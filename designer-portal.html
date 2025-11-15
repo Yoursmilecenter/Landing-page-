@@ -34,6 +34,7 @@
         let myProjects = [];
         let filteredProjects = [];
         let searchQuery = '';
+        let searchInputWasFocused = false;
         let currentProjectId = null;
         
         const designers = [
@@ -143,7 +144,7 @@
                     <p class="page-subtitle">View and manage patients assigned to you.</p>
 
                     <div style="margin-bottom: 20px;">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 100%; max-width: 400px; padding: 10px 16px;" oninput="handleSearch(this.value)">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 100%; max-width: 400px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
                     </div>
 
                     <div class="stats">
@@ -274,6 +275,18 @@
                     });
                 }
             }
+            
+            // Restore search input focus
+            if (searchInputWasFocused) {
+                setTimeout(() => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+                    }
+                    searchInputWasFocused = false;
+                }, 0);
+            }
         }
 
         function renderFileList(files) {
@@ -398,6 +411,7 @@
         }
 
         window.handleSearch = (value) => {
+            searchInputWasFocused = true;
             searchQuery = value;
             render();
         };
