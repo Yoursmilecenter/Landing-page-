@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Smile Center</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .redirect-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
+        .redirect-logo {
+            width: 280px;
+            margin-bottom: 30px;
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+        .redirect-text {
+            color: var(--color-text-secondary);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 3px solid rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--color-primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-container">
+        <img src="smile-center-logo.png" alt="Smile Center" class="redirect-logo">
+        <div class="redirect-text">Redirecting to registration...</div>
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get('i') || urlParams.get('invite') || urlParams.get('code');
+        const phone = urlParams.get('p') || urlParams.get('phone');
+
+        // Build redirect URL
+        let redirectUrl = 'portal-login.html';
+        
+        if (inviteCode || phone) {
+            const params = new URLSearchParams();
+            if (inviteCode) params.set('invite', inviteCode);
+            if (phone) params.set('phone', phone);
+            redirectUrl += '?' + params.toString();
+        }
+
+        // Redirect after short delay for branding
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 800);
+    </script>
+</body>
+</html>
