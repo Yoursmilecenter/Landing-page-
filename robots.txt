@@ -1,0 +1,14 @@
+# Smile Center Portal - Robots.txt
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /portal-login.html
+
+# Disallow private portal pages from search engines
+Disallow: /portal-dashboard.html
+Disallow: /admin-panel.html
+Disallow: /designer-portal.html
+Disallow: /client-register.html
+
+# Sitemap location
+Sitemap: https://yoursmilecenter.github.io/Landing-page-/sitemap.xml
