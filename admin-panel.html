@@ -115,6 +115,16 @@
             opacity: 0.4;
             cursor: not-allowed;
         }
+        .group-header {
+            background: rgba(167, 139, 250, 0.1);
+            padding: 8px 12px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            cursor: pointer;
+        }
+        .group-header:hover {
+            background: rgba(167, 139, 250, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -124,7 +134,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, deleteDoc, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -159,13 +169,12 @@
             client: 'all',
             priority: 'all',
             sortBy: 'date-desc',
-            search: ''
+            groupBy: 'none'
         };
 
         let currentPage = 1;
         let itemsPerPage = 50;
         let currentProjectForFiles = null;
-        let searchInputWasFocused = false;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -233,21 +242,13 @@
             urgentProjects.forEach(p => {
                 const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
                 if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
-                    console.warn(`⚠ URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
+                    console.warn(` URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
                 }
             });
         }
 
         function applyFilters() {
             filteredProjects = allProjects.filter(p => {
-                if (currentFilters.search) {
-                    const searchLower = currentFilters.search.toLowerCase();
-                    const matchesSearch = 
-                        p.title.toLowerCase().includes(searchLower) ||
-                        p.clientEmail.toLowerCase().includes(searchLower) ||
-                        (p.description && p.description.toLowerCase().includes(searchLower));
-                    if (!matchesSearch) return false;
-                }
                 if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
                 if (currentFilters.designer !== 'all') {
                     if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
@@ -280,12 +281,6 @@
 
         window.updateFilter = (type, value) => {
             currentFilters[type] = value;
-            applyFilters();
-        };
-
-        window.handleSearch = (searchValue) => {
-            searchInputWasFocused = true;
-            currentFilters.search = searchValue;
             applyFilters();
         };
 
@@ -327,6 +322,9 @@
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
+                            <button class="btn-primary btn-small" onclick="openInviteClientModal()">
+                                <i class="fas fa-link"></i> Invite Client
+                            </button>
                             <button class="btn-primary btn-small" onclick="openAddClientModal()">
                                 <i class="fas fa-user-plus"></i> Add Client
                             </button>
@@ -358,53 +356,52 @@
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label">🔥 Urgent</div>
+                            <div class="stat-label"> Urgent</div>
                             <div class="stat-value">${stats.urgent}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
-                            <div class="stat-label">⭐ VIP</div>
+                            <div class="stat-label"> VIP</div>
                             <div class="stat-value">${stats.vip}</div>
                         </div>
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 250px; padding: 8px 12px;" oninput="handleSearch(this.value)" autocomplete="off" value="${currentFilters.search || ''}">
-                        <select onchange="updateFilter('status', this.value)" value="${currentFilters.status}">
-                            <option value="all" ${currentFilters.status === 'all' ? 'selected' : ''}>All Status</option>
-                            <option value="pending" ${currentFilters.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="in-progress" ${currentFilters.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                            <option value="awaiting-client-approval" ${currentFilters.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting Approval</option>
-                            <option value="approved" ${currentFilters.status === 'approved' ? 'selected' : ''}>Approved</option>
-                            <option value="changes-requested" ${currentFilters.status === 'changes-requested' ? 'selected' : ''}>Changes Requested</option>
-                            <option value="completed" ${currentFilters.status === 'completed' ? 'selected' : ''}>Completed</option>
-                            <option value="canceled" ${currentFilters.status === 'canceled' ? 'selected' : ''}>Canceled</option>
+                        <select onchange="updateFilter('status', this.value)">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="awaiting-client-approval">Awaiting Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="changes-requested">Changes Requested</option>
+                            <option value="completed">Completed</option>
+                            <option value="canceled">Canceled</option>
                         </select>
-                        <select onchange="updateFilter('designer', this.value)" value="${currentFilters.designer}">
-                            <option value="all" ${currentFilters.designer === 'all' ? 'selected' : ''}>All Designers</option>
-                            <option value="null" ${currentFilters.designer === 'null' ? 'selected' : ''}>Unassigned</option>
-                            ${designers.map(d => `<option value="${d.email}" ${currentFilters.designer === d.email ? 'selected' : ''}>${d.name}</option>`).join('')}
+                        <select onchange="updateFilter('designer', this.value)">
+                            <option value="all">All Designers</option>
+                            <option value="null">Unassigned</option>
+                            ${designers.map(d => `<option value="${d.email}">${d.name}</option>`).join('')}
                         </select>
-                        <select onchange="updateFilter('client', this.value)" value="${currentFilters.client}">
-                            <option value="all" ${currentFilters.client === 'all' ? 'selected' : ''}>All Clients</option>
-                            ${clients.map(c => `<option value="${c}" ${currentFilters.client === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        <select onchange="updateFilter('client', this.value)">
+                            <option value="all">All Clients</option>
+                            ${clients.map(c => `<option value="${c}">${c}</option>`).join('')}
                         </select>
-                        <select onchange="updateFilter('priority', this.value)" value="${currentFilters.priority}">
-                            <option value="all" ${currentFilters.priority === 'all' ? 'selected' : ''}>All Priorities</option>
-                            <option value="urgent" ${currentFilters.priority === 'urgent' ? 'selected' : ''}>🔥 Urgent Only</option>
-                            <option value="vip" ${currentFilters.priority === 'vip' ? 'selected' : ''}>⭐ VIP Only</option>
-                            <option value="normal" ${currentFilters.priority === 'normal' ? 'selected' : ''}>Normal Only</option>
+                        <select onchange="updateFilter('priority', this.value)">
+                            <option value="all">All Priorities</option>
+                            <option value="urgent"> Urgent Only</option>
+                            <option value="vip"> VIP Only</option>
+                            <option value="normal">Normal Only</option>
                         </select>
-                        <select onchange="updateFilter('sortBy', this.value)" value="${currentFilters.sortBy}">
-                            <option value="date-desc" ${currentFilters.sortBy === 'date-desc' ? 'selected' : ''}>Date (Newest)</option>
-                            <option value="date-asc" ${currentFilters.sortBy === 'date-asc' ? 'selected' : ''}>Date (Oldest)</option>
-                            <option value="name-asc" ${currentFilters.sortBy === 'name-asc' ? 'selected' : ''}>Name (A-Z)</option>
-                            <option value="name-desc" ${currentFilters.sortBy === 'name-desc' ? 'selected' : ''}>Name (Z-A)</option>
-                            <option value="client-asc" ${currentFilters.sortBy === 'client-asc' ? 'selected' : ''}>Client (A-Z)</option>
+                        <select onchange="updateFilter('sortBy', this.value)">
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="client-asc">Client (A-Z)</option>
                         </select>
                         <select onchange="itemsPerPage = parseInt(this.value); applyFilters();">
-                            <option value="25" ${itemsPerPage === 25 ? 'selected' : ''}>25 per page</option>
-                            <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50 per page</option>
-                            <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
                         </select>
                         <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
                             Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}
@@ -434,7 +431,7 @@
                                 <tr class="${rowClass}">
                                     <td>
                                         <strong>${project.title}</strong>
-                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;">⚠ 24h exceeded!</span>' : ''}
+                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;"> 24h exceeded!</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>
@@ -462,10 +459,10 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent">🔥</button>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑️</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent"></button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP"></button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files"></button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient"></button>
                                     </td>
                                 </tr>
                             `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
@@ -473,9 +470,9 @@
                     </table>
 
                     <div class="pagination">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}> Previous</button>
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next </button>
                     </div>
                 </div>
 
@@ -521,21 +518,36 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Invite Client Modal -->
+                <div id="inviteClientModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeInviteClientModal()">&times;</button>
+                        <h2 class="modal-title">Invite Client</h2>
+                        <p class="modal-subtitle">Generate invite link for new client</p>
+                        
+                        <form id="inviteClientForm" onsubmit="handleInviteClient(event)">
+                            <div class="form-group">
+                                <label class="form-label">Client Phone Number *</label>
+                                <input type="tel" id="invitePhone" class="form-input" placeholder="Enter phone number (e.g., 0501234567)" required>
+                            </div>
+                            <div id="inviteLinkSection" style="display: none; margin-top: 20px;">
+                                <label class="form-label">Invite Link (Send via WhatsApp):</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="inviteLink" class="form-input" readonly>
+                                    <button type="button" class="btn-primary" onclick="copyInviteLink()" style="white-space: nowrap;">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="inviteStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Generate Invite Link</button>
+                        </form>
+                    </div>
+                </div>
             `;
 
             setupFileUpload();
-            
-            // Restore search input focus if it was focused before render
-            if (searchInputWasFocused) {
-                setTimeout(() => {
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) {
-                        searchInput.focus();
-                        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-                    }
-                    searchInputWasFocused = false;
-                }, 0);
-            }
         }
 
         function setupFileUpload() {
@@ -571,14 +583,14 @@
             listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
                 <div class="file-item">
                     <div class="file-info">
-                        <div class="file-icon">📄</div>
+                        <div class="file-icon"></div>
                         <div>
                             <div class="file-name">${file.name}</div>
-                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                            <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
                         <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
                         <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
@@ -600,7 +612,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = '✅ Files uploaded!';
+                statusEl.textContent = ' Files uploaded!';
                 statusEl.className = 'status-msg active success';
                 
                 await loadData();
@@ -612,7 +624,7 @@
                     e.target.value = '';
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = ' Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         }
@@ -662,9 +674,12 @@
             }
 
             try {
+                // Delete all files from storage
                 const filesRef = ref(storage, `projects/${projectId}`);
                 const list = await listAll(filesRef);
                 await Promise.all(list.items.map(item => deleteObject(item)));
+
+                // Delete Firestore document
                 await deleteDoc(doc(db, 'projects', projectId));
                 
                 alert('Patient deleted successfully');
@@ -709,7 +724,7 @@
 
                 await createUserWithEmailAndPassword(auth, email, password);
                 
-                statusEl.textContent = '✅ Client created successfully!';
+                statusEl.textContent = ' Client created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -724,9 +739,64 @@
                 } else if (error.code === 'auth/invalid-email') {
                     errorMsg = 'Invalid email format';
                 }
-                statusEl.textContent = '❌ ' + errorMsg;
+                statusEl.textContent = ' ' + errorMsg;
                 statusEl.className = 'status-msg active error';
             }
+        };
+
+        window.openInviteClientModal = () => {
+            document.getElementById('inviteClientModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('inviteClientForm').reset();
+            document.getElementById('inviteStatus').className = 'status-msg';
+            document.getElementById('inviteLinkSection').style.display = 'none';
+        };
+
+        window.closeInviteClientModal = () => {
+            document.getElementById('inviteClientModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.handleInviteClient = async (e) => {
+            e.preventDefault();
+            
+            const phone = document.getElementById('invitePhone').value.trim();
+            const statusEl = document.getElementById('inviteStatus');
+
+            try {
+                // Generate unique invite code
+                const inviteCode = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+                
+                // Store invite in Firestore
+                await addDoc(collection(db, 'invites'), {
+                    phone: phone,
+                    code: inviteCode,
+                    createdBy: currentUser.email,
+                    createdAt: Date.now(),
+                    used: false
+                });
+
+                // Generate invite link
+                const baseUrl = window.location.origin + window.location.pathname.replace('admin-panel.html', '');
+                const inviteLink = `${baseUrl}portal-login.html?invite=${inviteCode}&phone=${encodeURIComponent(phone)}`;
+                
+                document.getElementById('inviteLink').value = inviteLink;
+                document.getElementById('inviteLinkSection').style.display = 'block';
+                
+                statusEl.textContent = '✓ Invite link generated! Copy and send via WhatsApp.';
+                statusEl.className = 'status-msg active success';
+            } catch (error) {
+                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.copyInviteLink = () => {
+            const linkInput = document.getElementById('inviteLink');
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                alert('✓ Invite link copied! Send it via WhatsApp.');
+            });
         };
     </script>
 </body>

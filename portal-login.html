@@ -8,23 +8,44 @@
 </head>
 <body>
     <div class="login-container">
-        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo" style="background: transparent !important; box-shadow: none !important; padding: 0 !important; border: none !important;">
+        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
+        <h2 id="pageTitle" style="margin-bottom: 30px; color: var(--color-text);">Portal Login</h2>
         
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;">
             <div class="form-group">
-                <input type="text" id="email" class="form-input" placeholder="Username or Email" required autocomplete="username">
+                <input type="text" id="email" class="form-input" placeholder="Username or Email" required>
             </div>
             <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password" required autocomplete="current-password">
+                <input type="password" id="password" class="form-input" placeholder="Password" required>
             </div>
             <div id="loginStatus" class="status-msg"></div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
+        </form>
+
+        <!-- Invite Registration Form -->
+        <form id="inviteForm" onsubmit="handleInviteRegistration(event)" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" id="invitePhone" class="form-input" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Create Your Password *</label>
+                <input type="password" id="invitePassword" class="form-input" placeholder="Enter password" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm Password *</label>
+                <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="6">
+            </div>
+            <div id="inviteStatus" class="status-msg"></div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Complete Registration</button>
         </form>
     </div>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -37,12 +58,25 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Check if this is an invite link
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get('invite');
+        const invitePhone = urlParams.get('phone');
+
+        if (inviteCode && invitePhone) {
+            // Show invite registration form
+            document.getElementById('pageTitle').textContent = 'Complete Registration';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('inviteForm').style.display = 'block';
+            document.getElementById('invitePhone').value = invitePhone;
+        }
 
         window.handleLogin = async (e) => {
             e.preventDefault();
             
-            const emailInput = document.getElementById('email');
-            const email = emailInput.value.trim();
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('loginStatus');
 
@@ -53,13 +87,10 @@
             
             // If no @ symbol, treat as username and convert to email format
             if (!email.includes('@')) {
-                loginEmail = email + '@smile.com';
+                loginEmail = email + '@smile.local';
             }
 
             try {
-                statusEl.textContent = 'Logging in...';
-                statusEl.className = 'status-msg active warning';
-                
                 await signInWithEmailAndPassword(auth, loginEmail, password);
                 
                 if (admins.includes(loginEmail)) {
@@ -70,8 +101,74 @@
                     window.location.href = 'portal-dashboard.html';
                 }
             } catch (error) {
-                console.error('Login error:', error);
-                statusEl.textContent = '❌ Invalid credentials';
+                statusEl.textContent = '✗ Invalid credentials';
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.handleInviteRegistration = async (e) => {
+            e.preventDefault();
+            
+            const phone = document.getElementById('invitePhone').value;
+            const password = document.getElementById('invitePassword').value;
+            const passwordConfirm = document.getElementById('invitePasswordConfirm').value;
+            const statusEl = document.getElementById('inviteStatus');
+
+            if (password !== passwordConfirm) {
+                statusEl.textContent = '✗ Passwords do not match';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+
+            try {
+                statusEl.textContent = 'Verifying invite...';
+                statusEl.className = 'status-msg active warning';
+
+                // Verify invite code
+                const invitesRef = collection(db, 'invites');
+                const q = query(invitesRef, where('code', '==', inviteCode), where('phone', '==', phone));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    statusEl.textContent = '✗ Invalid or expired invite link';
+                    statusEl.className = 'status-msg active error';
+                    return;
+                }
+
+                const inviteDoc = snapshot.docs[0];
+                const inviteData = inviteDoc.data();
+
+                if (inviteData.used) {
+                    statusEl.textContent = '✗ This invite has already been used';
+                    statusEl.className = 'status-msg active error';
+                    return;
+                }
+
+                // Create account with phone as email
+                const email = phone + '@smile.com';
+                await createUserWithEmailAndPassword(auth, email, password);
+
+                // Mark invite as used
+                await updateDoc(doc(db, 'invites', inviteDoc.id), {
+                    used: true,
+                    usedAt: Date.now()
+                });
+
+                statusEl.textContent = '✓ Registration complete! Redirecting...';
+                statusEl.className = 'status-msg active success';
+
+                setTimeout(() => {
+                    window.location.href = 'portal-dashboard.html';
+                }, 1500);
+
+            } catch (error) {
+                let errorMsg = 'Registration failed';
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg = 'Phone number already registered';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg = 'Password too weak (min 6 characters)';
+                }
+                statusEl.textContent = '✗ ' + errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
