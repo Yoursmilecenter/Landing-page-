@@ -74,7 +74,7 @@
         window.handleLogin = async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('loginStatus');
 
@@ -83,8 +83,12 @@
 
             let loginEmail = email;
             
+            // If only numbers (phone), convert to phone@smile.local
+            if (/^\d+$/.test(email)) {
+                loginEmail = email + '@smile.local';
+            }
             // If no @ symbol, treat as username and convert to email format
-            if (!email.includes('@')) {
+            else if (!email.includes('@')) {
                 loginEmail = email + '@smile.local';
             }
 
@@ -99,7 +103,7 @@
                     window.location.href = 'portal-dashboard.html';
                 }
             } catch (error) {
-                statusEl.textContent = '✗ Invalid credentials';
+                statusEl.textContent = 'Invalid credentials';
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -142,8 +146,8 @@
                     return;
                 }
 
-                // Create account with phone as email
-                const email = phone + '@smile.com';
+                // Create account with phone as email (using @smile.local for consistency)
+                const email = phone + '@smile.local';
                 await createUserWithEmailAndPassword(auth, email, password);
 
                 // Mark invite as used
@@ -152,7 +156,7 @@
                     usedAt: Date.now()
                 });
 
-                statusEl.textContent = '✓ Registration complete! Redirecting...';
+                statusEl.textContent = 'Registration complete! Redirecting...';
                 statusEl.className = 'status-msg active success';
 
                 setTimeout(() => {
@@ -160,13 +164,18 @@
                 }, 1500);
 
             } catch (error) {
+                console.error('Registration error:', error);
                 let errorMsg = 'Registration failed';
                 if (error.code === 'auth/email-already-in-use') {
                     errorMsg = 'Phone number already registered';
                 } else if (error.code === 'auth/weak-password') {
                     errorMsg = 'Password too weak (min 6 characters)';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMsg = 'Network error. Please check connection';
+                } else if (error.message) {
+                    errorMsg = error.message;
                 }
-                statusEl.textContent = '✗ ' + errorMsg;
+                statusEl.textContent = errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
