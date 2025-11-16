@@ -777,8 +777,7 @@
                 });
 
                 // Generate invite link
-                const baseUrl = window.location.origin + window.location.pathname.replace('admin-panel.html', '');
-                const inviteLink = `${baseUrl}portal-login.html?invite=${inviteCode}&phone=${encodeURIComponent(phone)}`;
+                const inviteLink = `https://yoursmilecenter.github.io/w?c=${inviteCode}&p=${encodeURIComponent(phone)}`;
                 
                 document.getElementById('inviteLink').value = inviteLink;
                 document.getElementById('inviteLinkSection').style.display = 'block';
