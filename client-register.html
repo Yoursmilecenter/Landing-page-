@@ -54,6 +54,13 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('registerStatus');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            // Disable button to prevent double submission
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Processing...';
+            }
 
             try {
                 // Check if username already exists
@@ -62,8 +69,12 @@
                 const snapshot = await getDocs(q);
                 
                 if (!snapshot.empty) {
-                    statusEl.textContent = '❌ Username already taken';
+                    statusEl.textContent = 'Username already taken';
                     statusEl.className = 'status-msg active error';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Register';
+                    }
                     return;
                 }
 
@@ -82,21 +93,31 @@
                     createdAt: Date.now()
                 });
 
-                statusEl.textContent = '✅ Registration submitted! Awaiting admin approval.';
+                statusEl.textContent = 'Registration submitted! Awaiting admin approval.';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
                     window.location.href = 'portal-login.html';
                 }, 2000);
             } catch (error) {
-                let msg = '❌ Registration failed';
+                console.error('Registration error:', error);
+                let msg = 'Registration failed';
                 if (error.code === 'auth/email-already-in-use') {
-                    msg = '❌ Username already registered';
+                    msg = 'Username already registered';
                 } else if (error.code === 'auth/weak-password') {
-                    msg = '❌ Password should be at least 6 characters';
+                    msg = 'Password should be at least 6 characters';
+                } else if (error.code === 'auth/network-request-failed') {
+                    msg = 'Network error. Please check your connection';
+                } else if (error.message) {
+                    msg = 'Error: ' + error.message;
                 }
                 statusEl.textContent = msg;
                 statusEl.className = 'status-msg active error';
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Register';
+                }
             }
         };
     </script>
