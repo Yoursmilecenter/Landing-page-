@@ -236,7 +236,15 @@
                                         </button>
                                     </div>
                                     <div class="file-list">
-                                        ${project.files.length > 0 ? project.files.map(file => `
+                                        ${project.files.length > 0 ? project.files
+                                            .filter(file => {
+                                                // Hide STL files if HTML not approved
+                                                if (file.name.match(/\.stl$/i) && !project.htmlApproved) {
+                                                    return false;
+                                                }
+                                                return true;
+                                            })
+                                            .map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
                                                     <div class="file-icon">
