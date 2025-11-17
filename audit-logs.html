@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - Smile Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .log-table thead {
+            background: rgba(99, 102, 241, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .log-table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .log-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .log-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .event-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .event-login { background: rgba(34, 197, 94, 0.2); color: var(--color-success); }
+        .event-logout { background: rgba(239, 68, 68, 0.2); color: var(--color-error); }
+        .event-upload { background: rgba(56, 189, 248, 0.2); color: var(--color-primary); }
+        .event-download { background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); }
+        .event-status-change { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .event-approval { background: rgba(34, 197, 94, 0.2); color: var(--color-success); }
+        .event-rejection { background: rgba(239, 68, 68, 0.2); color: var(--color-error); }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        select, input[type="date"] {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: var(--color-text-light) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .export-btn {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--color-success);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .export-btn:hover {
+            background: rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs, query, orderBy, where, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+            authDomain: "smile-center-7c6f5.firebaseapp.com",
+            projectId: "smile-center-7c6f5",
+            storageBucket: "smile-center-7c6f5.firebasestorage.app",
+            messagingSenderId: "517098616907",
+            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let allLogs = [];
+        let filteredLogs = [];
+        
+        const admins = ['admin@smile.com'];
+
+        let currentFilters = {
+            eventType: 'all',
+            user: 'all',
+            dateFrom: '',
+            dateTo: '',
+            limit: 100
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                if (!admins.includes(currentUser.email)) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                await loadLogs();
+            } else {
+                window.location.href = 'portal-login.html';
+            }
+        });
+
+        async function loadLogs() {
+            try {
+                const logsRef = collection(db, 'auditLogs');
+                let q = query(logsRef, orderBy('timestamp', 'desc'), limit(currentFilters.limit));
+                
+                const snapshot = await getDocs(q);
+                allLogs = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                render();
+            }
+        }
+
+        function applyFilters() {
+            filteredLogs = allLogs.filter(log => {
+                if (currentFilters.eventType !== 'all' && log.eventType !== currentFilters.eventType) return false;
+                if (currentFilters.user !== 'all' && log.userEmail !== currentFilters.user) return false;
+                
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom).getTime();
+                    if (log.timestamp < fromDate) return false;
+                }
+                
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo).getTime() + (24 * 60 * 60 * 1000);
+                    if (log.timestamp > toDate) return false;
+                }
+                
+                return true;
+            });
+            
+            render();
+        }
+
+        window.updateFilter = (type, value) => {
+            currentFilters[type] = value;
+            applyFilters();
+        };
+
+        window.exportLogs = () => {
+            const csv = [
+                ['Timestamp', 'Event Type', 'User', 'Details', 'IP Address'].join(','),
+                ...filteredLogs.map(log => [
+                    new Date(log.timestamp).toISOString(),
+                    log.eventType,
+                    log.userEmail,
+                    `"${log.details || ''}"`,
+                    log.ipAddress || 'N/A'
+                ].join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        };
+
+        function getEventBadgeClass(eventType) {
+            const mapping = {
+                'login': 'event-login',
+                'logout': 'event-logout',
+                'file-upload': 'event-upload',
+                'file-download': 'event-download',
+                'status-change': 'event-status-change',
+                'html-approval': 'event-approval',
+                'html-rejection': 'event-rejection',
+                'case-created': 'event-upload',
+                'case-deleted': 'event-logout'
+            };
+            return mapping[eventType] || 'event-login';
+        }
+
+        function render() {
+            const uniqueUsers = [...new Set(allLogs.map(log => log.userEmail))];
+            const stats = {
+                total: allLogs.length,
+                logins: allLogs.filter(l => l.eventType === 'login').length,
+                uploads: allLogs.filter(l => l.eventType === 'file-upload').length,
+                downloads: allLogs.filter(l => l.eventType === 'file-download').length
+            };
+
+            document.getElementById('app').innerHTML = `
+                <div class="header">
+                    <div class="header-content">
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <button class="btn-secondary btn-small" onclick="window.location.href='admin-panel.html'">
+                                <i class="fas fa-arrow-left"></i> Back to Admin
+                            </button>
+                            <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="main">
+                    <h1 class="page-title">🔍 Audit Logs</h1>
+                    <p class="page-subtitle">Track all system activities and user actions.</p>
+
+                    <div class="stats" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Events</div>
+                            <div class="stat-value">${stats.total}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Logins</div>
+                            <div class="stat-value">${stats.logins}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Uploads</div>
+                            <div class="stat-value">${stats.uploads}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Downloads</div>
+                            <div class="stat-value">${stats.downloads}</div>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <select onchange="updateFilter('eventType', this.value)">
+                            <option value="all">All Events</option>
+                            <option value="login">Login</option>
+                            <option value="logout">Logout</option>
+                            <option value="file-upload">File Upload</option>
+                            <option value="file-download">File Download</option>
+                            <option value="status-change">Status Change</option>
+                            <option value="html-approval">HTML Approval</option>
+                            <option value="html-rejection">HTML Rejection</option>
+                            <option value="case-created">Case Created</option>
+                            <option value="case-deleted">Case Deleted</option>
+                        </select>
+                        
+                        <select onchange="updateFilter('user', this.value)">
+                            <option value="all">All Users</option>
+                            ${uniqueUsers.map(u => `<option value="${u}">${u}</option>`).join('')}
+                        </select>
+                        
+                        <input type="date" onchange="updateFilter('dateFrom', this.value)" placeholder="From Date">
+                        <input type="date" onchange="updateFilter('dateTo', this.value)" placeholder="To Date">
+                        
+                        <select onchange="updateFilter('limit', parseInt(this.value)); loadLogs();">
+                            <option value="100">Last 100</option>
+                            <option value="500">Last 500</option>
+                            <option value="1000">Last 1000</option>
+                        </select>
+                        
+                        <button class="export-btn" onclick="exportLogs()" style="margin-left: auto;">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                        
+                        <div style="font-size: 13px; color: var(--color-text-secondary);">
+                            Showing ${filteredLogs.length} of ${allLogs.length}
+                        </div>
+                    </div>
+
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Timestamp</th>
+                                <th style="width: 15%;">Event Type</th>
+                                <th style="width: 20%;">User</th>
+                                <th style="width: 35%;">Details</th>
+                                <th style="width: 15%;">IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredLogs.length > 0 ? filteredLogs.map(log => `
+                                <tr>
+                                    <td style="font-size: 12px;">
+                                        ${new Date(log.timestamp).toLocaleString()}
+                                    </td>
+                                    <td>
+                                        <span class="event-badge ${getEventBadgeClass(log.eventType)}">
+                                            ${log.eventType.replace('-', ' ').toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td style="font-size: 12px;">${log.userEmail}</td>
+                                    <td style="font-size: 12px; color: var(--color-text-light);">
+                                        ${log.details || 'N/A'}
+                                    </td>
+                                    <td style="font-size: 12px; color: var(--color-text-secondary);">
+                                        ${log.ipAddress || 'N/A'}
+                                    </td>
+                                </tr>
+                            `).join('') : `
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">
+                                        No audit logs found
+                                    </td>
+                                </tr>
+                            `}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
