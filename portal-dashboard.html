@@ -149,6 +149,7 @@
                 completed: userProjects.filter(p => p.status === 'completed').length,
                 inProgress: userProjects.filter(p => p.status === 'in-progress').length,
                 awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
+                stlReady: userProjects.filter(p => p.status === 'stl-ready').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
             };
 
@@ -190,6 +191,10 @@
                         <div class="stat-card">
                             <div class="stat-label">Awaiting Approval</div>
                             <div class="stat-value">${stats.awaitingApproval}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">STL Ready</div>
+                            <div class="stat-value">${stats.stlReady}</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">Completed</div>
@@ -248,7 +253,7 @@
                                                             </div>
                                                             <div class="file-actions">
                                                                 <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
+                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank" onclick="trackStlDownload('${project.id}', '${file.name}')">Download</a>
                                                             </div>
                                                         </div>
                                                     `).join('')
@@ -502,13 +507,17 @@
         window.approveDesign = async () => {
             const statusEl = document.getElementById('approvalStatus');
             try {
+                // Get project to check if STL exists
+                const project = userProjects.find(p => p.id === currentApprovalProjectId);
+                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                
                 await updateDoc(doc(db, 'projects', currentApprovalProjectId), { 
                     htmlApproved: true,
-                    status: 'approved',
+                    status: hasSTL ? 'stl-ready' : 'approved',
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = '✅ Design approved! Designer can now upload STL file.';
+                statusEl.textContent = '✅ Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
@@ -716,6 +725,21 @@
                 window.location.href = 'portal-login.html';
             } catch (error) {
                 console.error('Logout error:', error);
+            }
+        };
+
+        window.trackStlDownload = async (projectId, fileName) => {
+            try {
+                const projectRef = doc(db, 'projects', projectId);
+                await updateDoc(projectRef, {
+                    stlDownloaded: true,
+                    stlDownloadedAt: Date.now(),
+                    stlDownloadedFile: fileName,
+                    status: 'completed'
+                });
+                console.log('STL download tracked');
+            } catch (error) {
+                console.error('Error tracking download:', error);
             }
         };
     </script>
