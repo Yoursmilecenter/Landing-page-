@@ -91,6 +91,14 @@
             font-size: 11px;
             font-weight: 600;
         }
+        .badge-downloaded {
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
         .action-btn {
             padding: 4px 8px;
             font-size: 11px;
@@ -489,7 +497,8 @@
                                     <td>
                                         ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
                                         ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
-                                        ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                                        ${project.stlDownloaded ? `<span class="badge-downloaded">DL ${new Date(project.stlDownloadedAt).toLocaleDateString()} ${new Date(project.stlDownloadedAt).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>` : ''}
+                                        ${!project.isUrgent && !project.isVIP && !project.stlDownloaded ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>

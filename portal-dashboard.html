@@ -146,7 +146,7 @@
 
             const stats = {
                 total: userProjects.length,
-                completed: userProjects.filter(p => p.status === 'completed').length,
+                completed: userProjects.filter(p => p.htmlApproved && p.files.some(f => f.name.match(/\.stl$/i))).length,
                 inProgress: userProjects.filter(p => p.status === 'in-progress').length,
                 awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
@@ -209,7 +209,7 @@
                                         <h3 class="project-title">${project.title}</h3>
                                         <p class="project-date">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
+                                    <span class="status-badge status-${project.htmlApproved && project.files.some(f => f.name.match(/\.stl$/i)) ? 'completed' : project.status.replace('-', '')}">${project.htmlApproved && project.files.some(f => f.name.match(/\.stl$/i)) ? 'COMPLETED' : project.status.toUpperCase().replace('-', ' ')}</span>
                                 </div>
                                 <p class="project-desc">${project.description}</p>
                                 
@@ -248,7 +248,7 @@
                                                             </div>
                                                             <div class="file-actions">
                                                                 <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
+                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank" onclick="trackStlDownload('${project.id}', '${file.name}')">Download</a>
                                                             </div>
                                                         </div>
                                                     `).join('')
@@ -716,6 +716,20 @@
                 window.location.href = 'portal-login.html';
             } catch (error) {
                 console.error('Logout error:', error);
+            }
+        };
+
+        window.trackStlDownload = async (projectId, fileName) => {
+            try {
+                const projectRef = doc(db, 'projects', projectId);
+                await updateDoc(projectRef, {
+                    stlDownloaded: true,
+                    stlDownloadedAt: Date.now(),
+                    stlDownloadedFile: fileName
+                });
+                console.log('STL download tracked');
+            } catch (error) {
+                console.error('Error tracking download:', error);
             }
         };
     </script>
