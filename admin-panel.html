@@ -196,7 +196,6 @@
                     return;
                 }
                 await loadData();
-                checkUrgentReminders();
                 initSessionTimeout();
             } else {
                 window.location.href = 'portal-login.html';
@@ -277,16 +276,6 @@
             }
         }
 
-        function checkUrgentReminders() {
-            const urgentProjects = allProjects.filter(p => p.isUrgent && p.status !== 'completed');
-            urgentProjects.forEach(p => {
-                const hoursSinceCreated = (Date.now() - p.createdAt) / (1000 * 60 * 60);
-                if (hoursSinceCreated > 24 && !p.files.some(f => f.name.match(/\.html?$/i))) {
-                    console.warn(` URGENT: Patient "${p.title}" exceeded 24-hour HTML guarantee!`);
-                }
-            });
-        }
-
         function applyFilters() {
             filteredProjects = allProjects.filter(p => {
                 if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
@@ -296,9 +285,8 @@
                 }
                 if (currentFilters.client !== 'all' && p.clientEmail !== currentFilters.client) return false;
                 if (currentFilters.priority !== 'all') {
-                    if (currentFilters.priority === 'urgent' && !p.isUrgent) return false;
                     if (currentFilters.priority === 'vip' && !p.isVIP) return false;
-                    if (currentFilters.priority === 'normal' && (p.isUrgent || p.isVIP)) return false;
+                    if (currentFilters.priority === 'normal' && p.isVIP) return false;
                 }
                 return true;
             });
@@ -346,7 +334,6 @@
                 pending: allProjects.filter(p => p.status === 'pending').length,
                 inProgress: allProjects.filter(p => p.status === 'in-progress').length,
                 completed: allProjects.filter(p => p.status === 'completed').length,
-                urgent: allProjects.filter(p => p.isUrgent).length,
                 vip: allProjects.filter(p => p.isVIP).length
             };
 
@@ -381,7 +368,7 @@
                     <h1 class="page-title">Admin Panel</h1>
                     <p class="page-subtitle">Manage all patients and assignments.</p>
 
-                    <div class="stats" style="grid-template-columns: repeat(6, 1fr);">
+                    <div class="stats" style="grid-template-columns: repeat(5, 1fr);">
                         <div class="stat-card">
                             <div class="stat-label">Total</div>
                             <div class="stat-value">${stats.total}</div>
@@ -398,12 +385,8 @@
                             <div class="stat-label">Completed</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
-                        <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label"> Urgent</div>
-                            <div class="stat-value">${stats.urgent}</div>
-                        </div>
                         <div class="stat-card" style="background: rgba(251, 191, 36, 0.1);">
-                            <div class="stat-label"> VIP</div>
+                            <div class="stat-label">⭐ VIP</div>
                             <div class="stat-value">${stats.vip}</div>
                         </div>
                     </div>
@@ -430,8 +413,7 @@
                         </select>
                         <select onchange="updateFilter('priority', this.value)">
                             <option value="all">All Priorities</option>
-                            <option value="urgent"> Urgent Only</option>
-                            <option value="vip"> VIP Only</option>
+                            <option value="vip">⭐ VIP Only</option>
                             <option value="normal">Normal Only</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)">
@@ -466,15 +448,12 @@
                         </thead>
                         <tbody>
                             ${pageProjects.length > 0 ? pageProjects.map(project => {
-                                const rowClass = project.isUrgent ? 'urgent-row' : (project.isVIP ? 'vip-row' : '');
-                                const hoursSince = (Date.now() - project.createdAt) / (1000 * 60 * 60);
-                                const urgentAlert = project.isUrgent && hoursSince > 24 && !project.files.some(f => f.name.match(/\.html?$/i));
+                                const rowClass = project.isVIP ? 'vip-row' : '';
                                 
                                 return `
                                 <tr class="${rowClass}">
                                     <td>
                                         <strong>${project.title}</strong>
-                                        ${urgentAlert ? '<br><span style="color: #ef4444; font-size: 11px;"> 24h exceeded!</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>
@@ -495,18 +474,17 @@
                                         </select>
                                     </td>
                                     <td>
-                                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                                        ${project.stlDownloaded ? '💡' : ''}
                                         ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
-                                        ${project.stlDownloaded ? `<span class="badge-downloaded">DL ${new Date(project.stlDownloadedAt).toLocaleDateString()} ${new Date(project.stlDownloadedAt).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>` : ''}
-                                        ${!project.isUrgent && !project.isVIP && !project.stlDownloaded ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                                        ${!project.stlDownloaded && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'urgent')" style="background: ${project.isUrgent ? '#ef4444' : '#555'}; color: white;" title="Mark Urgent"></button>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP"></button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files"></button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient"></button>
+                                        <button class="action-btn" onclick="toggleStlDownload('${project.id}')" style="background: ${project.stlDownloaded ? '#10b981' : '#555'}; color: white;" title="Toggle STL Download">💡</button>
+                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
+                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
+                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑</button>
                                     </td>
                                 </tr>
                             `}).join('') : '<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients found</td></tr>'}
@@ -688,9 +666,7 @@
             const project = allProjects.find(p => p.id === projectId);
             const updates = {};
             
-            if (type === 'urgent') {
-                updates.isUrgent = !project.isUrgent;
-            } else if (type === 'vip') {
+            if (type === 'vip') {
                 updates.isVIP = !project.isVIP;
             }
 
@@ -717,6 +693,20 @@
         window.updateStatus = async (projectId, newStatus) => {
             try {
                 await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
+                await loadData();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+
+        window.toggleStlDownload = async (projectId) => {
+            const project = allProjects.find(p => p.id === projectId);
+            try {
+                await updateDoc(doc(db, 'projects', projectId), {
+                    stlDownloaded: !project.stlDownloaded,
+                    stlDownloadedAt: !project.stlDownloaded ? Date.now() : null,
+                    status: !project.stlDownloaded ? 'completed' : project.status
+                });
                 await loadData();
             } catch (error) {
                 alert('Error: ' + error.message);
