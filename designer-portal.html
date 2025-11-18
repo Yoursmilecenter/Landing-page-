@@ -551,13 +551,6 @@
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('uploadStatus').className = 'status-msg';
             
-            const warningEl = document.getElementById('stlWarning');
-            if (isApproved) {
-                warningEl.style.display = 'none';
-            } else {
-                warningEl.style.display = 'block';
-            }
-            
             document.getElementById('uploadModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
