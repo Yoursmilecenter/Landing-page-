@@ -795,24 +795,38 @@
                 statusEl.textContent = 'Creating client...';
                 statusEl.className = 'status-msg active warning';
 
-                const currentUser = auth.currentUser;
-                const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
-                const secondaryAuth = getAuth(secondaryApp);
-                
-                let userCredential;
+                const currentUserEmail = auth.currentUser.email;
                 let username;
+                let authEmail;
                 
                 if (type === 'phone') {
                     const dummyEmail = `${phone.replace(/\+/g, '').replace(/\s/g, '')}@smile.local`;
-                    userCredential = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
+                    authEmail = dummyEmail;
                     username = phone;
                 } else {
-                    userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                    authEmail = email;
                     username = email;
+                }
+
+                // Create user with fetch to avoid logout
+                const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: authEmail,
+                        password: password,
+                        returnSecureToken: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error?.message || 'Failed to create user');
                 }
                 
                 await addDoc(collection(db, 'users'), {
-                    uid: userCredential.user.uid,
+                    uid: data.localId,
                     username: username,
                     email: email || null,
                     phone: phone || null,
@@ -820,10 +834,8 @@
                     role: 'client',
                     loginType: type,
                     createdAt: Date.now(),
-                    createdBy: currentUser.email
+                    createdBy: currentUserEmail
                 });
-
-                await secondaryApp.delete();
                 
                 statusEl.textContent = '✓ Client created successfully!';
                 statusEl.className = 'status-msg active success';
@@ -832,12 +844,13 @@
                     closeAddClientModal();
                 }, 1500);
             } catch (error) {
+                console.error('Error:', error);
                 let errorMsg = 'Error creating client';
-                if (error.code === 'auth/email-already-in-use') {
+                if (error.message?.includes('EMAIL_EXISTS')) {
                     errorMsg = 'Email/Phone already in use';
-                } else if (error.code === 'auth/weak-password') {
+                } else if (error.message?.includes('WEAK_PASSWORD')) {
                     errorMsg = 'Password too weak (min 6 characters)';
-                } else if (error.code === 'auth/invalid-email') {
+                } else if (error.message?.includes('INVALID_EMAIL')) {
                     errorMsg = 'Invalid format';
                 }
                 statusEl.textContent = '✗ ' + errorMsg;
