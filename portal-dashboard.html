@@ -146,7 +146,7 @@
 
             const stats = {
                 total: userProjects.length,
-                completed: userProjects.filter(p => p.htmlApproved && p.files.some(f => f.name.match(/\.stl$/i))).length,
+                completed: userProjects.filter(p => p.status === 'completed').length,
                 inProgress: userProjects.filter(p => p.status === 'in-progress').length,
                 awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
@@ -209,7 +209,7 @@
                                         <h3 class="project-title">${project.title}</h3>
                                         <p class="project-date">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <span class="status-badge status-${project.htmlApproved && project.files.some(f => f.name.match(/\.stl$/i)) ? 'completed' : project.status.replace('-', '')}">${project.htmlApproved && project.files.some(f => f.name.match(/\.stl$/i)) ? 'COMPLETED' : project.status.toUpperCase().replace('-', ' ')}</span>
+                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
                                 </div>
                                 <p class="project-desc">${project.description}</p>
                                 
@@ -502,9 +502,13 @@
         window.approveDesign = async () => {
             const statusEl = document.getElementById('approvalStatus');
             try {
+                // Get project to check if STL exists
+                const project = userProjects.find(p => p.id === currentApprovalProjectId);
+                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                
                 await updateDoc(doc(db, 'projects', currentApprovalProjectId), { 
                     htmlApproved: true,
-                    status: 'approved',
+                    status: hasSTL ? 'stl-ready' : 'approved',
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
@@ -725,7 +729,8 @@
                 await updateDoc(projectRef, {
                     stlDownloaded: true,
                     stlDownloadedAt: Date.now(),
-                    stlDownloadedFile: fileName
+                    stlDownloadedFile: fileName,
+                    status: 'completed'
                 });
                 console.log('STL download tracked');
             } catch (error) {
