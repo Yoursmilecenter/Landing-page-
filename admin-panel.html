@@ -537,12 +537,23 @@
                         
                         <form id="addClientForm" onsubmit="handleAddClient(event)">
                             <div class="form-group">
-                                <label class="form-label">Username *</label>
-                                <input type="text" id="clientUsername" class="form-input" placeholder="Enter username" required>
+                                <label class="form-label">Username Type *</label>
+                                <select id="usernameType" class="form-input" onchange="toggleUsernameInput()">
+                                    <option value="email">Email</option>
+                                    <option value="phone">Phone Number</option>
+                                </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="emailGroup">
                                 <label class="form-label">Email *</label>
                                 <input type="email" id="clientEmail" class="form-input" placeholder="Enter email" required>
+                            </div>
+                            <div class="form-group" id="phoneGroup" style="display:none;">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="tel" id="clientPhone" class="form-input" placeholder="+1234567890">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" id="clientFullName" class="form-input" placeholder="Enter full name" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Password *</label>
@@ -738,6 +749,7 @@
             document.body.style.overflow = 'hidden';
             document.getElementById('addClientForm').reset();
             document.getElementById('addClientStatus').className = 'status-msg';
+            toggleUsernameInput();
         };
 
         window.closeAddClientModal = () => {
@@ -745,21 +757,75 @@
             document.body.style.overflow = 'auto';
         };
 
+        window.toggleUsernameInput = () => {
+            const type = document.getElementById('usernameType').value;
+            const emailGroup = document.getElementById('emailGroup');
+            const phoneGroup = document.getElementById('phoneGroup');
+            
+            if (type === 'phone') {
+                emailGroup.style.display = 'none';
+                phoneGroup.style.display = 'block';
+                document.getElementById('clientEmail').required = false;
+                document.getElementById('clientPhone').required = true;
+            } else {
+                emailGroup.style.display = 'block';
+                phoneGroup.style.display = 'none';
+                document.getElementById('clientEmail').required = true;
+                document.getElementById('clientPhone').required = false;
+            }
+        };
+
         window.handleAddClient = async (e) => {
             e.preventDefault();
             
-            const username = document.getElementById('clientUsername').value.trim();
-            const email = document.getElementById('clientEmail').value.trim();
+            const type = document.getElementById('usernameType').value;
+            const email = type === 'email' ? document.getElementById('clientEmail').value.trim() : null;
+            const phone = type === 'phone' ? document.getElementById('clientPhone').value.trim() : null;
+            const fullName = document.getElementById('clientFullName').value.trim();
             const password = document.getElementById('clientPassword').value;
             const statusEl = document.getElementById('addClientStatus');
+
+            if (!fullName || !password || (!email && !phone)) {
+                statusEl.textContent = '✗ All fields are required';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
 
             try {
                 statusEl.textContent = 'Creating client...';
                 statusEl.className = 'status-msg active warning';
 
-                await createUserWithEmailAndPassword(auth, email, password);
+                const currentUser = auth.currentUser;
+                const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+                const secondaryAuth = getAuth(secondaryApp);
                 
-                statusEl.textContent = ' Client created successfully!';
+                let userCredential;
+                let username;
+                
+                if (type === 'phone') {
+                    const dummyEmail = `${phone.replace(/\+/g, '').replace(/\s/g, '')}@smile.local`;
+                    userCredential = await createUserWithEmailAndPassword(secondaryAuth, dummyEmail, password);
+                    username = phone;
+                } else {
+                    userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                    username = email;
+                }
+                
+                await addDoc(collection(db, 'users'), {
+                    uid: userCredential.user.uid,
+                    username: username,
+                    email: email || null,
+                    phone: phone || null,
+                    fullName: fullName,
+                    role: 'client',
+                    loginType: type,
+                    createdAt: Date.now(),
+                    createdBy: currentUser.email
+                });
+
+                await secondaryApp.delete();
+                
+                statusEl.textContent = '✓ Client created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -768,13 +834,13 @@
             } catch (error) {
                 let errorMsg = 'Error creating client';
                 if (error.code === 'auth/email-already-in-use') {
-                    errorMsg = 'Email already in use';
+                    errorMsg = 'Email/Phone already in use';
                 } else if (error.code === 'auth/weak-password') {
                     errorMsg = 'Password too weak (min 6 characters)';
                 } else if (error.code === 'auth/invalid-email') {
-                    errorMsg = 'Invalid email format';
+                    errorMsg = 'Invalid format';
                 }
-                statusEl.textContent = ' ' + errorMsg;
+                statusEl.textContent = '✗ ' + errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
