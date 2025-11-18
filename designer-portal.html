@@ -476,9 +476,6 @@
                             <div style="font-size:18px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
                             <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
                         </div>
-                        <div id="stlWarning" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; color: var(--color-error); font-size: 14px;">
-                            ⚠️ Client must approve HTML preview before you can upload STL files.
-                        </div>
                         <input type="file" id="fileInput" multiple style="display:none;">
                         <div id="fileList" class="file-list"></div>
                         <div id="uploadStatus" class="status-msg"></div>
@@ -584,14 +581,8 @@
                 return;
             }
 
-            const project = myProjects.find(p => p.id === currentProjectForUpload);
             const hasHTML = Array.from(files).some(f => f.name.match(/\.html?$/i));
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
-            
-            if (hasSTL && !project.htmlApproved) {
-                showStatus('⚠️ Cannot upload STL files until client approves HTML preview.', 'error');
-                return;
-            }
 
             btn.disabled = true;
             btn.textContent = 'Uploading...';
