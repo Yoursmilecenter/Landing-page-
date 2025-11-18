@@ -238,6 +238,10 @@
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
+                // Check if it's a permission error
+                if (error.code === 'permission-denied') {
+                    alert('Access denied. Please contact administrator.');
+                }
                 render();
             }
         }
