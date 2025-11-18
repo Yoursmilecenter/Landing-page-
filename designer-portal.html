@@ -3,13 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags -->
-    <meta name="robots" content="noindex, nofollow">
-    
     <title>Designer Panel - Smile Center</title>
     <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
+            50% { filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.8)); }
+        }
+        .header img, .header-content img {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        select, input[type="text"] {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: var(--color-text-light) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: rgba(167, 139, 250, 0.5) !important;
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        }
+        select option {
+            background-color: rgba(0, 0, 0, 0.98) !important;
+            color: var(--color-text-light) !important;
+        }
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ultra-compact-table thead {
+            background: rgba(167, 139, 250, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .ultra-compact-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-secondary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ultra-compact-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .ultra-compact-table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .ultra-compact-table tbody tr:hover {
+            background: rgba(167, 139, 250, 0.08);
+        }
+        .urgent-row {
+            background: rgba(239, 68, 68, 0.1) !important;
+            border-left: 3px solid #ef4444;
+        }
+        .vip-row {
+            background: rgba(251, 191, 36, 0.1) !important;
+            border-left: 3px solid #fbbf24;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+        }
+        .badge-urgent {
+            background: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-vip {
+            background: #fbbf24;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 11px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            margin: 0 2px;
+            background: #a78bfa;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            background: #8b5cf6;
+            transform: translateY(-1px);
+        }
+        .action-btn.upload {
+            background: #6366f1;
+        }
+        .action-btn.upload:hover {
+            background: #4f46e5;
+        }
+        .action-btn.view {
+            background: #10b981;
+        }
+        .action-btn.view:hover {
+            background: #059669;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 6px 12px;
+            background: var(--color-secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #8b5cf6;
+            transform: translateY(-1px);
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -37,14 +180,22 @@
         let currentUser = null;
         let myProjects = [];
         let filteredProjects = [];
-        let searchQuery = '';
-        let searchInputWasFocused = false;
-        let currentProjectId = null;
+        let currentProjectForFiles = null;
         
         const designers = [
             { email: 'designer1@smile.com', name: 'Designer 1' },
             { email: 'designer2@smile.com', name: 'Designer 2' },
         ];
+
+        let currentFilters = {
+            status: 'all',
+            priority: 'all',
+            sortBy: 'date-desc',
+            search: ''
+        };
+
+        let currentPage = 1;
+        let itemsPerPage = 50;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -54,34 +205,10 @@
                     return;
                 }
                 await loadData();
-                initSessionTimeout();
             } else {
                 window.location.href = 'portal-login.html';
             }
         });
-
-        // Session Timeout Management
-        let sessionTimeout;
-        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
-
-        function initSessionTimeout() {
-            resetSessionTimeout();
-            
-            // Reset timeout on user activity
-            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-            events.forEach(event => {
-                document.addEventListener(event, resetSessionTimeout, true);
-            });
-        }
-
-        function resetSessionTimeout() {
-            clearTimeout(sessionTimeout);
-            sessionTimeout = setTimeout(async () => {
-                alert('Your session has expired due to inactivity. You will be logged out.');
-                await signOut(auth);
-                window.location.href = 'portal-login.html';
-            }, TIMEOUT_DURATION);
-        }
 
         async function loadData() {
             try {
@@ -99,13 +226,10 @@
                     const files = await loadFiles(docSnap.id);
                     myProjects.push({ id: docSnap.id, ...data, files });
                 }
-                render();
+                
+                applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                // Check if it's a permission error
-                if (error.code === 'permission-denied') {
-                    alert('Access denied. Please contact administrator.');
-                }
                 render();
             }
         }
@@ -133,53 +257,95 @@
             }
         }
 
-        function formatSize(bytes, si = true, dp = 1) {
-            const thresh = si ? 1000 : 1024;
-            if (Math.abs(bytes) < thresh) return bytes + ' B';
-            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
-            let u = -1;
-            do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-            return bytes.toFixed(1) + ' ' + units[u];
-        }
-
-        function render() {
+        function applyFilters() {
             filteredProjects = myProjects.filter(p => {
-                if (searchQuery) {
-                    const searchLower = searchQuery.toLowerCase();
-                    return p.title.toLowerCase().includes(searchLower) ||
+                if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
+                if (currentFilters.priority !== 'all') {
+                    if (currentFilters.priority === 'urgent' && !p.isUrgent) return false;
+                    if (currentFilters.priority === 'vip' && !p.isVIP) return false;
+                    if (currentFilters.priority === 'normal' && (p.isUrgent || p.isVIP)) return false;
+                }
+                if (currentFilters.search) {
+                    const searchLower = currentFilters.search.toLowerCase();
+                    return p.title.toLowerCase().includes(searchLower) || 
                            p.description.toLowerCase().includes(searchLower) ||
-                           p.status.toLowerCase().includes(searchLower);
+                           p.clientEmail.toLowerCase().includes(searchLower);
                 }
                 return true;
             });
 
+            if (currentFilters.sortBy === 'date-asc') {
+                filteredProjects.sort((a, b) => a.createdAt - b.createdAt);
+            } else if (currentFilters.sortBy === 'date-desc') {
+                filteredProjects.sort((a, b) => b.createdAt - a.createdAt);
+            } else if (currentFilters.sortBy === 'name-asc') {
+                filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
+            } else if (currentFilters.sortBy === 'name-desc') {
+                filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
+            }
+
+            currentPage = 1;
+            render();
+        }
+
+        window.updateFilter = (type, value) => {
+            currentFilters[type] = value;
+            applyFilters();
+        };
+
+        window.handleSearch = (value) => {
+            currentFilters.search = value;
+            applyFilters();
+        };
+
+        function formatSize(bytes) {
+            const thresh = 1024;
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = ['KB', 'MB', 'GB'];
+            let u = -1;
+            do {
+                bytes /= thresh;
+                ++u;
+            } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
+        };
+
+        function render() {
             const stats = {
                 total: myProjects.length,
                 pending: myProjects.filter(p => p.status === 'pending').length,
                 inProgress: myProjects.filter(p => p.status === 'in-progress').length,
-                completed: myProjects.filter(p => p.status === 'completed').length
+                completed: myProjects.filter(p => p.status === 'completed').length,
+                awaiting: myProjects.filter(p => p.status === 'awaiting-client-approval').length,
+                urgent: myProjects.filter(p => p.isUrgent).length
             };
+
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageProjects = filteredProjects.slice(startIdx, endIdx);
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
-                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; background: transparent !important; box-shadow: none !important; padding: 0 !important; border: none !important;">
-                        <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border-color: rgba(167, 139, 250, 0.3);">DESIGNER</span>
-                        <div style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">DESIGNER</span>
                             <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
                     </div>
                 </div>
+                
                 <div class="main">
                     <h1 class="page-title">My Assigned Patients</h1>
-                    <p class="page-subtitle">View and manage patients assigned to you.</p>
+                    
 
-                    <div style="margin-bottom: 20px;">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 100%; max-width: 400px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
-                    </div>
-
-                    <div class="stats">
+                    <div class="stats" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="stat-card">
                             <div class="stat-label">Total Assigned</div>
                             <div class="stat-value">${stats.total}</div>
@@ -193,85 +359,125 @@
                             <div class="stat-value">${stats.inProgress}</div>
                         </div>
                         <div class="stat-card">
+                            <div class="stat-label">Awaiting Approval</div>
+                            <div class="stat-value">${stats.awaiting}</div>
+                        </div>
+                        <div class="stat-card">
                             <div class="stat-label">Completed</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
+                        <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
+                            <div class="stat-label">⚡ Urgent</div>
+                            <div class="stat-value">${stats.urgent}</div>
+                        </div>
                     </div>
 
-                    <div class="projects-list">
-                        ${filteredProjects.length > 0 ? filteredProjects.map(project => {
-                            const elapsed = Date.now() - project.createdAt;
-                            const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
-                            const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
-                            return `
-                            <div class="project-card">
-                                <div class="project-header">
-                                    <h3 class="project-title">${project.title}</h3>
-                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase()}</span>
-                                </div>
-                                <p class="project-description">${project.description}</p>
-                                <div class="project-meta">
-                                    ⏱ ${timeStr} elapsed • Created ${new Date(project.createdAt).toLocaleDateString()}
-                                </div>
+                    <div class="filter-bar">
+                        <input type="text" class="search-input" placeholder="🔍 Search patients..." 
+                               oninput="handleSearch(this.value)" value="${currentFilters.search}">
+                        <select onchange="updateFilter('status', this.value)" style="min-width: 150px;">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="awaiting-client-approval">Awaiting Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="changes-requested">Changes Requested</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <select onchange="updateFilter('priority', this.value)" style="min-width: 140px;">
+                            <option value="all">All Priorities</option>
+                            <option value="urgent">⚡ Urgent Only</option>
+                            <option value="vip">⭐ VIP Only</option>
+                            <option value="normal">Normal Only</option>
+                        </select>
+                        <select onchange="updateFilter('sortBy', this.value)" style="min-width: 140px;">
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                        </select>
+                        <select onchange="itemsPerPage = parseInt(this.value); applyFilters();" style="min-width: 120px;">
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
+                        </select>
+                        <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
+                            Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}
+                        </div>
+                    </div>
+
+                    <table class="ultra-compact-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Patient Name</th>
+                                <th style="width: 15%;">Client</th>
+                                <th style="width: 12%;">Status</th>
+                                <th style="width: 10%;">Priority</th>
+                                <th style="width: 8%;">Files</th>
+                                <th style="width: 10%;">Date</th>
+                                <th style="width: 20%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageProjects.length > 0 ? pageProjects.map(project => {
+                                const rowClass = project.isUrgent ? 'urgent-row' : (project.isVIP ? 'vip-row' : '');
+                                const elapsed = Date.now() - project.createdAt;
+                                const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+                                const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                const timeStr = days > 0 ? `${days}d ${hours}h ago` : `${hours}h ago`;
                                 
-                                <div class="files-section">
-                                    ${project.clientRemarks ? `
-                                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-error); margin-bottom: 8px;">⚠ Client Requested Changes:</h4>
-                                            <p style="color: var(--color-text-light);">${project.clientRemarks}</p>
-                                        </div>
-                                    ` : ''}
-                                    ${project.htmlApproved ? `
-                                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: var(--color-success); margin-bottom: 8px;">✅ Client Approved HTML</h4>
-                                            <p style="color: var(--color-text-light);">You can now upload STL file.</p>
-                                        </div>
-                                    ` : project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? `
-                                        <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                                            <h4 style="color: #fbbf24; margin-bottom: 8px;">⏳ Awaiting Client Approval</h4>
-                                            <p style="color: var(--color-text-light);">Client must approve HTML before STL upload.</p>
-                                        </div>
-                                    ` : ''}
-                                    <div class="files-header">
-                                        <h4>Patient Files (${project.files.length})</h4>
-                                        <button class="btn-secondary btn-small" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})">
-                                            <i class="fas fa-upload"></i> Upload Files
+                                return `
+                                <tr class="${rowClass}">
+                                    <td>
+                                        <strong>${project.title}</strong>
+                                        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">${timeStr}</div>
+                                        ${project.clientRemarks ? '<div style="font-size: 11px; color: #ef4444; margin-top: 2px;">⚠️ Changes requested</div>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.clientEmail}</td>
+                                    <td>
+                                        <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                                    </td>
+                                    <td>
+                                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                                        ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
+                                        ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">${project.files.length} files</td>
+                                    <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" title="Upload Files">
+                                            📤 Upload
                                         </button>
-                                    </div>
-                                    <div class="file-list">
-                                        ${project.files.length > 0 ? project.files.map(file => `
-                                            <div class="file-item">
-                                                <div class="file-info">
-                                                    <div class="file-icon">📄</div>
-                                                    <div>
-                                                        <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="file-actions">
-                                                    <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
-                                                </div>
-                                            </div>
-                                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
-                                    </div>
-                                </div>
-                            </div>
-                        `}).join('') : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No Patients Assigned</div><p class="page-subtitle">You have no patients currently assigned for design work.</p></div>'}
+                                        <button class="action-btn view" onclick="openFilesModal('${project.id}')" title="View Files">
+                                            📁 Files
+                                        </button>
+                                    </td>
+                                </tr>
+                            `}).join('') : '<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients assigned</td></tr>'}
+                        </tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+                        <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
                     </div>
                 </div>
-                
+
+                <!-- Upload Modal -->
                 <div id="uploadModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeUpload()">&times;</button>
                         <h2 class="modal-title">Upload Files</h2>
-                        <p class="modal-subtitle">Uploading to patient: <span id="currentProjectTitle"></span></p>
+                        <p class="modal-subtitle">Patient: <span id="currentProjectTitle"></span></p>
                         
                         <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                            <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-secondary); margin-bottom: 10px;"></i>
                             <div style="font-size:18px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
                             <div style="color:var(--color-text-secondary); font-size:14px;">or click to browse</div>
+                        </div>
+                        <div id="stlWarning" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; color: var(--color-error); font-size: 14px;">
+                            ⚠️ Client must approve HTML preview before you can upload STL files.
                         </div>
                         <input type="file" id="fileInput" multiple style="display:none;">
                         <div id="fileList" class="file-list"></div>
@@ -279,13 +485,25 @@
                         <button class="btn-primary" style="width:100%; padding:16px; margin-top:20px;" id="uploadBtn" onclick="handleUpload()">Upload Files</button>
                     </div>
                 </div>
+
+                <!-- Files Modal -->
+                <div id="filesModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closeFilesModal()">&times;</button>
+                        <h2 class="modal-title">Patient Files</h2>
+                        <p class="modal-subtitle" id="filesPatientName"></p>
+                        <div id="filesList" class="file-list"></div>
+                    </div>
+                </div>
             `;
 
+            setupUploadModal();
+        }
+
+        function setupUploadModal() {
             const fileInput = document.getElementById('fileInput');
             if (fileInput) {
-                fileInput.addEventListener('change', (e) => {
-                    renderFileList(e.target.files);
-                });
+                fileInput.addEventListener('change', (e) => renderFileList(e.target.files));
                 
                 const uploadArea = document.querySelector('#uploadModal .upload-area');
                 if (uploadArea) {
@@ -304,18 +522,6 @@
                     });
                 }
             }
-            
-            // Restore search input focus
-            if (searchInputWasFocused) {
-                setTimeout(() => {
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) {
-                        searchInput.focus();
-                        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-                    }
-                    searchInputWasFocused = false;
-                }, 0);
-            }
         }
 
         function renderFileList(files) {
@@ -331,16 +537,29 @@
                 </div>
             `).join('');
         }
-        
+
+        window.changePage = (page) => {
+            currentPage = page;
+            render();
+        };
+
+        let currentProjectForUpload = null;
         let currentPatientTitle = '';
 
         window.openUploadModal = (projectId, projectTitle, isApproved) => {
-            currentProjectId = projectId;
+            currentProjectForUpload = projectId;
             currentPatientTitle = projectTitle;
             document.getElementById('currentProjectTitle').textContent = projectTitle;
             document.getElementById('fileInput').value = '';
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('uploadStatus').className = 'status-msg';
+            
+            const warningEl = document.getElementById('stlWarning');
+            if (isApproved) {
+                warningEl.style.display = 'none';
+            } else {
+                warningEl.style.display = 'block';
+            }
             
             document.getElementById('uploadModal').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -365,9 +584,14 @@
                 return;
             }
 
-            const project = myProjects.find(p => p.id === currentProjectId);
+            const project = myProjects.find(p => p.id === currentProjectForUpload);
             const hasHTML = Array.from(files).some(f => f.name.match(/\.html?$/i));
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
+            
+            if (hasSTL && !project.htmlApproved) {
+                showStatus('⚠️ Cannot upload STL files until client approves HTML preview.', 'error');
+                return;
+            }
 
             btn.disabled = true;
             btn.textContent = 'Uploading...';
@@ -377,7 +601,7 @@
                 for (const file of files) {
                     const ext = file.name.substring(file.name.lastIndexOf('.'));
                     const newFileName = `${currentPatientTitle}${ext}`;
-                    const storageRef = ref(storage, `projects/${currentProjectId}/${newFileName}`);
+                    const storageRef = ref(storage, `projects/${currentProjectForUpload}/${newFileName}`);
                     await uploadBytesResumable(storageRef, file);
                 }
 
@@ -390,10 +614,10 @@
                 }
                 
                 if (Object.keys(updateData).length > 0) {
-                    await updateDoc(doc(db, 'projects', currentProjectId), updateData);
+                    await updateDoc(doc(db, 'projects', currentProjectForUpload), updateData);
                 }
 
-                showStatus('✅ Files uploaded!', 'success');
+                showStatus('✅ Files uploaded successfully!', 'success');
                 setTimeout(async () => {
                     closeUpload();
                     await loadData();
@@ -405,6 +629,42 @@
             }
         };
 
+        window.openFilesModal = async (projectId) => {
+            currentProjectForFiles = myProjects.find(p => p.id === projectId);
+            document.getElementById('filesPatientName').textContent = `Patient: ${currentProjectForFiles.title}`;
+            document.getElementById('filesModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            renderFilesModalList();
+        };
+
+        window.closeFilesModal = () => {
+            document.getElementById('filesModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentProjectForFiles = null;
+        };
+
+        function renderFilesModalList() {
+            const listEl = document.getElementById('filesList');
+            if (!currentProjectForFiles || !listEl) return;
+
+            listEl.innerHTML = currentProjectForFiles.files.length > 0 ? currentProjectForFiles.files.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">Preview</button>` : ''}
+                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
+                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy Link</button>
+                    </div>
+                </div>
+            `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
+        }
+
         window.removeFile = (index) => {
             const dt = new DataTransfer();
             const input = document.getElementById('fileInput');
@@ -415,23 +675,11 @@
             input.dispatchEvent(new Event('change'));
         };
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Link copied to clipboard!');
-            });
-        };
-
         function showStatus(msg, type) {
             const el = document.getElementById('uploadStatus');
             el.textContent = msg;
             el.className = `status-msg active ${type}`;
         }
-
-        window.handleSearch = (value) => {
-            searchInputWasFocused = true;
-            searchQuery = value;
-            render();
-        };
 
         window.logout = async () => {
             try {
@@ -444,3 +692,5 @@
     </script>
 </body>
 </html>
+
+
