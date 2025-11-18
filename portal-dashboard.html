@@ -149,6 +149,7 @@
                 completed: userProjects.filter(p => p.status === 'completed').length,
                 inProgress: userProjects.filter(p => p.status === 'in-progress').length,
                 awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
+                stlReady: userProjects.filter(p => p.status === 'stl-ready').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
             };
 
@@ -190,6 +191,10 @@
                         <div class="stat-card">
                             <div class="stat-label">Awaiting Approval</div>
                             <div class="stat-value">${stats.awaitingApproval}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">STL Ready</div>
+                            <div class="stat-value">${stats.stlReady}</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">Completed</div>

@@ -398,8 +398,8 @@
                             <option value="in-progress">In Progress</option>
                             <option value="awaiting-client-approval">Awaiting Approval</option>
                             <option value="approved">Approved</option>
-                            <option value="stl-ready">STL Ready</option>
                             <option value="changes-requested">Changes Requested</option>
+                            <option value="stl-ready">STL Ready</option>
                             <option value="completed">Completed</option>
                             <option value="canceled">Canceled</option>
                         </select>
@@ -465,13 +465,13 @@
                                     </td>
                                     <td>
                                         <select onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
-                                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''}>Awaiting</option>
-                                            <option value="approved" ${project.status === 'approved' ? 'selected' : ''}>Approved</option>
-                                            <option value="stl-ready" ${project.status === 'stl-ready' ? 'selected' : ''}>STL Ready</option>
-                                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''}>Changes</option>
-                                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                            <option value="pending" ${project.status === 'pending' ? 'selected' : ''} disabled>Pending</option>
+                                            <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''} disabled>In Progress</option>
+                                            <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''} disabled>Awaiting</option>
+                                            <option value="approved" ${project.status === 'approved' ? 'selected' : ''} disabled>Approved</option>
+                                            <option value="changes-requested" ${project.status === 'changes-requested' ? 'selected' : ''} disabled>Changes</option>
+                                            <option value="stl-ready" ${project.status === 'stl-ready' ? 'selected' : ''} disabled>STL Ready</option>
+                                            <option value="completed" ${project.status === 'completed' ? 'selected' : ''} disabled>Completed</option>
                                             <option value="canceled" ${project.status === 'canceled' ? 'selected' : ''}>Canceled</option>
                                         </select>
                                     </td>
