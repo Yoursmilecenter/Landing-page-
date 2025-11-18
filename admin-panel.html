@@ -189,10 +189,34 @@
                 }
                 await loadData();
                 checkUrgentReminders();
+                initSessionTimeout();
             } else {
                 window.location.href = 'portal-login.html';
             }
         });
+
+        // Session Timeout Management
+        let sessionTimeout;
+        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+        function initSessionTimeout() {
+            resetSessionTimeout();
+            
+            // Reset timeout on user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, true);
+            });
+        }
+
+        function resetSessionTimeout() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(async () => {
+                alert('Your session has expired due to inactivity. You will be logged out.');
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            }, TIMEOUT_DURATION);
+        }
 
         async function loadData() {
             try {
@@ -214,6 +238,10 @@
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
+                // Check if it's a permission error
+                if (error.code === 'permission-denied') {
+                    alert('Access denied. Please contact administrator.');
+                }
                 render();
             }
         }
@@ -326,6 +354,9 @@
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
+                            <button class="btn-secondary btn-small" onclick="window.location.href='audit-logs.html'">
+                                <i class="fas fa-clipboard-list"></i> Audit Logs
+                            </button>
                             <button class="btn-primary btn-small" onclick="openInviteClientModal()">
                                 <i class="fas fa-link"></i> Invite Client
                             </button>
@@ -781,7 +812,7 @@
                 });
 
                 // Generate invite link
-                const inviteLink = `https://yoursmilecenter.github.io/Landing-page-/portal-login.html?invite=${inviteCode}&phone=${encodeURIComponent(phone)}`;
+                const inviteLink = `https://www.smilecenter.pro/portal-login.html?invite=${inviteCode}&phone=${encodeURIComponent(phone)}`;
                 
                 document.getElementById('inviteLink').value = inviteLink;
                 document.getElementById('inviteLinkSection').style.display = 'block';

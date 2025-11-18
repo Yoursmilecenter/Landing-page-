@@ -1,0 +1,14 @@
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
+                            <button class="btn-secondary btn-small" onclick="window.location.href='audit-logs.html'">
+                                <i class="fas fa-clipboard-list"></i> Audit Logs
+                            </button>
+                            <button class="btn-primary btn-small" onclick="openInviteClientModal()">
+                                <i class="fas fa-link"></i> Invite Client
+                            </button>
+                            <button class="btn-primary btn-small" onclick="openAddClientModal()">
+                                <i class="fas fa-user-plus"></i> Add Client
+                            </button>
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>

@@ -49,10 +49,34 @@
             if (user) {
                 currentUser = user;
                 await loadData();
+                initSessionTimeout();
             } else {
                 window.location.href = 'portal-login.html';
             }
         });
+
+        // Session Timeout Management
+        let sessionTimeout;
+        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+        function initSessionTimeout() {
+            resetSessionTimeout();
+            
+            // Reset timeout on user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, true);
+            });
+        }
+
+        function resetSessionTimeout() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(async () => {
+                alert('Your session has expired due to inactivity. You will be logged out.');
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            }, TIMEOUT_DURATION);
+        }
 
         async function loadData() {
             try {
@@ -69,6 +93,10 @@
                 render();
             } catch (error) {
                 console.error('Error loading projects:', error);
+                // Check if it's a permission error
+                if (error.code === 'permission-denied') {
+                    alert('Access denied. Please contact administrator.');
+                }
                 render();
             }
         }
@@ -236,7 +264,15 @@
                                         </button>
                                     </div>
                                     <div class="file-list">
-                                        ${project.files.length > 0 ? project.files.map(file => `
+                                        ${project.files.length > 0 ? project.files
+                                            .filter(file => {
+                                                // Hide STL files if HTML not approved
+                                                if (file.name.match(/\.stl$/i) && !project.htmlApproved) {
+                                                    return false;
+                                                }
+                                                return true;
+                                            })
+                                            .map(file => `
                                             <div class="file-item">
                                                 <div class="file-info">
                                                     <div class="file-icon">

@@ -98,11 +98,12 @@
             }
 
             try {
-                await signInWithEmailAndPassword(auth, loginEmail, password);
+                const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+                const userEmail = userCredential.user.email;
                 
-                if (admins.includes(loginEmail)) {
+                if (admins.includes(userEmail)) {
                     window.location.href = 'admin-panel.html';
-                } else if (designers.includes(loginEmail)) {
+                } else if (designers.includes(userEmail)) {
                     window.location.href = 'designer-portal.html';
                 } else {
                     window.location.href = 'portal-dashboard.html';
