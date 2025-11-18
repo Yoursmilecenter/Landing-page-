@@ -14,15 +14,14 @@
 <body>
     <div class="login-container">
         <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
-        <h2 id="pageTitle" style="margin-bottom: 30px; color: var(--color-text);">Portal Login</h2>
         
         <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;">
             <div class="form-group">
-                <input type="text" id="email" class="form-input" placeholder="Username or Email" required>
+                <input type="text" id="email" class="form-input" placeholder="Username or Email" required autocomplete="username">
             </div>
             <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password" required>
+                <input type="password" id="password" class="form-input" placeholder="Password" required autocomplete="current-password">
             </div>
             <div id="loginStatus" class="status-msg"></div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
@@ -72,7 +71,6 @@
 
         if (inviteCode && invitePhone) {
             // Show invite registration form
-            document.getElementById('pageTitle').textContent = 'Complete Registration';
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('inviteForm').style.display = 'block';
             document.getElementById('invitePhone').value = invitePhone;
@@ -81,7 +79,7 @@
         window.handleLogin = async (e) => {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const statusEl = document.getElementById('loginStatus');
 
@@ -90,8 +88,12 @@
 
             let loginEmail = email;
             
+            // If only numbers (phone), convert to phone@smile.local
+            if (/^\d+$/.test(email)) {
+                loginEmail = email + '@smile.local';
+            }
             // If no @ symbol, treat as username and convert to email format
-            if (!email.includes('@')) {
+            else if (!email.includes('@')) {
                 loginEmail = email + '@smile.local';
             }
 
@@ -106,7 +108,7 @@
                     window.location.href = 'portal-dashboard.html';
                 }
             } catch (error) {
-                statusEl.textContent = '✗ Invalid credentials';
+                statusEl.textContent = 'Invalid credentials';
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -149,8 +151,8 @@
                     return;
                 }
 
-                // Create account with phone as email
-                const email = phone + '@smile.com';
+                // Create account with phone as email (using @smile.local for consistency)
+                const email = phone + '@smile.local';
                 await createUserWithEmailAndPassword(auth, email, password);
 
                 // Mark invite as used
@@ -159,7 +161,7 @@
                     usedAt: Date.now()
                 });
 
-                statusEl.textContent = '✓ Registration complete! Redirecting...';
+                statusEl.textContent = 'Registration complete! Redirecting...';
                 statusEl.className = 'status-msg active success';
 
                 setTimeout(() => {
@@ -167,13 +169,18 @@
                 }, 1500);
 
             } catch (error) {
+                console.error('Registration error:', error);
                 let errorMsg = 'Registration failed';
                 if (error.code === 'auth/email-already-in-use') {
                     errorMsg = 'Phone number already registered';
                 } else if (error.code === 'auth/weak-password') {
                     errorMsg = 'Password too weak (min 6 characters)';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMsg = 'Network error. Please check connection';
+                } else if (error.message) {
+                    errorMsg = error.message;
                 }
-                statusEl.textContent = '✗ ' + errorMsg;
+                statusEl.textContent = errorMsg;
                 statusEl.className = 'status-msg active error';
             }
         };
