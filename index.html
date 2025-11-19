@@ -6,22 +6,22 @@
     <meta name="google-site-verification" content="6xfdVAlDFaUjlClfG1zOJ0obUibt4tEJvZq-rlMYZvA">
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Smile Center Portal - Professional dental design management system for administrators, designers, and clients. Streamline your dental workflow with our secure cloud-based platform.">
-    <meta name="keywords" content="smile center, dental portal, dental design, dental lab, smile design, dental workflow, dental management, dental designers">
+    <meta name="description" content="SmileCenter Pro - Professional dental design services. Digital smile design, dental lab solutions, and precision CAD engineering for perfect dental aesthetics.">
+    <meta name="keywords" content="dental design, smile design, dental lab, CAD dental design, digital smile design, dental aesthetics, dental engineering, precision dentistry, smile center">
     <meta name="author" content="Smile Center">
     <meta name="robots" content="index, follow">
     
-    <!-- Open Graph Meta Tags (for social media) -->
-    <meta property="og:title" content="Smile Center Portal - Dental Design Management">
-    <meta property="og:description" content="Professional dental design management system for streamlined workflow and collaboration.">
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="SmileCenter Pro - Professional Dental Design Services">
+    <meta property="og:description" content="Digital smile design and precision dental lab services. Engineered for perfection.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.smilecenter.pro/">
     <meta property="og:image" content="https://www.smilecenter.pro/smile-center-logo.png">
     
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Smile Center Portal - Dental Design Management">
-    <meta name="twitter:description" content="Professional dental design management system for streamlined workflow and collaboration.">
+    <meta name="twitter:title" content="SmileCenter Pro - Professional Dental Design Services">
+    <meta name="twitter:description" content="Digital smile design and precision dental lab services. Engineered for perfection.">
     <meta name="twitter:image" content="https://www.smilecenter.pro/smile-center-logo.png">
     
     <!-- Google Analytics -->
@@ -33,13 +33,230 @@
         gtag('config', 'G-Z4P4RNT6QH');
     </script>
     
-    <title>Smile Center Portal - Professional Dental Design Management</title>
-    <link rel="stylesheet" href="style.css">
+    <title>SmileCenter Pro - Professional Dental Design | Smile Design | Dental Lab Services</title>
     <link rel="canonical" href="https://www.smilecenter.pro/">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+            50% { filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
+        }
+
+        @keyframes letterFlash {
+            0% { 
+                color: #fff;
+                text-shadow: 0 0 20px rgba(56, 189, 248, 1),
+                             0 0 30px rgba(56, 189, 248, 0.8);
+            }
+            100% { 
+                color: #38bdf8;
+                text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        /* Hidden SEO Content */
+        .seo-content {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .logo-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            cursor: pointer;
+            pointer-events: none;
+        }
+
+        .logo-container img {
+            height: 200px;
+            width: auto;
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        #headline-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 100;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .headline {
+            position: absolute;
+            font-size: 1.6em;
+            font-weight: 600;
+            color: #38bdf8;
+            opacity: 0;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .headline.typing {
+            opacity: 1;
+        }
+
+        .headline span.flash {
+            animation: letterFlash 0.3s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .logo-container img { height: 150px; }
+            .headline { font-size: 1.3em; }
+        }
+
+        @media (max-width: 480px) {
+            .logo-container img { height: 120px; }
+            .headline { font-size: 1em; }
+        }
+    </style>
 </head>
-<body>
-    <div id="landing-gateway" onclick="window.location.href='portal-login.html'">
-        <img src="smile-center-logo.png" alt="Smile Center" class="main-logo">
+<body onclick="window.location.href='portal-login.html'">
+
+    <!-- Hidden SEO Content -->
+    <div class="seo-content">
+        <h1>Professional Dental Design Services - SmileCenter Pro</h1>
+        <h2>Digital Smile Design and Dental Lab Solutions</h2>
+        <p>SmileCenter Pro offers professional dental design services including digital smile design, CAD dental engineering, and precision dental lab solutions. Our expert team delivers engineered perfection for dental aesthetics, combining artistry with digital mastery for exceptional results.</p>
+        <p>Services: Dental design, smile design, dental lab, CAD design, digital dentistry, dental aesthetics, precision engineering, smile transformation.</p>
     </div>
+
+    <div id="headline-container"></div>
+
+    <div class="logo-container">
+        <img src="smile-center-logo.png" alt="SmileCenter Pro">
+    </div>
+
+    <script>
+        const sentences = [
+            "Design your destiny.|Start with your smile.",
+            "Engineered for perfection.|Designed for life.",
+            "Don't just change your smile.|Change your story.",
+            "Where vision meets|absolute execution.",
+            "The blueprint for your|brilliant future.",
+            "Confidence crafted.|Every dimension perfected.",
+            "The future of aesthetics|is precisely crafted here.",
+            "Artistry elevated by|unrelenting digital mastery.",
+            "Precision without compromise.|That is the smile center standard.",
+            "Your perfect smile is a science.|We execute the formula.",
+            "Beyond expectation.|Experience the transformation you deserve.",
+            "The definitive resource|for dental design excellence.",
+            "Every detail matters.|Every smile unforgettable.",
+            "Stop dreaming.|Start designing.",
+            "Redefining dental confidence,|one design at a time."
+        ];
+
+        const container = document.getElementById('headline-container');
+        let currentIndex = 0;
+
+        function typeHeadline(element, text, callback) {
+            let charIndex = 0;
+            element.innerHTML = '';
+            element.classList.add('typing');
+            
+            const lines = text.split('|');
+            const fullText = lines.join('\n');
+            
+            const typeInterval = setInterval(() => {
+                if (charIndex < fullText.length) {
+                    const char = fullText[charIndex];
+                    const span = document.createElement('span');
+                    
+                    if (char === '\n') {
+                        element.appendChild(document.createElement('br'));
+                    } else {
+                        span.textContent = char;
+                        span.className = 'flash';
+                        element.appendChild(span);
+                    }
+                    
+                    charIndex++;
+                } else {
+                    clearInterval(typeInterval);
+                    if (callback) callback();
+                }
+            }, 50);
+        }
+
+        function showHeadline() {
+            const headline = document.createElement('div');
+            headline.className = 'headline';
+            
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const centerX = viewportWidth / 2;
+            const centerY = viewportHeight / 2;
+            
+            const logoWidth = 400;
+            const logoHeight = 350;
+            
+            let randomX, randomY;
+            let attempts = 0;
+            
+            do {
+                randomX = Math.random() * (viewportWidth - 700);
+                randomY = Math.random() * (viewportHeight - 100);
+                
+                if (randomX < 20) randomX = 20;
+                if (randomY < 20) randomY = 20;
+                
+                const headlineRight = randomX + 700;
+                const headlineBottom = randomY + 100;
+                
+                const logoLeft = centerX - logoWidth / 2;
+                const logoRight = centerX + logoWidth / 2;
+                const logoTop = centerY - logoHeight / 2;
+                const logoBottom = centerY + logoHeight / 2;
+                
+                const overlaps = !(headlineRight < logoLeft || 
+                                   randomX > logoRight || 
+                                   headlineBottom < logoTop || 
+                                   randomY > logoBottom);
+                
+                if (!overlaps) break;
+                attempts++;
+            } while (attempts < 100);
+            
+            headline.style.left = randomX + 'px';
+            headline.style.top = randomY + 'px';
+            
+            container.appendChild(headline);
+            
+            typeHeadline(headline, sentences[currentIndex], () => {
+                setTimeout(() => {
+                    headline.style.transition = 'opacity 0.5s';
+                    headline.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        headline.remove();
+                    }, 500);
+                }, 2000);
+            });
+
+            currentIndex = (currentIndex + 1) % sentences.length;
+        }
+
+        showHeadline();
+        setInterval(showHeadline, 5000);
+    </script>
 </body>
 </html>
