@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Patients Dashboard - Smile Center Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Hidden SEO Content */
+        .seo-content {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+        
+        /* Additional compact table styling */
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ultra-compact-table thead {
+            background: rgba(56, 189, 248, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .ultra-compact-table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ultra-compact-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .ultra-compact-table tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .status-awaitingclientapproval { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-changesrequested { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-stlready { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-completed { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        .action-btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--color-primary);
+            color: white;
+            transition: all 0.2s;
+        }
+        .action-btn-sm:hover {
+            opacity: 0.8;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .files-count {
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hidden SEO Content -->
+    <div class="seo-content">
+        <h1>Dental Patient Management Dashboard - SmileCenter Pro</h1>
+        <h2>Track Your Dental Design Cases and STL Files</h2>
+        <p>Manage your dental patient designs with SmileCenter Pro's client portal. View case status, approve HTML previews, and download final STL files for your dental practice. Professional dental design workflow management with real-time case tracking.</p>
+        <p>Features: Patient case tracking, design approval, STL file downloads, dental workflow management, case status updates, client portal.</p>
+    </div>
+
+    <div id="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span style="color: var(--color-text-secondary); font-size: 14px;">client@example.com</span>
+                    <button class="logout-btn">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main">
+            <!-- Page Header -->            <div class="section-header">
+                <div>
+                    <h1 class="page-title">Patients</h1>
+                </div>
+                <button class="btn-primary">
+                    <i class="fas fa-plus"></i> New Patient
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="filter-bar">
+                <input type="text" class="form-input" placeholder="🔍 Search patients by name, status, or date..." style="flex: 1; max-width: 600px; padding: 10px 16px;">
+                <select class="form-input" style="width: 180px;">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="awaiting-client-approval">Awaiting Approval</option>
+                    <option value="approved">Approved</option>
+                    <option value="stl-ready">STL Ready</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Patients</div>
+                    <div class="stat-value">12</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value">4</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Awaiting Approval</div>
+                    <div class="stat-value">2</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">STL Ready</div>
+                    <div class="stat-value">3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-value">3</div>
+                </div>
+            </div>
+
+            <!-- Compact Table -->
+            <div style="background: var(--color-card); border-radius: 12px; overflow: hidden;">
+                <table class="ultra-compact-table">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Files</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>John Smith</strong></td>
+                            <td>Full arch upper restoration</td>
+                            <td><span class="status-pill status-awaitingclientapproval">AWAITING APPROVAL</span></td>
+                            <td>Nov 15, 2025</td>
+                            <td><span class="files-count">2 HTML, 0 STL</span></td>
+                            <td>
+                                <button class="action-btn-sm"><i class="fas fa-eye"></i> View</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sarah Johnson</strong></td>
+                            <td>Anterior veneers design #8-9</td>
+                            <td><span class="status-pill status-stlready">STL READY</span></td>
+                            <td>Nov 12, 2025</td>
+                            <td><span class="files-count">1 HTML, 3 STL</span></td>
+                            <td>
+                                <button class="action-btn-sm"><i class="fas fa-download"></i> Download</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Michael Brown</strong></td>
+                            <td>Crown #14 preparation</td>
+                            <td><span class="status-pill status-inprogress">IN PROGRESS</span></td>
+                            <td>Nov 10, 2025</td>
+                            <td><span class="files-count">0 HTML, 0 STL</span></td>
+                            <td>
+                                <button class="action-btn-sm" disabled style="opacity: 0.4; cursor: not-allowed;">Waiting</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Emily Davis</strong></td>
+                            <td>Implant planning case</td>
+                            <td><span class="status-pill status-approved">APPROVED</span></td>
+                            <td>Nov 8, 2025</td>
+                            <td><span class="files-count">1 HTML, 0 STL</span></td>
+                            <td>
+                                <button class="action-btn-sm">Waiting STL</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Robert Wilson</strong></td>
+                            <td>Bridge #3-5 restoration</td>
+                            <td><span class="status-pill status-completed">COMPLETED</span></td>
+                            <td>Nov 5, 2025</td>
+                            <td><span class="files-count">1 HTML, 2 STL</span></td>
+                            <td>
+                                <button class="action-btn-sm"><i class="fas fa-check"></i> Done</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
