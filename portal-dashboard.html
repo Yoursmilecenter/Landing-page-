@@ -3,15 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags -->
     <meta name="robots" content="noindex, nofollow">
-    
-    <title>Dashboard - Smile Center Portal</title>
+    <title>Patients Dashboard - Smile Center Portal</title>
     <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Hidden SEO Content */
+        .seo-content {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+        
+        /* Compact table styling */
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ultra-compact-table thead {
+            background: rgba(56, 189, 248, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .ultra-compact-table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ultra-compact-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .ultra-compact-table tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .status-awaitingclientapproval { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-changesrequested { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-stlready { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-completed { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        .action-btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--color-primary);
+            color: white;
+            transition: all 0.2s;
+            margin: 2px;
+        }
+        .action-btn-sm:hover {
+            opacity: 0.8;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .files-count {
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Hidden SEO Content -->
+    <div class="seo-content">
+        <h1>Dental Patient Management Dashboard - SmileCenter Pro</h1>
+        <h2>Track Your Dental Design Cases and STL Files</h2>
+        <p>Manage your dental patient designs with SmileCenter Pro's client portal. View case status, approve HTML previews, and download final STL files for your dental practice. Professional dental design workflow management with real-time case tracking.</p>
+        <p>Features: Patient case tracking, design approval, STL file downloads, dental workflow management, case status updates, client portal.</p>
+    </div>
+    
     <div id="app">
         <div class="header-content">
             <div class="logo">Loading...</div>
@@ -167,16 +255,15 @@
                 <div class="main">
                     <div class="section-header">
                         <div>
-                            <h1 class="page-title">My Patients</h1>
-                            <p class="page-subtitle">View and manage your patient designs.</p>
+                            <h1 class="page-title">Patients</h1>
                         </div>
                         <button class="btn-primary" onclick="openNewProjectModal()">
                             <i class="fas fa-plus"></i> New Patient
                         </button>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients..." style="width: 100%; max-width: 400px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients by name, status, or date..." style="flex: 1; max-width: 600px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
                     </div>
 
                     <div class="stats">
@@ -206,108 +293,48 @@
                         </div>
                     </div>
 
-                    <div class="projects-list">
-                        ${filteredProjects.length > 0 ? filteredProjects.map(project => `
-                            <div class="project-card">
-                                <div class="project-header">
-                                    <div>
-                                        <h3 class="project-title">${project.title}</h3>
-                                        <p class="project-date">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                    <span class="status-badge status-${project.status.replace('-', '')}">${project.status.toUpperCase().replace('-', ' ')}</span>
-                                </div>
-                                <p class="project-desc">${project.description}</p>
-                                
-                                <div class="files-section">
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                                        <div class="upload-section">
-                                            <h4 class="upload-section-title">Design Preview (HTML)</h4>
-                                            ${project.files.filter(f => f.name.match(/\.html?$/i)).length > 0 ? 
-                                                project.files.filter(f => f.name.match(/\.html?$/i)).map(file => `
-                                                    <div class="file-item">
-                                                        <div class="file-info">
-                                                            <div class="file-icon">📄</div>
-                                                            <div>
-                                                                <div class="file-name">${file.name}</div>
-                                                                <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
-                                                            </div>
-                                                        </div>
-                                                        <button class="btn-view" onclick="viewHtmlForApproval('${project.id}', '${file.url}', '${file.name}')">Preview & Review</button>
-                                                    </div>
-                                                `).join('') 
-                                                : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No preview uploaded yet</p>'}
-                                        </div>
-                                        
-                                        <div class="upload-section">
-                                            <h4 class="upload-section-title">Final Files (STL)</h4>
-                                            ${project.htmlApproved ? 
-                                                (project.files.filter(f => f.name.match(/\.stl$/i)).length > 0 ?
-                                                    project.files.filter(f => f.name.match(/\.stl$/i)).map(file => `
-                                                        <div class="file-item">
-                                                            <div class="file-info">
-                                                                <div class="file-icon">📄</div>
-                                                                <div>
-                                                                    <div class="file-name">${file.name}</div>
-                                                                    <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="file-actions">
-                                                                <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                                                                <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank" onclick="trackStlDownload('${project.id}', '${file.name}')">Download</a>
-                                                            </div>
-                                                        </div>
-                                                    `).join('')
-                                                    : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">STL file will appear after designer upload</p>')
-                                                : '<p style="color: var(--color-warning); padding: 20px; text-align: center;">⚠ Approve HTML preview first to unlock STL files</p>'}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="files-header" style="margin-top: 30px;">
-                                        <h4>All Patient Files (${project.files.length})</h4>
-                                        <button class="btn-secondary btn-small" onclick="openClientUploadModal('${project.id}', '${project.title}')">
-                                            <i class="fas fa-upload"></i> Upload Files
-                                        </button>
-                                    </div>
-                                    <div class="file-list">
-                                        ${project.files.length > 0 ? project.files
-                                            .filter(file => {
-                                                // Hide STL files if HTML not approved
-                                                if (file.name.match(/\.stl$/i) && !project.htmlApproved) {
-                                                    return false;
-                                                }
-                                                return true;
-                                            })
-                                            .map(file => `
-                                            <div class="file-item">
-                                                <div class="file-info">
-                                                    <div class="file-icon">
-                                                        ${file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? '🖼' : 
-                                                          file.name.match(/\.(pdf)$/i) ? '📄' :
-                                                          file.name.match(/\.(html|htm)$/i) ? '🌐' :
-                                                          file.name.match(/\.(zip|rar)$/i) ? '📦' : '📄'}
-                                                    </div>
-                                                    <div>
-                                                        <div class="file-name">${file.name}</div>
-                                                        <div class="file-meta">${formatSize(file.size)} • ${file.date}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="file-actions">
-                                                    ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="viewHtmlFile('${file.url}', '${file.name}')">Preview</button>` : ''}
-                                                    <button class="btn-view" onclick="copyLink('${file.url}')">Copy Link</button>
-                                                    <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
-                                                </div>
-                                            </div>
-                                        `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files uploaded yet</p>'}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('') : `
-                            <div class="empty">
-                                <div class="empty-icon">📋</div>
-                                <div class="empty-title">No Patients Yet</div>
-                                <p class="empty-desc">Your patients will appear here once they are created.</p>
-                            </div>
-                        `}
+                    <div style="background: var(--color-card); border-radius: 12px; overflow: hidden;">
+                        <table class="ultra-compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Files</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredProjects.length > 0 ? filteredProjects.map(project => {
+                                    const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
+                                    const stlCount = project.files.filter(f => f.name.match(/\.stl$/i)).length;
+                                    return \`
+                                        <tr style="cursor: pointer;">
+                                            <td><strong>\${project.title}</strong></td>
+                                            <td>\${project.description}</td>
+                                            <td><span class="status-pill status-\${project.status.replace(/-/g, '')}">\${project.status.toUpperCase().replace(/-/g, ' ')}</span></td>
+                                            <td>\${new Date(project.createdAt).toLocaleDateString()}</td>
+                                            <td><span class="files-count">\${htmlCount} HTML, \${stlCount} STL</span></td>
+                                            <td><button class="action-btn-sm" onclick="openProjectCard('\${project.id}')"><i class="fas fa-eye"></i> View</button></td>
+                                        </tr>
+                                    \`;
+                                }).join('') : \`
+                                    <tr><td colspan="6" style="text-align: center; padding: 40px;">
+                                        <div style="font-size: 48px;">📋</div>
+                                        <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">No Patients Yet</div>
+                                        <p style="color: var(--color-text-secondary);">Your patients will appear here once they are created.</p>
+                                    </td></tr>
+                                \`}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="projectCardModal" class="modal">
+                    <div class="modal-content large" style="max-width: 1200px;">
+                        <button class="close" onclick="closeProjectCard()">&times;</button>
+                        <div id="projectCardContent"></div>
                     </div>
                 </div>
 
