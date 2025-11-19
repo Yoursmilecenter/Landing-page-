@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Patients Dashboard - Smile Center Portal</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Hidden SEO Content */
+        .seo-content {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+        
+        /* Compact table styling */
+        .ultra-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ultra-compact-table thead {
+            background: rgba(56, 189, 248, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .ultra-compact-table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .ultra-compact-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .ultra-compact-table tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .status-awaitingclientapproval { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-changesrequested { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-stlready { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-completed { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        .action-btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: var(--color-primary);
+            color: white;
+            transition: all 0.2s;
+            margin: 2px;
+        }
+        .action-btn-sm:hover {
+            opacity: 0.8;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .files-count {
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hidden SEO Content -->
+    <div class="seo-content">
+        <h1>Dental Patient Management Dashboard - SmileCenter Pro</h1>
+        <h2>Track Your Dental Design Cases and STL Files</h2>
+        <p>Manage your dental patient designs with SmileCenter Pro's client portal. View case status, approve HTML previews, and download final STL files for your dental practice. Professional dental design workflow management with real-time case tracking.</p>
+        <p>Features: Patient case tracking, design approval, STL file downloads, dental workflow management, case status updates, client portal.</p>
+    </div>
+    
+    <div id="app">
+        <div class="header-content">
+            <div class="logo">Loading...</div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+            authDomain: "smile-center-7c6f5.firebaseapp.com",
+            projectId: "smile-center-7c6f5",
+            storageBucket: "smile-center-7c6f5.firebasestorage.app",
+            messagingSenderId: "517098616907",
+            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let userProjects = [];
+        let filteredProjects = [];
+        let searchQuery = '';
+        let searchInputWasFocused = false;
+        let currentProjectId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadData();
+                initSessionTimeout();
+            } else {
+                window.location.href = 'portal-login.html';
+            }
+        });
+
+        // Session Timeout Management
+        let sessionTimeout;
+        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+        function initSessionTimeout() {
+            resetSessionTimeout();
+            
+            // Reset timeout on user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetSessionTimeout, true);
+            });
+        }
+
+        function resetSessionTimeout() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(async () => {
+                alert('Your session has expired due to inactivity. You will be logged out.');
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            }, TIMEOUT_DURATION);
+        }
+
+        async function loadData() {
+            try {
+                const projectsRef = collection(db, 'projects');
+                const q = query(projectsRef, where('clientEmail', '==', currentUser.email), orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                
+                userProjects = [];
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const files = await loadFiles(doc.id);
+                    userProjects.push({ id: doc.id, ...data, files });
+                }
+                render();
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                // Check if it's a permission error
+                if (error.code === 'permission-denied') {
+                    alert('Access denied. Please contact administrator.');
+                }
+                render();
+            }
+        }
+
+        async function loadFiles(projectId) {
+            try {
+                const filesRef = ref(storage, `projects/${projectId}`);
+                const list = await listAll(filesRef);
+                const files = await Promise.all(
+                    list.items.map(async (item) => {
+                        const url = await getDownloadURL(item);
+                        const meta = await getMetadata(item);
+                        return {
+                            name: item.name,
+                            url,
+                            path: item.fullPath,
+                            size: meta.size,
+                            date: new Date(meta.timeCreated).toLocaleDateString()
+                        };
+                    })
+                );
+                return files;
+            } catch {
+                return [];
+            }
+        }
+
+        function formatSize(bytes, si = true, dp = 1) {
+            const thresh = si ? 1000 : 1024;
+            if (Math.abs(bytes) < thresh) return bytes + ' B';
+            const units = si ? ['kB', 'MB', 'GB', 'TB'] : ['KiB', 'MiB', 'GiB', 'TiB'];
+            let u = -1;
+            do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+            return bytes.toFixed(1) + ' ' + units[u];
+        }
+
+        function render() {
+            filteredProjects = userProjects.filter(p => {
+                if (searchQuery) {
+                    const searchLower = searchQuery.toLowerCase();
+                    return p.title.toLowerCase().includes(searchLower) ||
+                           p.description.toLowerCase().includes(searchLower) ||
+                           p.status.toLowerCase().includes(searchLower);
+                }
+                return true;
+            });
+
+            const stats = {
+                total: userProjects.length,
+                completed: userProjects.filter(p => p.status === 'completed').length,
+                inProgress: userProjects.filter(p => p.status === 'in-progress').length,
+                awaitingApproval: userProjects.filter(p => p.status === 'awaiting-client-approval').length,
+                stlReady: userProjects.filter(p => p.status === 'stl-ready').length,
+                totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
+            };
+
+            document.getElementById('app').innerHTML = `
+                <div class="header">
+                    <div class="header-content">
+                        <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; background: transparent !important; box-shadow: none !important; padding: 0 !important; border: none !important;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main">
+                    <div class="section-header">
+                        <div>
+                            <h1 class="page-title">Patients</h1>
+                        </div>
+                        <button class="btn-primary" onclick="openNewProjectModal()">
+                            <i class="fas fa-plus"></i> New Patient
+                        </button>
+                    </div>
+
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients by name, status, or date..." style="flex: 1; max-width: 600px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Patients</div>
+                            <div class="stat-value">${stats.total}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">In Progress</div>
+                            <div class="stat-value">${stats.inProgress}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Awaiting Approval</div>
+                            <div class="stat-value">${stats.awaitingApproval}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">STL Ready</div>
+                            <div class="stat-value">${stats.stlReady}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Completed</div>
+                            <div class="stat-value">${stats.completed}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Files</div>
+                            <div class="stat-value">${stats.totalFiles}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--color-card); border-radius: 12px; overflow: hidden;">
+                        <table class="ultra-compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Files</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredProjects.length > 0 ? filteredProjects.map(project => {
+                                    const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
+                                    const stlCount = project.files.filter(f => f.name.match(/\.stl$/i)).length;
+                                    return \`
+                                        <tr style="cursor: pointer;">
+                                            <td><strong>\${project.title}</strong></td>
+                                            <td>\${project.description}</td>
+                                            <td><span class="status-pill status-\${project.status.replace(/-/g, '')}">\${project.status.toUpperCase().replace(/-/g, ' ')}</span></td>
+                                            <td>\${new Date(project.createdAt).toLocaleDateString()}</td>
+                                            <td><span class="files-count">\${htmlCount} HTML, \${stlCount} STL</span></td>
+                                            <td><button class="action-btn-sm" onclick="openProjectCard('\${project.id}')"><i class="fas fa-eye"></i> View</button></td>
+                                        </tr>
+                                    \`;
+                                }).join('') : \`
+                                    <tr><td colspan="6" style="text-align: center; padding: 40px;">
+                                        <div style="font-size: 48px;">📋</div>
+                                        <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">No Patients Yet</div>
+                                        <p style="color: var(--color-text-secondary);">Your patients will appear here once they are created.</p>
+                                    </td></tr>
+                                \`}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="projectCardModal" class="modal">
+                    <div class="modal-content large" style="max-width: 1200px;">
+                        <button class="close" onclick="closeProjectCard()">&times;</button>
+                        <div id="projectCardContent"></div>
+                    </div>
+                </div>
+
+                <div id="previewModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closePreview()">&times;</button>
+                        <h2 class="modal-title">HTML Preview</h2>
+                        <p class="modal-subtitle" id="previewFileName"></p>
+                        <iframe id="previewFrame" class="preview-iframe"></iframe>
+                        <div style="text-align: center; margin-top: 16px;">
+                            <button class="btn-primary" onclick="closePreview()">Close Preview</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="approvalModal" class="modal">
+                    <div class="modal-content large">
+                        <button class="close" onclick="closeApproval()">&times;</button>
+                        <h2 class="modal-title">Review Design Preview</h2>
+                        <p class="modal-subtitle" id="approvalFileName"></p>
+                        <iframe id="approvalFrame" class="preview-iframe"></iframe>
+                        <div class="approval-section">
+                            <h3 style="margin-bottom: 16px;">Your Decision:</h3>
+                            <div class="approval-options">
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">⚠ Request Changes</button>
+                            </div>
+                            <div id="rejectForm" style="display: none; margin-top: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
+                                <textarea id="clientRemarks" class="approval-comment" placeholder="Please describe the changes you'd like..."></textarea>
+                                <button class="btn-primary" onclick="submitRejection()" style="width: 100%;">Submit Feedback</button>
+                            </div>
+                            <div id="approvalStatus" class="status-msg"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="newProjectModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeNewProject()">&times;</button>
+                        <h2 class="modal-title">Create New Patient</h2>
+                        <form id="newProjectForm" onsubmit="createProject(event)">
+                            <div class="form-group">
+                                <label class="form-label">Patient Name *</label>
+                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter patient name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Description *</label>
+                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter patient description" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Upload Files (Optional)</label>
+                                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
+                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
+                                    <div style="color:var(--color-text-secondary); font-size:13px;">or click to browse</div>
+                                </div>
+                                <input type="file" id="fileInput" multiple style="display:none;">
+                                <div id="fileList" class="file-list" style="margin-top: 12px;"></div>
+                            </div>
+                            <div id="createStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Patient</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="clientUploadModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeClientUpload()">&times;</button>
+                        <h2 class="modal-title">Upload Files to Patient</h2>
+                        <p class="modal-subtitle">Patient: <span id="currentUploadPatientTitle"></span></p>
+                        
+                        <div class="upload-area" id="clientUploadArea" onclick="document.getElementById('clientFileInput').click()">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
+                            <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
+                            <div style="color:var(--color-text-secondary); font-size:13px;">or click to browse</div>
+                        </div>
+                        <input type="file" id="clientFileInput" multiple style="display:none;">
+                        <div id="clientFileList" class="file-list" style="margin-top: 12px;"></div>
+                        <div id="clientUploadStatus" class="status-msg"></div>
+                        <button class="btn-primary" style="width:100%; padding:16px; margin-top:20px;" id="clientUploadBtn" onclick="handleClientUpload()">Upload Files</button>
+                    </div>
+                </div>
+            `;
+
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            
+            fileInput.addEventListener('change', (e) => renderFileList(e.target.files));
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--color-primary)';
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            });
+
+            const clientFileInput = document.getElementById('clientFileInput');
+            const clientUploadArea = document.getElementById('clientUploadArea');
+            
+            if (clientFileInput) {
+                clientFileInput.addEventListener('change', (e) => renderClientFileList(e.target.files));
+            }
+            
+            if (clientUploadArea) {
+                clientUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    clientUploadArea.style.borderColor = 'var(--color-primary)';
+                });
+                clientUploadArea.addEventListener('dragleave', () => {
+                    clientUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                });
+                clientUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    clientUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    clientFileInput.files = e.dataTransfer.files;
+                    clientFileInput.dispatchEvent(new Event('change'));
+                });
+            }
+            
+            // Restore search input focus
+            if (searchInputWasFocused) {
+                setTimeout(() => {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+                    }
+                    searchInputWasFocused = false;
+                }, 0);
+            }
+        }
+
+        function renderFileList(files) {
+            const listEl = document.getElementById('fileList');
+            if (!listEl || files.length === 0) {
+                if (listEl) listEl.innerHTML = '';
+                return;
+            }
+            listEl.innerHTML = Array.from(files).map((file, i) => `
+                <div class="file-list-item">
+                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <button class="btn-icon" onclick="removeFile(${i})" type="button">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.removeFile = (index) => {
+            const dt = new DataTransfer();
+            const input = document.getElementById('fileInput');
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            files.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        };
+
+        window.copyLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        };
+
+        let currentApprovalProjectId = null;
+
+        window.viewHtmlForApproval = (projectId, url, filename) => {
+            currentApprovalProjectId = projectId;
+            document.getElementById('approvalFileName').textContent = `File: ${filename}`;
+            document.getElementById('approvalFrame').src = url;
+            document.getElementById('approvalModal').classList.add('active');
+            document.getElementById('rejectForm').style.display = 'none';
+            document.getElementById('approvalStatus').className = 'status-msg';
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeApproval = () => {
+            document.getElementById('approvalModal').classList.remove('active');
+            document.getElementById('approvalFrame').src = '';
+            document.getElementById('clientRemarks').value = '';
+            document.body.style.overflow = 'auto';
+            currentApprovalProjectId = null;
+        };
+
+        window.showRejectForm = () => {
+            document.getElementById('rejectForm').style.display = 'block';
+        };
+
+        window.approveDesign = async () => {
+            const statusEl = document.getElementById('approvalStatus');
+            try {
+                // Get project to check if STL exists
+                const project = userProjects.find(p => p.id === currentApprovalProjectId);
+                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                
+                await updateDoc(doc(db, 'projects', currentApprovalProjectId), { 
+                    htmlApproved: true,
+                    status: hasSTL ? 'stl-ready' : 'approved',
+                    clientRemarks: null,
+                    approvedAt: Date.now()
+                });
+                statusEl.textContent = '✅ Thank you for your approval!';
+                statusEl.className = 'status-msg active success';
+                setTimeout(() => {
+                    closeApproval();
+                    loadData();
+                }, 2000);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.submitRejection = async () => {
+            const remarks = document.getElementById('clientRemarks').value.trim();
+            const statusEl = document.getElementById('approvalStatus');
+            
+            if (!remarks) {
+                statusEl.textContent = 'Please enter your feedback';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, 'projects', currentApprovalProjectId), { 
+                    htmlApproved: false,
+                    status: 'changes-requested',
+                    clientRemarks: remarks,
+                    remarksAt: Date.now()
+                });
+                statusEl.textContent = '✅ Feedback sent to designer';
+                statusEl.className = 'status-msg active success';
+                setTimeout(() => {
+                    closeApproval();
+                    loadData();
+                }, 2000);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.openNewProjectModal = () => {
+            document.getElementById('newProjectModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeNewProject = () => {
+            document.getElementById('newProjectModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('newProjectForm').reset();
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('createStatus').className = 'status-msg';
+        };
+
+        window.createProject = async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('projectTitle').value;
+            const description = document.getElementById('projectDescription').value;
+            const files = document.getElementById('fileInput').files;
+            const statusEl = document.getElementById('createStatus');
+
+            try {
+                const docRef = await addDoc(collection(db, 'projects'), {
+                    title,
+                    clientEmail: currentUser.email,
+                    description,
+                    status: 'pending',
+                    assignedDesignerEmail: null,
+                    htmlApproved: false,
+                    clientRemarks: null,
+                    createdAt: Date.now()
+                });
+
+                if (files.length > 0) {
+                    statusEl.textContent = 'Patient created! Uploading files...';
+                    statusEl.className = 'status-msg active warning';
+                    
+                    for (const file of files) {
+                        const storageRef = ref(storage, `projects/${docRef.id}/${file.name}`);
+                        await uploadBytesResumable(storageRef, file);
+                    }
+                }
+
+                statusEl.textContent = '✅ Patient created successfully!';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(() => {
+                    closeNewProject();
+                    loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.viewHtmlFile = (url, filename) => {
+            document.getElementById('previewFileName').textContent = `File: ${filename}`;
+            document.getElementById('previewFrame').src = url;
+            document.getElementById('previewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closePreview = () => {
+            document.getElementById('previewModal').classList.remove('active');
+            document.getElementById('previewFrame').src = '';
+            document.body.style.overflow = 'auto';
+        };
+
+        let currentUploadProjectId = null;
+        let currentUploadPatientTitle = '';
+
+        window.openClientUploadModal = (projectId, patientTitle) => {
+            currentUploadProjectId = projectId;
+            currentUploadPatientTitle = patientTitle;
+            document.getElementById('currentUploadPatientTitle').textContent = patientTitle;
+            document.getElementById('clientFileInput').value = '';
+            document.getElementById('clientFileList').innerHTML = '';
+            document.getElementById('clientUploadStatus').className = 'status-msg';
+            document.getElementById('clientUploadModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeClientUpload = () => {
+            document.getElementById('clientUploadModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('clientUploadStatus').className = 'status-msg';
+            document.getElementById('clientFileList').innerHTML = '';
+            document.getElementById('clientFileInput').value = '';
+        };
+
+        function renderClientFileList(files) {
+            const listEl = document.getElementById('clientFileList');
+            if (!listEl || files.length === 0) {
+                if (listEl) listEl.innerHTML = '';
+                return;
+            }
+            listEl.innerHTML = Array.from(files).map((file, i) => `
+                <div class="file-list-item">
+                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <button class="btn-icon" onclick="removeClientFile(${i})" type="button">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.removeClientFile = (index) => {
+            const dt = new DataTransfer();
+            const input = document.getElementById('clientFileInput');
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            files.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+        };
+
+        window.handleClientUpload = async () => {
+            const input = document.getElementById('clientFileInput');
+            const files = input.files;
+            const btn = document.getElementById('clientUploadBtn');
+            const statusEl = document.getElementById('clientUploadStatus');
+
+            if (files.length === 0) {
+                statusEl.textContent = 'Please select at least one file.';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+            statusEl.textContent = 'Starting upload...';
+            statusEl.className = 'status-msg active warning';
+
+            try {
+                for (const file of files) {
+                    const storageRef = ref(storage, `projects/${currentUploadProjectId}/${file.name}`);
+                    await uploadBytesResumable(storageRef, file);
+                }
+
+                statusEl.textContent = '✅ Files uploaded successfully!';
+                statusEl.className = 'status-msg active success';
+                
+                setTimeout(async () => {
+                    closeClientUpload();
+                    await loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+                btn.disabled = false;
+                btn.textContent = 'Upload Files';
+            }
+        };
+
+        window.handleSearch = (value) => {
+            searchInputWasFocused = true;
+            searchQuery = value;
+            render();
+        };
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'portal-login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+
+        window.trackStlDownload = async (projectId, fileName) => {
+            try {
+                const projectRef = doc(db, 'projects', projectId);
+                await updateDoc(projectRef, {
+                    stlDownloaded: true,
+                    stlDownloadedAt: Date.now(),
+                    stlDownloadedFile: fileName,
+                    status: 'completed'
+                });
+                console.log('STL download tracked');
+            } catch (error) {
+                console.error('Error tracking download:', error);
+            }
+        };
+    </script>
+
+    <!-- WhatsApp Float Button -->
+    <a href="https://wa.me/972559339666?text=Hello%20Smile%20Center!" 
+       class="whatsapp-float" 
+       target="_blank" 
+       aria-label="Chat on WhatsApp">
+        <svg viewBox="0 0 32 32" width="32" height="32">
+            <path fill="currentColor" d="M16 0c-8.837 0-16 7.163-16 16 0 2.825 0.737 5.607 2.137 8.048l-2.137 7.952 7.933-2.127c2.42 1.37 5.173 2.127 8.067 2.127 8.837 0 16-7.163 16-16s-7.163-16-16-16zM16 29.467c-2.482 0-4.908-0.646-7.07-1.87l-0.507-0.292-5.247 1.408 1.417-5.263-0.315-0.528c-1.331-2.217-2.036-4.773-2.036-7.389 0-7.842 6.384-14.226 14.226-14.226s14.226 6.384 14.226 14.226c0 7.842-6.384 14.226-14.226 14.226zM22.923 19.408c-0.407-0.204-2.415-1.191-2.789-1.327s-0.646-0.204-0.917 0.204c-0.271 0.407-1.053 1.327-1.291 1.599s-0.475 0.306-0.882 0.102c-0.407-0.204-1.719-0.633-3.274-2.019-1.21-1.079-2.027-2.411-2.264-2.818s-0.024-0.626 0.179-0.829c0.183-0.183 0.407-0.475 0.611-0.713s0.271-0.407 0.407-0.679c0.136-0.271 0.068-0.509-0.034-0.713s-0.917-2.211-1.257-3.028c-0.331-0.799-0.667-0.689-0.917-0.702-0.237-0.012-0.509-0.015-0.781-0.015s-0.713 0.102-1.087 0.509c-0.373 0.407-1.428 1.395-1.428 3.402s1.462 3.946 1.666 4.218c0.204 0.271 2.825 4.416 6.879 6.132 0.962 0.407 1.713 0.651 2.299 0.833 0.967 0.307 1.847 0.264 2.543 0.16 0.776-0.116 2.415-0.987 2.755-1.939s0.34-1.771 0.238-1.939c-0.102-0.169-0.373-0.271-0.781-0.475z"/>
+        </svg>
+    </a>
+</body>
+</html>

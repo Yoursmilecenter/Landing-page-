@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            background: #000; 
+            margin: 0;
+            overflow: hidden;
+        }
+        .headline {
+            position: absolute;
+            color: #00e5ff;
+            font-size: 2em;
+            opacity: 0;
+            transition: all 1s;
+        }
+        .headline.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script>
+        const sentences = ["Test 1", "Test 2", "Test 3"];
+        const container = document.getElementById('container');
+        let index = 0;
+
+        sentences.forEach(text => {
+            const h2 = document.createElement('h2');
+            h2.className = 'headline';
+            h2.textContent = text;
+            container.appendChild(h2);
+        });
+
+        function show() {
+            const all = document.querySelectorAll('.headline');
+            all.forEach(h => h.classList.remove('active'));
+            
+            const current = all[index];
+            current.style.left = Math.random() * 80 + 10 + '%';
+            current.style.top = Math.random() * 80 + 10 + '%';
+            current.classList.add('active');
+            
+            index = (index + 1) % sentences.length;
+        }
+
+        show();
+        setInterval(show, 2000);
+    </script>
+</body>
+</html>

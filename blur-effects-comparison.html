@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blur Effects Comparison - SmileCenter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #000;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .effect-box {
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            height: 400px;
+            position: relative;
+            background-color: #0a0a0a;
+        }
+
+        .effect-title {
+            color: #00e5ff;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .headline-container {
+            width: 100%;
+            height: 320px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .headline {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #00e5ff;
+            position: absolute;
+            opacity: 0;
+            transition: opacity 1s ease-in-out, transform 1s ease-out, filter 1s ease-out;
+            padding: 10px;
+            white-space: nowrap;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Option 1: Blur In/Out */
+        .effect1 .headline {
+            filter: blur(10px);
+            opacity: 0;
+        }
+        .effect1 .headline.active {
+            filter: blur(0px);
+            opacity: 1;
+        }
+
+        /* Option 2: Blur + Slide Down */
+        .effect2 .headline {
+            filter: blur(8px);
+            transform: translateY(-30px);
+            opacity: 0;
+        }
+        .effect2 .headline.active {
+            filter: blur(0px);
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Option 3: Scale + Blur */
+        .effect3 .headline {
+            filter: blur(10px);
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0;
+        }
+        .effect3 .headline.active {
+            filter: blur(0px);
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        /* Option 4: Horizontal Blur Slide */
+        .effect4 .headline {
+            filter: blur(15px);
+            transform: translate(calc(-50% - 50px), -50%);
+            opacity: 0;
+        }
+        .effect4 .headline.active {
+            filter: blur(0px);
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            .headline {
+                font-size: 1.4em;
+                white-space: normal;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center; color: #00e5ff; margin-bottom: 30px;">Blur Effects Comparison</h1>
+
+    <div class="comparison-grid">
+        <!-- Effect 1 -->
+        <div class="effect-box effect1">
+            <div class="effect-title">Option 1: Blur In/Out</div>
+            <div class="headline-container" id="container1"></div>
+        </div>
+
+        <!-- Effect 2 -->
+        <div class="effect-box effect2">
+            <div class="effect-title">Option 2: Blur + Slide Down</div>
+            <div class="headline-container" id="container2"></div>
+        </div>
+
+        <!-- Effect 3 -->
+        <div class="effect-box effect3">
+            <div class="effect-title">Option 3: Scale + Blur (Zoom)</div>
+            <div class="headline-container" id="container3"></div>
+        </div>
+
+        <!-- Effect 4 -->
+        <div class="effect-box effect4">
+            <div class="effect-title">Option 4: Horizontal Blur Slide</div>
+            <div class="headline-container" id="container4"></div>
+        </div>
+    </div>
+
+    <script>
+        const sentences = [
+            "Design your destiny.",
+            "Engineered for perfection.",
+            "Change your story.",
+            "Vision meets execution.",
+            "Your brilliant future.",
+            "Confidence crafted.",
+            "Precisely crafted here.",
+            "Digital mastery.",
+            "The smilecenter standard."
+        ];
+
+        let currentIndex = 0;
+
+        function initEffect(containerNum) {
+            const container = document.getElementById(`container${containerNum}`);
+            
+            sentences.forEach((text) => {
+                const h2 = document.createElement('h2');
+                h2.classList.add('headline');
+                h2.textContent = text;
+                container.appendChild(h2);
+            });
+        }
+
+        function rotateHeadlines(containerNum) {
+            const container = document.getElementById(`container${containerNum}`);
+            const headlines = container.querySelectorAll('.headline');
+
+            headlines.forEach(h => h.classList.remove('active'));
+
+            const currentHeadline = headlines[currentIndex];
+            if (currentHeadline) {
+                // Set random position
+                const containerRect = container.getBoundingClientRect();
+                const elementRect = currentHeadline.getBoundingClientRect();
+                
+                const buffer = 20;
+                const maxLeft = containerRect.width - elementRect.width - buffer;
+                const maxTop = containerRect.height - elementRect.height - buffer;
+                
+                const randomLeft = Math.max(buffer, Math.floor(Math.random() * maxLeft));
+                const randomTop = Math.max(buffer, Math.floor(Math.random() * maxTop));
+                
+                currentHeadline.style.left = `${randomLeft}px`;
+                currentHeadline.style.top = `${randomTop}px`;
+                
+                setTimeout(() => {
+                    currentHeadline.classList.add('active');
+                }, 50);
+            }
+
+            currentIndex = (currentIndex + 1) % sentences.length;
+        }
+
+        // Initialize all 4 effects
+        for (let i = 1; i <= 4; i++) {
+            initEffect(i);
+            rotateHeadlines(i);
+            setInterval(() => rotateHeadlines(i), 3500);
+        }
+    </script>
+</body>
+</html>
