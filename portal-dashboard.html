@@ -1,4 +1,4 @@
-<!-- FINAL FIX v2.0.2 -->
+﻿<!-- FINAL FIX v2.0.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -310,23 +310,28 @@
                                 ${filteredProjects.length > 0 ? filteredProjects.map(project => {
                                     const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
                                     const stlCount = project.files.filter(f => f.name.match(/\.stl$/i)).length;
-                                    return \`
+                                    const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
+                                    return `
                                         <tr style="cursor: pointer;">
-                                            <td><strong>\${project.title}</strong></td>
-                                            <td>\${project.description}</td>
-                                            <td><span class="status-pill status-\${project.status.replace(/-/g, '')}">\${project.status.toUpperCase().replace(/-/g, ' ')}</span></td>
-                                            <td>\${new Date(project.createdAt).toLocaleDateString()}</td>
-                                            <td><span class="files-count">\${htmlCount} HTML, \${stlCount} STL</span></td>
-                                            <td><button class="action-btn-sm" onclick="openProjectCard('\${project.id}')"><i class="fas fa-eye"></i> View</button></td>
+                                            <td><strong>${project.title}</strong></td>
+                                            <td>${project.description}</td>
+                                            <td><span class="status-pill status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span></td>
+                                            <td>${new Date(project.createdAt).toLocaleDateString()}</td>
+                                            <td><span class="files-count">${htmlCount} HTML, ${stlCount} STL</span></td>
+                                            <td>
+                                                <button class="action-btn-sm" onclick="openProjectCard('${project.id}')"><i class="fas fa-eye"></i> View</button>
+                                                ${stlCount > 0 ? `<a href="${stlFiles[0].url}" download="${stlFiles[0].name}" onclick="trackStlDownload('${project.id}', '${stlFiles[0].name}')" class="action-btn-sm" style="text-decoration: none; margin-left: 8px;"><i class="fas fa-download"></i> STL</a>` : ''}
+                                                <button class="action-btn-sm" onclick="openClientUploadModal('${project.id}', '${project.title}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> Upload</button>
+                                            </td>
                                         </tr>
-                                    \`;
-                                }).join('') : \`
+                                    `;
+                                }).join('') : `
                                     <tr><td colspan="6" style="text-align: center; padding: 40px;">
                                         <div style="font-size: 48px;">📋</div>
                                         <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">No Patients Yet</div>
                                         <p style="color: var(--color-text-secondary);">Your patients will appear here once they are created.</p>
                                     </td></tr>
-                                \`}
+                                `}
                             </tbody>
                         </table>
                     </div>
@@ -360,8 +365,8 @@
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">⚠ Request Changes</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">âœ… Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">âš  Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -545,14 +550,14 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = '✅ Thank you for your approval!';
+                statusEl.textContent = 'âœ… Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -574,14 +579,14 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = '✅ Feedback sent to designer';
+                statusEl.textContent = 'âœ… Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -629,7 +634,7 @@
                     }
                 }
 
-                statusEl.textContent = '✅ Patient created successfully!';
+                statusEl.textContent = 'âœ… Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -637,7 +642,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -665,13 +670,11 @@
             document.getElementById('clientFileInput').value = '';
             document.getElementById('clientFileList').innerHTML = '';
             document.getElementById('clientUploadStatus').className = 'status-msg';
-            document.getElementById('clientUploadModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
+            document.getElementById('clientUploadModal').style.display = 'flex';
         };
 
         window.closeClientUpload = () => {
-            document.getElementById('clientUploadModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
+            document.getElementById('clientUploadModal').style.display = 'none';
             document.getElementById('clientUploadStatus').className = 'status-msg';
             document.getElementById('clientFileList').innerHTML = '';
             document.getElementById('clientFileInput').value = '';
@@ -726,7 +729,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = '✅ Files uploaded successfully!';
+                statusEl.textContent = 'âœ… Files uploaded successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
@@ -734,7 +737,7 @@
                     await loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
@@ -745,6 +748,75 @@
             searchInputWasFocused = true;
             searchQuery = value;
             render();
+        };
+
+        window.openProjectCard = async (projectId) => {
+            const project = userProjects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const modal = document.getElementById('projectCardModal');
+            const content = document.getElementById('projectCardContent');
+            
+            const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
+            const htmlFiles = project.files.filter(f => f.name.match(/\.html?$/i));
+            
+            content.innerHTML = `
+                <h2>${project.title}</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 24px;">${project.description}</p>
+                
+                <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+                    <div><strong>Status:</strong> <span class="status-pill status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span></div>
+                    <div><strong>Created:</strong> ${new Date(project.createdAt).toLocaleString()}</div>
+                    ${project.stlDownloaded ? `<div><strong>STL Downloaded:</strong> ${new Date(project.stlDownloadedAt).toLocaleString()}</div>` : ''}
+                </div>
+                
+                ${htmlFiles.length > 0 ? `
+                    <h3 style="margin-top: 24px;">HTML Files (${htmlFiles.length})</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                        ${htmlFiles.map(file => `
+                            <button class="action-btn-sm" onclick="previewFile('${project.id}', '${file.name}')">
+                                <i class="fas fa-eye"></i> ${file.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                ${stlFiles.length > 0 ? `
+                    <h3 style="margin-top: 24px;">STL Files (${stlFiles.length})</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        ${stlFiles.map(file => `
+                            <a href="${file.url}" download="${file.name}" 
+                               onclick="trackStlDownload('${project.id}', '${file.name}')"
+                               class="action-btn-sm" style="text-decoration: none;">
+                                <i class="fas fa-download"></i> ${file.name}
+                            </a>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            `;
+            
+            modal.style.display = 'flex';
+        };
+
+        window.closeProjectCard = () => {
+            document.getElementById('projectCardModal').style.display = 'none';
+        };
+
+        window.previewFile = async (projectId, fileName) => {
+            const project = userProjects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const file = project.files.find(f => f.name === fileName);
+            if (!file) return;
+            
+            document.getElementById('previewFileName').textContent = fileName;
+            document.getElementById('previewFrame').src = file.url;
+            document.getElementById('previewModal').style.display = 'flex';
+        };
+
+        window.closePreview = () => {
+            document.getElementById('previewModal').style.display = 'none';
+            document.getElementById('previewFrame').src = '';
         };
 
         window.logout = async () => {
@@ -770,6 +842,16 @@
                 console.error('Error tracking download:', error);
             }
         };
+
+        // Close modals when clicking outside
+        window.onclick = (event) => {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                if (event.target.id === 'previewModal') {
+                    document.getElementById('previewFrame').src = '';
+                }
+            }
+        };
     </script>
 
     <!-- WhatsApp Float Button -->
@@ -781,10 +863,29 @@
             <path fill="currentColor" d="M16 0c-8.837 0-16 7.163-16 16 0 2.825 0.737 5.607 2.137 8.048l-2.137 7.952 7.933-2.127c2.42 1.37 5.173 2.127 8.067 2.127 8.837 0 16-7.163 16-16s-7.163-16-16-16zM16 29.467c-2.482 0-4.908-0.646-7.07-1.87l-0.507-0.292-5.247 1.408 1.417-5.263-0.315-0.528c-1.331-2.217-2.036-4.773-2.036-7.389 0-7.842 6.384-14.226 14.226-14.226s14.226 6.384 14.226 14.226c0 7.842-6.384 14.226-14.226 14.226zM22.923 19.408c-0.407-0.204-2.415-1.191-2.789-1.327s-0.646-0.204-0.917 0.204c-0.271 0.407-1.053 1.327-1.291 1.599s-0.475 0.306-0.882 0.102c-0.407-0.204-1.719-0.633-3.274-2.019-1.21-1.079-2.027-2.411-2.264-2.818s-0.024-0.626 0.179-0.829c0.183-0.183 0.407-0.475 0.611-0.713s0.271-0.407 0.407-0.679c0.136-0.271 0.068-0.509-0.034-0.713s-0.917-2.211-1.257-3.028c-0.331-0.799-0.667-0.689-0.917-0.702-0.237-0.012-0.509-0.015-0.781-0.015s-0.713 0.102-1.087 0.509c-0.373 0.407-1.428 1.395-1.428 3.402s1.462 3.946 1.666 4.218c0.204 0.271 2.825 4.416 6.879 6.132 0.962 0.407 1.713 0.651 2.299 0.833 0.967 0.307 1.847 0.264 2.543 0.16 0.776-0.116 2.415-0.987 2.755-1.939s0.34-1.771 0.238-1.939c-0.102-0.169-0.373-0.271-0.781-0.475z"/>
         </svg>
     </a>
+
+    <style>
+        .whatsapp-float {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            color: #4FC3F7;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+        }
+    </style>
 </body>
 </html>
-t e s t 
- 
- 
-
-
