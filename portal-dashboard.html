@@ -752,7 +752,7 @@
         };
 
         window.openProjectCard = async (projectId) => {
-            const project = allProjects.find(p => p.id === projectId);
+            const project = userProjects.find(p => p.id === projectId);
             if (!project) return;
             
             const modal = document.getElementById('projectCardModal');
@@ -804,7 +804,7 @@
         };
 
         window.previewFile = async (projectId, fileName) => {
-            const project = allProjects.find(p => p.id === projectId);
+            const project = userProjects.find(p => p.id === projectId);
             if (!project) return;
             
             const file = project.files.find(f => f.name === fileName);
