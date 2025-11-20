@@ -803,6 +803,23 @@
             document.getElementById('projectCardModal').style.display = 'none';
         };
 
+        window.previewFile = async (projectId, fileName) => {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const file = project.files.find(f => f.name === fileName);
+            if (!file) return;
+            
+            document.getElementById('previewFileName').textContent = fileName;
+            document.getElementById('previewFrame').src = file.url;
+            document.getElementById('previewModal').style.display = 'flex';
+        };
+
+        window.closePreview = () => {
+            document.getElementById('previewModal').style.display = 'none';
+            document.getElementById('previewFrame').src = '';
+        };
+
         window.logout = async () => {
             try {
                 await signOut(auth);
@@ -824,6 +841,16 @@
                 console.log('STL download tracked');
             } catch (error) {
                 console.error('Error tracking download:', error);
+            }
+        };
+
+        // Close modals when clicking outside
+        window.onclick = (event) => {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                if (event.target.id === 'previewModal') {
+                    document.getElementById('previewFrame').src = '';
+                }
             }
         };
     </script>
