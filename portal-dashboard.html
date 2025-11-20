@@ -321,6 +321,7 @@
                                             <td>
                                                 <button class="action-btn-sm" onclick="openProjectCard('${project.id}')"><i class="fas fa-eye"></i> View</button>
                                                 ${stlCount > 0 ? `<a href="${stlFiles[0].url}" download="${stlFiles[0].name}" onclick="trackStlDownload('${project.id}', '${stlFiles[0].name}')" class="action-btn-sm" style="text-decoration: none; margin-left: 8px;"><i class="fas fa-download"></i> STL</a>` : ''}
+                                                <button class="action-btn-sm" onclick="openClientUploadModal('${project.id}', '${project.title}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> Upload</button>
                                             </td>
                                         </tr>
                                     `;
@@ -669,13 +670,11 @@
             document.getElementById('clientFileInput').value = '';
             document.getElementById('clientFileList').innerHTML = '';
             document.getElementById('clientUploadStatus').className = 'status-msg';
-            document.getElementById('clientUploadModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
+            document.getElementById('clientUploadModal').style.display = 'flex';
         };
 
         window.closeClientUpload = () => {
-            document.getElementById('clientUploadModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
+            document.getElementById('clientUploadModal').style.display = 'none';
             document.getElementById('clientUploadStatus').className = 'status-msg';
             document.getElementById('clientFileList').innerHTML = '';
             document.getElementById('clientFileInput').value = '';
