@@ -1,4 +1,4 @@
-<!-- FINAL FIX v2.0.2 -->
+﻿<!-- FINAL FIX v2.0.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -322,7 +322,7 @@
                                     `;
                                 }).join('') : `
                                     <tr><td colspan="6" style="text-align: center; padding: 40px;">
-                                        <div style="font-size: 48px;">📋</div>
+                                        <div style="font-size: 48px;">ðŸ“‹</div>
                                         <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">No Patients Yet</div>
                                         <p style="color: var(--color-text-secondary);">Your patients will appear here once they are created.</p>
                                     </td></tr>
@@ -360,8 +360,8 @@
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">⚠ Request Changes</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">âœ… Approve Design</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">âš  Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -545,14 +545,14 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = '✅ Thank you for your approval!';
+                statusEl.textContent = 'âœ… Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -574,14 +574,14 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = '✅ Feedback sent to designer';
+                statusEl.textContent = 'âœ… Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -629,7 +629,7 @@
                     }
                 }
 
-                statusEl.textContent = '✅ Patient created successfully!';
+                statusEl.textContent = 'âœ… Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -637,7 +637,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -726,7 +726,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = '✅ Files uploaded successfully!';
+                statusEl.textContent = 'âœ… Files uploaded successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
@@ -734,7 +734,7 @@
                     await loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = 'âŒ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';
@@ -795,20 +795,15 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            color: #25D366;
+            color: #4FC3F7;
             transition: all 0.3s ease;
             z-index: 1000;
         }
         
         .whatsapp-float:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
         }
     </style>
 </body>
 </html>
-t e s t 
- 
- 
-
-
