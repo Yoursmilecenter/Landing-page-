@@ -331,15 +331,15 @@
         window.forceDownload = async (path, filename) => {
             try {
                 const fileRef = ref(storage, path);
-                const url = await getDownloadURL(fileRef);
+                const blob = await getBlob(fileRef);
+                const blobUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = blobUrl;
                 a.download = filename;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Download failed: ' + error.message);
@@ -643,7 +643,7 @@
                     </div>
                     <div style="display: flex; gap: 8px;">
                         ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
-                        ${file.name.match(/\\.html?$/i) ? `<a href="${file.url}" class="btn-download" onclick="alert('HTML files: Use Right-click > Save link as'); return false;">Download</a>` : `<a href="${file.url}" download="${file.name}" class="btn-download">Download</a>`}
+                        <button class="btn-download" onclick="forceDownload('${file.path}', '${file.name}')">Download</button>
                         <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
                 </div>
