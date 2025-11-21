@@ -98,7 +98,18 @@
             }
 
             try {
-                const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+                let userCredential;
+                try {
+                    userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+                } catch (e) {
+                    // Fallback: try old @smile.local domain for existing users
+                    if (!email.includes('@')) {
+                        const legacyEmail = email + '@smile.local';
+                        userCredential = await signInWithEmailAndPassword(auth, legacyEmail, password);
+                    } else {
+                        throw e;
+                    }
+                }
                 const userEmail = userCredential.user.email;
                 
                 if (admins.includes(userEmail)) {
