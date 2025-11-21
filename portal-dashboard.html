@@ -754,11 +754,13 @@
             const project = userProjects.find(p => p.id === projectId);
             if (!project) return;
             
+            currentProjectId = projectId;
             const modal = document.getElementById('projectCardModal');
             const content = document.getElementById('projectCardContent');
             
             const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
             const htmlFiles = project.files.filter(f => f.name.match(/\.html?$/i));
+            const isAwaitingApproval = project.status === 'awaiting-client-approval';
             
             content.innerHTML = `
                 <h2>${project.title}</h2>
@@ -768,17 +770,38 @@
                     <div><strong>Status:</strong> <span class="status-pill status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span></div>
                     <div><strong>Created:</strong> ${new Date(project.createdAt).toLocaleString()}</div>
                     ${project.stlDownloaded ? `<div><strong>STL Downloaded:</strong> ${new Date(project.stlDownloadedAt).toLocaleString()}</div>` : ''}
+                    ${project.clientRemarks ? `<div><strong>Your Remarks:</strong> ${project.clientRemarks}</div>` : ''}
                 </div>
                 
                 ${htmlFiles.length > 0 ? `
-                    <h3 style="margin-top: 24px;">HTML Files (${htmlFiles.length})</h3>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-                        ${htmlFiles.map(file => `
-                            <button class="action-btn-sm" onclick="previewFile('${project.id}', '${file.name}')">
-                                <i class="fas fa-eye"></i> ${file.name}
+                    <h3 style="margin-top: 24px;">HTML Preview</h3>
+                    <div style="margin-bottom: 12px;">
+                        ${htmlFiles.map((file, i) => `
+                            <button class="action-btn-sm ${i === 0 ? 'active' : ''}" onclick="loadHtmlPreview('${file.url}', '${file.name}', this)" style="margin-right: 8px;">
+                                ${file.name}
                             </button>
                         `).join('')}
                     </div>
+                    <iframe id="inlinePreviewFrame" src="${htmlFiles[0].url}" style="width: 100%; height: 400px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #fff;"></iframe>
+                    
+                    ${isAwaitingApproval ? `
+                        <div style="margin-top: 20px; padding: 16px; background: rgba(167, 139, 250, 0.1); border-radius: 8px;">
+                            <h4 style="margin-bottom: 12px; color: #a78bfa;">Review Required</h4>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button class="btn-primary" onclick="approveFromCard()" style="background: var(--color-success);">
+                                    <i class="fas fa-check"></i> Approve Design
+                                </button>
+                                <button class="btn-primary" onclick="showCardRejectForm()" style="background: var(--color-error);">
+                                    <i class="fas fa-times"></i> Request Changes
+                                </button>
+                            </div>
+                            <div id="cardRejectForm" style="display: none; margin-top: 16px;">
+                                <textarea id="cardRemarks" class="form-textarea" placeholder="Describe the changes you need..." style="margin-bottom: 12px;"></textarea>
+                                <button class="btn-primary" onclick="submitCardRejection()">Submit Feedback</button>
+                            </div>
+                            <div id="cardApprovalStatus" class="status-msg"></div>
+                        </div>
+                    ` : ''}
                 ` : ''}
                 
                 ${stlFiles.length > 0 ? `
@@ -796,6 +819,69 @@
             `;
             
             modal.style.display = 'flex';
+        };
+
+        window.loadHtmlPreview = (url, name, btn) => {
+            document.getElementById('inlinePreviewFrame').src = url;
+            document.querySelectorAll('#projectCardContent .action-btn-sm').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+
+        window.showCardRejectForm = () => {
+            document.getElementById('cardRejectForm').style.display = 'block';
+        };
+
+        window.approveFromCard = async () => {
+            const statusEl = document.getElementById('cardApprovalStatus');
+            try {
+                const project = userProjects.find(p => p.id === currentProjectId);
+                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                
+                await updateDoc(doc(db, 'projects', currentProjectId), { 
+                    htmlApproved: true,
+                    status: hasSTL ? 'stl-ready' : 'approved',
+                    clientRemarks: null,
+                    approvedAt: Date.now()
+                });
+                statusEl.textContent = '✅ Design approved!';
+                statusEl.className = 'status-msg active success';
+                setTimeout(() => {
+                    closeProjectCard();
+                    loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.submitCardRejection = async () => {
+            const remarks = document.getElementById('cardRemarks').value.trim();
+            const statusEl = document.getElementById('cardApprovalStatus');
+            
+            if (!remarks) {
+                statusEl.textContent = 'Please enter your feedback';
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, 'projects', currentProjectId), { 
+                    htmlApproved: false,
+                    status: 'changes-requested',
+                    clientRemarks: remarks,
+                    remarksAt: Date.now()
+                });
+                statusEl.textContent = '✅ Feedback sent!';
+                statusEl.className = 'status-msg active success';
+                setTimeout(() => {
+                    closeProjectCard();
+                    loadData();
+                }, 1500);
+            } catch (error) {
+                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
         };
 
         window.closeProjectCard = () => {
