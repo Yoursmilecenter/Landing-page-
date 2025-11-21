@@ -328,6 +328,24 @@
             navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
         };
 
+        window.forceDownload = async (url, filename) => {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Download error:', error);
+                window.open(url, '_blank');
+            }
+        };
+
         function render() {
             const stats = {
                 total: allProjects.length,
@@ -625,7 +643,7 @@
                     </div>
                     <div style="display: flex; gap: 8px;">
                         ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
-                        <a href="${file.url}" class="btn-download" download="${file.name}" target="_blank">Download</a>
+                        <button class="btn-download" onclick="forceDownload('${file.url}', '${file.name}')">Download</button>
                         <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
                 </div>
