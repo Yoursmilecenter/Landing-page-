@@ -88,13 +88,13 @@
 
             let loginEmail = email;
             
-            // If only numbers (phone), convert to phone@smile.local
+            // If only numbers (phone), convert to phone@smilecenter.pro
             if (/^\d+$/.test(email)) {
-                loginEmail = email + '@smile.local';
+                loginEmail = email + '@smilecenter.pro';
             }
             // If no @ symbol, treat as username and convert to email format
             else if (!email.includes('@')) {
-                loginEmail = email + '@smile.local';
+                loginEmail = email + '@smilecenter.pro';
             }
 
             try {
@@ -152,8 +152,8 @@
                     return;
                 }
 
-                // Create account with phone as email (using @smile.local for consistency)
-                const email = phone + '@smile.local';
+                // Create account with phone as email (using @smilecenter.pro for consistency)
+                const email = phone + '@smilecenter.pro';
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
                 // Create user document in Firestore
