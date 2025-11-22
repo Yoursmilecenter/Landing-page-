@@ -8,12 +8,19 @@
     <meta name="description" content="Login to Smile Center Portal - Access your dental design workspace for administrators, designers, and clients.">
     <meta name="robots" content="noindex, nofollow">
     
+    <!-- Performance: Preconnect to critical origins -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    
     <title>Login - Smile Center Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="login-container">
-        <img src="smile-center-logo.png" alt="Smile Center" class="login-logo">
+        <picture>
+            <source srcset="smile-center-logo.webp" type="image/webp">
+            <img src="smile-center-logo.png" alt="Smile Center" class="login-logo" loading="eager" decoding="async">
+        </picture>
         
         <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;">
