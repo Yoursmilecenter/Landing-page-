@@ -644,7 +644,7 @@
                     <div style="display: flex; gap: 8px;">
                         ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
                         <button class="btn-download" onclick="forceDownload('${file.path}', '${file.name}')">Download</button>
-                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
+                        <button type="button" class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
