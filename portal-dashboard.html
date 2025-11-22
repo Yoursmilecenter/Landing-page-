@@ -1,4 +1,3 @@
-﻿<!-- FINAL FIX v2.0.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,15 +17,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     <style>
-        /* Hidden SEO Content */
-        .seo-content {
-            position: absolute;
-            left: -9999px;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-        }
-        
         /* Compact table styling */
         .ultra-compact-table {
             width: 100%;
@@ -102,14 +92,6 @@
     </style>
 </head>
 <body>
-    <!-- Hidden SEO Content -->
-    <div class="seo-content">
-        <h1>Dental Patient Management Dashboard - SmileCenter Pro</h1>
-        <h2>Track Your Dental Design Cases and STL Files</h2>
-        <p>Manage your dental patient designs with SmileCenter Pro's client portal. View case status, approve HTML previews, and download final STL files for your dental practice. Professional dental design workflow management with real-time case tracking.</p>
-        <p>Features: Patient case tracking, design approval, STL file downloads, dental workflow management, case status updates, client portal.</p>
-    </div>
-    
     <div id="app">
         <div class="header-content">
             <div class="logo">Loading...</div>
@@ -170,10 +152,90 @@
         function resetSessionTimeout() {
             clearTimeout(sessionTimeout);
             sessionTimeout = setTimeout(async () => {
-                alert('Your session has expired due to inactivity. You will be logged out.');
-                await signOut(auth);
-                window.location.href = 'portal-login.html';
+                // Show timeout notification
+                showTimeoutNotification();
+                setTimeout(async () => {
+                    await signOut(auth);
+                    window.location.href = 'portal-login.html';
+                }, 3000);
             }, TIMEOUT_DURATION);
+        }
+
+        function showTimeoutNotification() {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(239, 68, 68, 0.95);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                font-size: 16px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">Session Expired</div>
+                        <div style="font-size: 14px; opacity: 0.9;">You will be logged out in 3 seconds...</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function showErrorNotification(title, message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(239, 68, 68, 0.95);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                font-size: 16px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">${title}</div>
+                        <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
         }
 
         async function loadData() {
@@ -182,18 +244,20 @@
                 const q = query(projectsRef, where('clientEmail', '==', currentUser.email), orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
                 
-                userProjects = [];
-                for (const doc of snapshot.docs) {
-                    const data = doc.data();
-                    const files = await loadFiles(doc.id);
-                    userProjects.push({ id: doc.id, ...data, files });
-                }
+                // Load all projects and their files in parallel
+                userProjects = await Promise.all(
+                    snapshot.docs.map(async (doc) => {
+                        const data = doc.data();
+                        const files = await loadFiles(doc.id);
+                        return { id: doc.id, ...data, files };
+                    })
+                );
                 render();
             } catch (error) {
                 console.error('Error loading projects:', error);
                 // Check if it's a permission error
                 if (error.code === 'permission-denied') {
-                    alert('Access denied. Please contact administrator.');
+                    showErrorNotification('Access Denied', 'Please contact administrator for access.');
                 }
                 render();
             }
@@ -217,7 +281,8 @@
                     })
                 );
                 return files;
-            } catch {
+            } catch (error) {
+                console.error('Error loading files for project:', projectId, error);
                 return [];
             }
         }
@@ -348,14 +413,14 @@
                 
                 <div id="projectCardModal" class="modal">
                     <div class="modal-content large" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-                        <button class="close" onclick="closeProjectCard()">&times;</button>
+                        <button class="close" onclick="closeProjectCard()" aria-label="Close modal">&times;</button>
                         <div id="projectCardContent"></div>
                     </div>
                 </div>
 
                 <div id="previewModal" class="modal">
                     <div class="modal-content large">
-                        <button class="close" onclick="closePreview()">&times;</button>
+                        <button class="close" onclick="closePreview()" aria-label="Close preview">&times;</button>
                         <h2 class="modal-title">HTML Preview</h2>
                         <p class="modal-subtitle" id="previewFileName"></p>
                         <iframe id="previewFrame" class="preview-iframe"></iframe>
@@ -367,14 +432,14 @@
 
                 <div id="approvalModal" class="modal">
                     <div class="modal-content large">
-                        <button class="close" onclick="closeApproval()">&times;</button>
+                        <button class="close" onclick="closeApproval()" aria-label="Close approval dialog">&times;</button>
                         <h2 class="modal-title">Review Design Preview</h2>
                         <p class="modal-subtitle" id="approvalFileName"></p>
                         <iframe id="approvalFrame" class="preview-iframe"></iframe>
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
-                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">âœ… Approve Design</button>
+                                <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
                                 <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">âš  Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
@@ -389,7 +454,7 @@
 
                 <div id="newProjectModal" class="modal">
                     <div class="modal-content">
-                        <button class="close" onclick="closeNewProject()">&times;</button>
+                        <button class="close" onclick="closeNewProject()" aria-label="Close new patient form">&times;</button>
                         <h2 class="modal-title">Create New Patient</h2>
                         <form id="newProjectForm" onsubmit="createProject(event)">
                             <div class="form-group">
@@ -418,7 +483,7 @@
 
                 <div id="clientUploadModal" class="modal">
                     <div class="modal-content">
-                        <button class="close" onclick="closeClientUpload()">&times;</button>
+                        <button class="close" onclick="closeClientUpload()" aria-label="Close upload dialog">&times;</button>
                         <h2 class="modal-title">Upload Files to Patient</h2>
                         <p class="modal-subtitle">Patient: <span id="currentUploadPatientTitle"></span></p>
                         
@@ -559,7 +624,7 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
-                statusEl.textContent = 'âœ… Thank you for your approval!';
+                statusEl.textContent = '✅ Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
@@ -588,7 +653,7 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
-                statusEl.textContent = 'âœ… Feedback sent to designer';
+                statusEl.textContent = '✅ Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
@@ -643,7 +708,7 @@
                     }
                 }
 
-                statusEl.textContent = 'âœ… Patient created successfully!';
+                statusEl.textContent = '✅ Patient created successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -738,7 +803,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = 'âœ… Files uploaded successfully!';
+                statusEl.textContent = '✅ Files uploaded successfully!';
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
