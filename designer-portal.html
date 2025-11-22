@@ -448,7 +448,7 @@
                                     <td>
                                         <strong>${project.title}</strong>
                                         <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">${timeStr}</div>
-                                        ${project.clientRemarks ? '<div style="font-size: 11px; color: #ef4444; margin-top: 2px;">⚠️ Changes requested</div>' : ''}
+                                        ${project.clientRemarks ? `<div style="font-size: 11px; color: #ef4444; margin-top: 2px; cursor: pointer;" onclick="alert('Client Remarks:\\n${project.clientRemarks.replace(/'/g, "\\'")}')">⚠️ Changes requested (click to view)</div>` : ''}
                                     </td>
                                     <td>
                                         <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
@@ -664,7 +664,7 @@
                     <div style="display: flex; gap: 8px;">
                         ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">Preview</button>` : ''}
                         <button class="btn-download" onclick="forceDownload('${file.path}', '${file.name}')">Download</button>
-                        <button class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy Link</button>
+                        <button type="button" class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy Link</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
