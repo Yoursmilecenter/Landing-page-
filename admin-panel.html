@@ -509,6 +509,7 @@
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
                                         <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
+                                        ${project.files.find(f => f.name.match(/\\.html?$/i)) ? `<button class="action-btn" onclick="viewHtmlFile('${project.id}')" style="background: #10b981; color: white;" title="View HTML">👁</button>` : ''}
                                         <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
                                         <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑</button>
                                     </td>
@@ -725,6 +726,16 @@
             }
         };
 
+        window.viewHtmlFile = (projectId) => {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const htmlFile = project.files.find(f => f.name.match(/\.html?$/i));
+            if (htmlFile) {
+                window.open(htmlFile.url, '_blank');
+            }
+        };
+
         window.deletePatient = async (projectId, patientName) => {
             if (!confirm(`Are you sure you want to delete patient "${patientName}"?\n\nThis will also delete all associated files. This action cannot be undone.`)) {
                 return;
@@ -738,7 +749,7 @@
 
                 // Delete Firestore document
                 await deleteDoc(doc(db, 'projects', projectId));
-                
+
                 alert('Patient deleted successfully');
                 await loadData();
             } catch (error) {
