@@ -242,6 +242,7 @@
                 for (const docSnap of snapshot.docs) {
                     const data = docSnap.data();
                     const files = await loadFiles(docSnap.id);
+                    console.log(`Project ${docSnap.id} files:`, files);
                     allProjects.push({
                         id: docSnap.id,
                         ...data,
