@@ -479,16 +479,12 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        ${(() => {
-                                            const hasHtml = project.files && project.files.find(f => f.name.match(/\\.html?$/i));
-                                            if (project.files) console.log(`${project.title}: ${project.files.length} files, hasHTML: ${!!hasHtml}`);
-                                            return hasHtml ? `<button class="action-btn" onclick="viewHtmlFile('${project.id}')" title="View HTML" style="background: #10b981;">👁 View</button>` : '';
-                                        })()}
+                                        <button class="action-btn" onclick="viewHtmlFile('${project.id}')" title="View HTML" style="background: #10b981;">👁</button>
                                         <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" title="Upload Files">
-                                            📤 Upload
+                                            📤
                                         </button>
                                         <button class="action-btn view" onclick="openFilesModal('${project.id}')" title="View Files">
-                                            📁 Files
+                                            📁
                                         </button>
                                     </td>
                                 </tr>
