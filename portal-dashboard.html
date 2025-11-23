@@ -124,6 +124,10 @@
         let searchQuery = '';
         let searchInputWasFocused = false;
         let currentProjectId = null;
+        let projectsCache = new Map();
+        let lastLoadTime = 0;
+        const CACHE_DURATION = 30000;
+        let searchTimeout = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -239,23 +243,35 @@
         }
 
         async function loadData() {
+            const now = Date.now();
+            if (now - lastLoadTime < CACHE_DURATION && userProjects.length > 0) {
+                render();
+                return;
+            }
+
             try {
                 const projectsRef = collection(db, 'projects');
                 const q = query(projectsRef, where('clientEmail', '==', currentUser.email), orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
                 
-                // Load all projects and their files in parallel
-                userProjects = await Promise.all(
-                    snapshot.docs.map(async (doc) => {
-                        const data = doc.data();
-                        const files = await loadFiles(doc.id);
-                        return { id: doc.id, ...data, files };
-                    })
-                );
+                userProjects = [];
+                const filePromises = [];
+                
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    userProjects.push({ id: doc.id, ...data, files: [] });
+                    filePromises.push(loadFilesForProject(doc.id));
+                });
+                
+                const filesResults = await Promise.all(filePromises);
+                filesResults.forEach((files, index) => {
+                    userProjects[index].files = files;
+                });
+                
+                lastLoadTime = now;
                 render();
             } catch (error) {
                 console.error('Error loading projects:', error);
-                // Check if it's a permission error
                 if (error.code === 'permission-denied') {
                     showErrorNotification('Access Denied', 'Please contact administrator for access.');
                 }
@@ -263,24 +279,33 @@
             }
         }
 
+        async function loadFilesForProject(projectId) {
+            if (projectsCache.has(projectId)) {
+                return projectsCache.get(projectId);
+            }
+            
+            const files = await loadFiles(projectId);
+            projectsCache.set(projectId, files);
+            return files;
+        }
+
         async function loadFiles(projectId) {
             try {
                 const filesRef = ref(storage, `projects/${projectId}`);
                 const list = await listAll(filesRef);
-                const files = await Promise.all(
-                    list.items.map(async (item) => {
-                        const url = await getDownloadURL(item);
-                        const meta = await getMetadata(item);
-                        return {
-                            name: item.name,
-                            url,
-                            path: item.fullPath,
-                            size: meta.size,
-                            date: new Date(meta.timeCreated).toLocaleDateString()
-                        };
-                    })
-                );
-                return files;
+                
+                const filePromises = list.items.map(async (item) => {
+                    const [url, meta] = await Promise.all([
+                        getDownloadURL(item),
+                        getMetadata(item)
+                    ]);
+                    return {
+                        name: item.name,
+                        date: new Date(meta.timeCreated).toLocaleDateString()
+                    };
+                });
+                
+                return await Promise.all(filePromises);
             } catch (error) {
                 console.error('Error loading files for project:', projectId, error);
                 return [];
@@ -297,15 +322,26 @@
         }
 
         function render() {
-            filteredProjects = userProjects.filter(p => {
-                if (searchQuery) {
-                    const searchLower = searchQuery.toLowerCase();
-                    return p.title.toLowerCase().includes(searchLower) ||
-                           p.description.toLowerCase().includes(searchLower) ||
-                           p.status.toLowerCase().includes(searchLower);
-                }
-                return true;
-            });
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            searchTimeout = setTimeout(() => {
+                filteredProjects = userProjects.filter(p => {
+                    if (searchQuery) {
+                        const searchLower = searchQuery.toLowerCase();
+                        return p.title.toLowerCase().includes(searchLower) ||
+                               p.description.toLowerCase().includes(searchLower) ||
+                               p.status.toLowerCase().includes(searchLower);
+                    }
+                    return true;
+                });
+
+                renderContent();
+            }, 200);
+        }
+
+        function renderContent() {
 
             const stats = {
                 total: userProjects.length,

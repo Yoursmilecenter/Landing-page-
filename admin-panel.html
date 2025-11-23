@@ -172,6 +172,9 @@
         let currentUser = null;
         let allProjects = [];
         let filteredProjects = [];
+        let projectsCache = new Map();
+        let lastLoadTime = 0;
+        const CACHE_DURATION = 30000; // 30 seconds
         
         const admins = [
             { email: 'admin@smile.com', name: 'Admin' },
@@ -194,6 +197,7 @@
         let currentPage = 1;
         let itemsPerPage = 50;
         let currentProjectForFiles = null;
+        let searchTimeout = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -233,26 +237,39 @@
         }
 
         async function loadData() {
+            const now = Date.now();
+            if (now - lastLoadTime < CACHE_DURATION && allProjects.length > 0) {
+                applyFilters();
+                return;
+            }
+
             try {
                 const projectsRef = collection(db, 'projects');
                 const q = query(projectsRef, orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
                 
                 allProjects = [];
-                for (const docSnap of snapshot.docs) {
+                const filePromises = [];
+                
+                snapshot.docs.forEach(docSnap => {
                     const data = docSnap.data();
-                    const files = await loadFiles(docSnap.id);
                     allProjects.push({
                         id: docSnap.id,
                         ...data,
-                        files
+                        files: []
                     });
-                }
+                    filePromises.push(loadFilesForProject(docSnap.id));
+                });
                 
+                const filesResults = await Promise.all(filePromises);
+                filesResults.forEach((files, index) => {
+                    allProjects[index].files = files;
+                });
+                
+                lastLoadTime = now;
                 applyFilters();
             } catch (error) {
                 console.error('Error:', error);
-                // Check if it's a permission error
                 if (error.code === 'permission-denied') {
                     alert('Access denied. Please contact administrator.');
                 }
@@ -260,58 +277,76 @@
             }
         }
 
+        async function loadFilesForProject(projectId) {
+            if (projectsCache.has(projectId)) {
+                return projectsCache.get(projectId);
+            }
+            
+            const files = await loadFiles(projectId);
+            projectsCache.set(projectId, files);
+            return files;
+        }
+
         async function loadFiles(projectId) {
             try {
                 const filesRef = ref(storage, `projects/${projectId}`);
                 const list = await listAll(filesRef);
-                const files = await Promise.all(
-                    list.items.map(async (item) => {
-                        const url = await getDownloadURL(item);
-                        const meta = await getMetadata(item);
-                        return {
-                            name: item.name,
-                            url,
-                            path: item.fullPath,
-                            size: meta.size,
-                            date: new Date(meta.timeCreated).toLocaleDateString()
-                        };
-                    })
-                );
-                return files;
+                
+                const filePromises = list.items.map(async (item) => {
+                    const [url, meta] = await Promise.all([
+                        getDownloadURL(item),
+                        getMetadata(item)
+                    ]);
+                    return {
+                        name: item.name,
+                        url,
+                        path: item.fullPath,
+                        size: meta.size,
+                        date: new Date(meta.timeCreated).toLocaleDateString()
+                    };
+                });
+                
+                return await Promise.all(filePromises);
             } catch {
                 return [];
             }
         }
 
         function applyFilters() {
-            filteredProjects = allProjects.filter(p => {
-                if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
-                if (currentFilters.designer !== 'all') {
-                    if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
-                    if (currentFilters.designer !== 'null' && p.assignedDesignerEmail !== currentFilters.designer) return false;
-                }
-                if (currentFilters.client !== 'all' && p.clientEmail !== currentFilters.client) return false;
-                if (currentFilters.priority !== 'all') {
-                    if (currentFilters.priority === 'vip' && !p.isVIP) return false;
-                    if (currentFilters.priority === 'normal' && p.isVIP) return false;
-                }
-                return true;
-            });
-
-            if (currentFilters.sortBy === 'date-asc') {
-                filteredProjects.sort((a, b) => a.createdAt - b.createdAt);
-            } else if (currentFilters.sortBy === 'date-desc') {
-                filteredProjects.sort((a, b) => b.createdAt - a.createdAt);
-            } else if (currentFilters.sortBy === 'name-asc') {
-                filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
-            } else if (currentFilters.sortBy === 'name-desc') {
-                filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
-            } else if (currentFilters.sortBy === 'client-asc') {
-                filteredProjects.sort((a, b) => a.clientEmail.localeCompare(b.clientEmail));
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
             }
+            
+            searchTimeout = setTimeout(() => {
+                filteredProjects = allProjects.filter(p => {
+                    if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
+                    if (currentFilters.designer !== 'all') {
+                        if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
+                        if (currentFilters.designer !== 'null' && p.assignedDesignerEmail !== currentFilters.designer) return false;
+                    }
+                    if (currentFilters.client !== 'all' && p.clientEmail !== currentFilters.client) return false;
+                    if (currentFilters.priority !== 'all') {
+                        if (currentFilters.priority === 'vip' && !p.isVIP) return false;
+                        if (currentFilters.priority === 'normal' && p.isVIP) return false;
+                    }
+                    return true;
+                });
 
-            currentPage = 1;
-            render();
+                if (currentFilters.sortBy === 'date-asc') {
+                    filteredProjects.sort((a, b) => a.createdAt - b.createdAt);
+                } else if (currentFilters.sortBy === 'date-desc') {
+                    filteredProjects.sort((a, b) => b.createdAt - a.createdAt);
+                } else if (currentFilters.sortBy === 'name-asc') {
+                    filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
+                } else if (currentFilters.sortBy === 'name-desc') {
+                    filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
+                } else if (currentFilters.sortBy === 'client-asc') {
+                    filteredProjects.sort((a, b) => a.clientEmail.localeCompare(b.clientEmail));
+                }
+
+                currentPage = 1;
+                render();
+            }, 300);
         }
 
         window.updateFilter = (type, value) => {
