@@ -323,6 +323,15 @@
             navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
         };
 
+        window.viewHtmlFile = (projectId) => {
+            const project = myProjects.find(p => p.id === projectId);
+            if (!project) return;
+            const htmlFile = project.files.find(f => f.name.match(/\.html?$/i));
+            if (htmlFile) {
+                window.open(htmlFile.url, '_blank');
+            }
+        };
+
         window.forceDownload = async (path, filename) => {
             try {
                 const fileRef = ref(storage, path);
@@ -470,6 +479,7 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
+                                        ${project.files && project.files.find(f => f.name.match(/\\.html?$/i)) ? `<button class="action-btn" onclick="viewHtmlFile('${project.id}')" title="View HTML" style="background: #10b981;">👁 View</button>` : ''}
                                         <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" title="Upload Files">
                                             📤 Upload
                                         </button>
