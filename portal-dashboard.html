@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <script src="translations.js"></script>
     <style>
         /* Compact table styling */
         .ultra-compact-table {
@@ -75,6 +76,76 @@
         }
         .action-btn-sm:hover {
             opacity: 0.8;
+        }
+        .lang-toggle {
+            position: relative;
+            display: inline-block;
+        }
+        .lang-dropdown {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--color-text-light);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .lang-dropdown img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-option img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-dropdown:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .lang-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--color-card);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .lang-menu.active {
+            display: block;
+        }
+        .lang-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .lang-option:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        [dir="rtl"] .lang-menu {
+            right: auto;
+            left: 0;
+        }
+        [dir="rtl"] table th,
+        [dir="rtl"] table td {
+            text-align: right;
         }
         
         .filter-bar {
@@ -351,14 +422,29 @@
                 stlReady: userProjects.filter(p => p.status === 'stl-ready').length,
                 totalFiles: userProjects.reduce((sum, p) => sum + p.files.length, 0)
             };
+            const currentLang = localStorage.getItem('lang') || 'en';
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; background: transparent !important; box-shadow: none !important; padding: 0 !important; border: none !important;">
                         <div style="display: flex; align-items: center; gap: 16px;">
-                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
-                            <button class="logout-btn" onclick="logout()">Logout</button>
+                            <div class="lang-toggle">
+                                <button class="lang-dropdown" id="langDropdown" onclick="toggleLangMenu(event)">
+                                    <img src="https://flagcdn.com/w20/${currentLang === 'he' ? 'il' : 'gb'}.png" alt="Flag">
+                                    <span>▼</span>
+                                </button>
+                                <div class="lang-menu" id="langMenu">
+                                    <div class="lang-option" onclick="switchLang('en')">
+                                        <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
+                                    </div>
+                                    <div class="lang-option" onclick="switchLang('he')">
+                                        <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
+                                    </div>
+                                </div>
+                            </div>
+                            <span style="color: var(--color-text-secondary); font-size: 14px; direction: ltr;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
                     </div>
                 </div>
@@ -366,40 +452,40 @@
                 <div class="main">
                     <div class="section-header">
                         <div>
-                            <h1 class="page-title">Patients</h1>
+                            <h1 class="page-title">${t('myProjects')}</h1>
                         </div>
                         <button class="btn-primary" onclick="openNewProjectModal()">
-                            <i class="fas fa-plus"></i> New Patient
+                            <i class="fas fa-plus"></i> ${t('newPatient')}
                         </button>
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search patients by name, status, or date..." style="flex: 1; max-width: 600px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
+                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 ${t('searchPatients')}" style="flex: 1; max-width: 600px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
                     </div>
 
                     <div class="stats">
                         <div class="stat-card">
-                            <div class="stat-label">Total Patients</div>
+                            <div class="stat-label">${t('totalPatients')}</div>
                             <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">In Progress</div>
+                            <div class="stat-label">${t('inProgress')}</div>
                             <div class="stat-value">${stats.inProgress}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Awaiting Approval</div>
+                            <div class="stat-label">${t('awaitingApproval')}</div>
                             <div class="stat-value">${stats.awaitingApproval}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">STL Ready</div>
+                            <div class="stat-label">${t('stlReady')}</div>
                             <div class="stat-value">${stats.stlReady}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Completed</div>
+                            <div class="stat-label">${t('completed')}</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Total Files</div>
+                            <div class="stat-label">${t('totalFiles')}</div>
                             <div class="stat-value">${stats.totalFiles}</div>
                         </div>
                     </div>
@@ -408,12 +494,12 @@
                         <table class="ultra-compact-table">
                             <thead>
                                 <tr>
-                                    <th>Patient Name</th>
-                                    <th>Description</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Files</th>
-                                    <th>Actions</th>
+                                    <th>${t('patient')}</th>
+                                    <th>${t('description')}</th>
+                                    <th>${t('status')}</th>
+                                    <th>${t('date')}</th>
+                                    <th>${t('files')}</th>
+                                    <th>${t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -429,17 +515,17 @@
                                             <td>${new Date(project.createdAt).toLocaleDateString()}</td>
                                             <td><span class="files-count">${htmlCount} HTML, ${stlCount} STL</span></td>
                                             <td>
-                                                <button class="action-btn-sm" onclick="openProjectCard('${project.id}')"><i class="fas fa-folder-open"></i> View</button>
+                                                <button class="action-btn-sm" onclick="openProjectCard('${project.id}')"><i class="fas fa-folder-open"></i> ${t('view')}</button>
                                                 ${stlCount > 0 ? `<button class="action-btn-sm" onclick="forceDownload('${stlFiles[0].path}', '${stlFiles[0].name}'); trackStlDownload('${project.id}', '${stlFiles[0].name}')" style="margin-left: 8px;"><i class="fas fa-download"></i> STL</button>` : ''}
-                                                <button class="action-btn-sm" onclick="openClientUploadModal('${project.id}', '${project.title}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> Upload</button>
+                                                <button class="action-btn-sm" onclick="openClientUploadModal('${project.id}', '${project.title}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> ${t('upload')}</button>
                                             </td>
                                         </tr>
                                     `;
                                 }).join('') : `
                                     <tr><td colspan="6" style="text-align: center; padding: 40px;">
                                         <div style="font-size: 48px;">📋</div>
-                                        <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">No Patients Yet</div>
-                                        <p style="color: var(--color-text-secondary);">Your patients will appear here once they are created.</p>
+                                        <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">${t('noPatientsYet')}</div>
+                                        <p style="color: var(--color-text-secondary);">${t('patientsAppearHere')}</p>
                                     </td></tr>
                                 `}
                             </tbody>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,41 +15,162 @@
     
     <title>Login - Smile Center Portal</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px !important;
+            z-index: 100;
+        }
+        .lang-dropdown {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--color-text-light);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .lang-dropdown img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-dropdown:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .lang-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--color-card);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .lang-menu.active {
+            display: block;
+        }
+        .lang-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .lang-option img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-option:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+    </style>
 </head>
 <body>
+    <div class="lang-toggle">
+        <button class="lang-dropdown" id="langDropdown" onclick="toggleLangMenu(event)">
+            <img src="https://flagcdn.com/w20/gb.png" alt="Flag">
+            <span>▼</span>
+        </button>
+        <div class="lang-menu" id="langMenu">
+            <div class="lang-option" onclick="switchLang('en')">
+                <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
+            </div>
+            <div class="lang-option" onclick="switchLang('he')">
+                <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
+            </div>
+        </div>
+    </div>
+
     <div class="login-container">
         <img src="smile-center-logo.png" alt="Smile Center" class="login-logo" loading="eager" decoding="async">
         
         <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;">
             <div class="form-group">
-                <input type="text" id="email" class="form-input" placeholder="Username or Email" required autocomplete="username">
+                <input type="text" id="email" class="form-input" placeholder="Username or Email" required autocomplete="username" data-en="Username or Email" data-he="שם משתמש או אימייל">
             </div>
             <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password" required autocomplete="current-password">
+                <input type="password" id="password" class="form-input" placeholder="Password" required autocomplete="current-password" data-en="Password" data-he="סיסמה">
             </div>
             <div id="loginStatus" class="status-msg"></div>
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Login</button>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;" data-en="Login" data-he="כניסה">Login</button>
         </form>
 
         <!-- Invite Registration Form -->
         <form id="inviteForm" onsubmit="handleInviteRegistration(event)" style="display: none;">
             <div class="form-group">
-                <label class="form-label">Phone Number</label>
+                <label class="form-label" data-en="Phone Number" data-he="מספר טלפון">Phone Number</label>
                 <input type="tel" id="invitePhone" class="form-input" readonly>
             </div>
             <div class="form-group">
-                <label class="form-label">Create Your Password *</label>
-                <input type="password" id="invitePassword" class="form-input" placeholder="Enter password" required minlength="6">
+                <label class="form-label" data-en="Create Your Password *" data-he="צור סיסמה *">Create Your Password *</label>
+                <input type="password" id="invitePassword" class="form-input" placeholder="Enter password" required minlength="6" data-en="Enter password" data-he="הזן סיסמה">
             </div>
             <div class="form-group">
-                <label class="form-label">Confirm Password *</label>
-                <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="6">
+                <label class="form-label" data-en="Confirm Password *" data-he="אמת סיסמה *">Confirm Password *</label>
+                <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="6" data-en="Re-enter password" data-he="הזן סיסמה שוב">
             </div>
             <div id="inviteStatus" class="status-msg"></div>
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Complete Registration</button>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;" data-en="Complete Registration" data-he="השלם הרשמה">Complete Registration</button>
         </form>
     </div>
+
+    <script src="translations.js"></script>
+    <script>
+        window.switchLang = function(lang) {
+            const html = document.documentElement;
+            
+            // Update HTML attributes
+            html.setAttribute('lang', lang);
+            html.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
+            
+            // Update dropdown
+            const dropdown = document.getElementById('langDropdown');
+            if (dropdown) {
+                dropdown.innerHTML = `<img src="https://flagcdn.com/w20/${lang === 'he' ? 'il' : 'gb'}.png" alt="Flag"><span>▼</span>`;
+            }
+            
+            // Close menu
+            const menu = document.getElementById('langMenu');
+            if (menu) menu.classList.remove('active');
+            
+            // Update all text elements
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute('data-' + lang);
+                if (el.tagName === 'INPUT') {
+                    el.placeholder = text;
+                } else {
+                    el.textContent = text;
+                }
+            });
+            
+            // Save preference
+            localStorage.setItem('lang', lang);
+        };
+
+        // Load saved language
+        const savedLang = localStorage.getItem('lang') || 'en';
+        if (savedLang === 'he') {
+            switchLang('he');
+        }
+    </script>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';

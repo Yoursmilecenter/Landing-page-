@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <script src="translations.js"></script>
     <style>
         @keyframes logoGlow {
             0%, 100% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
@@ -160,6 +161,76 @@
         .pagination button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+        }
+        .lang-toggle {
+            position: relative;
+            display: inline-block;
+        }
+        .lang-dropdown {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--color-text-light);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .lang-dropdown img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-option img {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .lang-dropdown:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .lang-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--color-card);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .lang-menu.active {
+            display: block;
+        }
+        .lang-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .lang-option:hover {
+            background: rgba(167, 139, 250, 0.1);
+        }
+        [dir="rtl"] .lang-menu {
+            right: auto;
+            left: 0;
+        }
+        [dir="rtl"] table th,
+        [dir="rtl"] table td {
+            text-align: right;
         }
     </style>
 </head>
@@ -400,42 +471,57 @@
             const startIdx = (currentPage - 1) * itemsPerPage;
             const endIdx = startIdx + itemsPerPage;
             const pageProjects = filteredProjects.slice(startIdx, endIdx);
+            const currentLang = localStorage.getItem('lang') || 'en';
 
             document.getElementById('app').innerHTML = `
                 <div class="header">
                     <div class="header-content">
                         <img src="smile-center-logo.png" alt="Smile Center" style="height: 55px; animation: logoGlow 3s ease-in-out infinite; display: block; padding: 0; margin: 0;">
                         <div style="display: flex; align-items: center; gap: 16px;">
+                            <div class="lang-toggle">
+                                <button class="lang-dropdown" id="langDropdown" onclick="toggleLangMenu(event)">
+                                    <img src="https://flagcdn.com/w20/${currentLang === 'he' ? 'il' : 'gb'}.png" alt="Flag">
+                                    <span>▼</span>
+                                </button>
+                                <div class="lang-menu" id="langMenu">
+                                    <div class="lang-option" onclick="switchLang('en')">
+                                        <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
+                                    </div>
+                                    <div class="lang-option" onclick="switchLang('he')">
+                                        <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
+                                    </div>
+                                </div>
+                            </div>
                             <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">DESIGNER</span>
-                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
-                            <button class="logout-btn" onclick="logout()">Logout</button>
+                            <span style="color: var(--color-text-secondary); font-size: 14px; direction: ltr;">${currentUser.email}</span>
+                            <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
                     </div>
                 </div>
                 
                 <div class="main">
-                    <h1 class="page-title">My Assigned Patients</h1>
+                    <h1 class="page-title">${t('designerPanel')}</h1>
                     
 
                     <div class="stats" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="stat-card">
-                            <div class="stat-label">Total Assigned</div>
+                            <div class="stat-label">${t('total')}</div>
                             <div class="stat-value">${stats.total}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Pending</div>
+                            <div class="stat-label">${t('pending')}</div>
                             <div class="stat-value">${stats.pending}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">In Progress</div>
+                            <div class="stat-label">${t('inProgress')}</div>
                             <div class="stat-value">${stats.inProgress}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Awaiting Approval</div>
+                            <div class="stat-label">${t('awaitingApproval')}</div>
                             <div class="stat-value">${stats.awaiting}</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Completed</div>
+                            <div class="stat-label">${t('completed')}</div>
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
@@ -445,48 +531,48 @@
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" class="search-input" placeholder="🔍 Search patients..." 
+                        <input type="text" class="search-input" placeholder="🔍 ${t('searchPatients')}" 
                                oninput="handleSearch(this.value)" value="${currentFilters.search}">
                         <select onchange="updateFilter('status', this.value)" style="min-width: 150px;">
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
+                            <option value="all">${t('allStatus')}</option>
+                            <option value="pending">${t('pending')}</option>
                             <option value="in-progress">In Progress</option>
-                            <option value="awaiting-client-approval">Awaiting Approval</option>
+                            <option value="awaiting-client-approval">${t('awaitingApproval')}</option>
                             <option value="approved">Approved</option>
                             <option value="changes-requested">Changes Requested</option>
-                            <option value="completed">Completed</option>
+                            <option value="completed">${t('completed')}</option>
                         </select>
                         <select onchange="updateFilter('priority', this.value)" style="min-width: 140px;">
-                            <option value="all">All Priorities</option>
+                            <option value="all">${t('allPriorities')}</option>
                             <option value="urgent">⚡ Urgent Only</option>
-                            <option value="vip">⭐ VIP Only</option>
-                            <option value="normal">Normal Only</option>
+                            <option value="vip">${t('vipOnly')}</option>
+                            <option value="normal">${t('normalOnly')}</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)" style="min-width: 140px;">
-                            <option value="date-desc">Date (Newest)</option>
-                            <option value="date-asc">Date (Oldest)</option>
-                            <option value="name-asc">Name (A-Z)</option>
-                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="date-desc">${t('dateNewest')}</option>
+                            <option value="date-asc">${t('dateOldest')}</option>
+                            <option value="name-asc">${t('nameAZ')}</option>
+                            <option value="name-desc">${t('nameZA')}</option>
                         </select>
                         <select onchange="itemsPerPage = parseInt(this.value); applyFilters();" style="min-width: 120px;">
-                            <option value="25">25 per page</option>
-                            <option value="50" selected>50 per page</option>
-                            <option value="100">100 per page</option>
+                            <option value="25">25 ${t('perPage')}</option>
+                            <option value="50" selected>50 ${t('perPage')}</option>
+                            <option value="100">100 ${t('perPage')}</option>
                         </select>
                         <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
-                            Showing ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} of ${filteredProjects.length}
+                            ${t('showing')} ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} ${t('of')} ${filteredProjects.length}
                         </div>
                     </div>
 
                     <table class="ultra-compact-table">
                         <thead>
                             <tr>
-                                <th style="width: 30%;">Patient Name</th>
-                                <th style="width: 15%;">Status</th>
-                                <th style="width: 12%;">Priority</th>
-                                <th style="width: 10%;">Files</th>
-                                <th style="width: 10%;">Date</th>
-                                <th style="width: 23%;">Actions</th>
+                                <th style="width: 30%;">${t('patient')}</th>
+                                <th style="width: 15%;">${t('status')}</th>
+                                <th style="width: 12%;">${t('priority')}</th>
+                                <th style="width: 10%;">${t('files')}</th>
+                                <th style="width: 10%;">${t('date')}</th>
+                                <th style="width: 23%;">${t('actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -505,14 +591,14 @@
                                         ${project.clientRemarks ? `<div style="font-size: 11px; color: #ef4444; margin-top: 2px; cursor: pointer;" onclick="alert('Client Remarks:\\n${project.clientRemarks.replace(/'/g, "\\'")}')">⚠️ Changes requested (click to view)</div>` : ''}
                                     </td>
                                     <td>
-                                        <span class="status-badge status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                                        <span class="status-badge status-${project.status.replace(/-/g, '')}">${t('status' + project.status.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')) || project.status.toUpperCase().replace(/-/g, ' ')}</span>
                                     </td>
                                     <td>
                                         ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
                                         ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
                                         ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
                                     </td>
-                                    <td style="font-size: 12px;">${project.files.length} files</td>
+                                    <td style="font-size: 12px;">${project.files.length} ${t('files')}</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
                                         <button class="action-btn" onclick="viewHtmlFile('${project.id}')" title="View HTML" style="background: #10b981;">👁</button>
@@ -524,14 +610,14 @@
                                         </button>
                                     </td>
                                 </tr>
-                            `}).join('') : '<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">No patients assigned</td></tr>'}
+                            `}).join('') : `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">${t('noPatients')}</td></tr>`}
                         </tbody>
                     </table>
 
                     <div class="pagination">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
-                        <span style="color: var(--color-text-secondary); font-size: 13px;">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>${t('previous')}</button>
+                        <span style="color: var(--color-text-secondary); font-size: 13px;">${t('page')} ${currentPage} ${t('of')} ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>${t('next')}</button>
                     </div>
                 </div>
 
