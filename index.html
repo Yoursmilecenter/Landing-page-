@@ -3,50 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="6xfdVAlDFaUjlClfG1zOJ0obUibt4tEJvZq-rlMYZvA">
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="SmileCenter Pro - Professional dental design services. Digital smile design, dental lab solutions, and precision CAD engineering for perfect dental aesthetics.">
-    <meta name="keywords" content="dental design, smile design, dental lab, CAD dental design, digital smile design, dental aesthetics, dental engineering, precision dentistry, smile center">
-    <meta name="author" content="Smile Center">
-    <meta name="robots" content="index, follow">
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="SmileCenter Pro - Professional Dental Design Services">
-    <meta property="og:description" content="Digital smile design and precision dental lab services. Engineered for perfection.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.smilecenter.pro/">
-    <meta property="og:image" content="https://www.smilecenter.pro/smile-center-logo.png">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SmileCenter Pro - Professional Dental Design Services">
-    <meta name="twitter:description" content="Digital smile design and precision dental lab services. Engineered for perfection.">
-    <meta name="twitter:image" content="https://www.smilecenter.pro/smile-center-logo.png">
-    
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4P4RNT6QH"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-Z4P4RNT6QH');
-    </script>
-    
-    <title>SmileCenter Pro - Professional Dental Design | Smile Design | Dental Lab Services</title>
-    <link rel="canonical" href="https://www.smilecenter.pro/">
+    <title>Smile Center Pro - Professional Dental Design Services</title>
+    <meta name="description" content="Professional dental design services for clinics. Fast turnaround, expert designers, STL files ready for 3D printing.">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #000;
-            overflow: hidden;
+            color: #fff;
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+        }
+
+        /* First Screen - Existing Animation */
+        #first-screen {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
             cursor: pointer;
+            scroll-snap-align: start;
         }
 
         @keyframes logoGlow {
@@ -57,8 +37,7 @@
         @keyframes letterFlash {
             0% { 
                 color: #fff;
-                text-shadow: 0 0 20px rgba(56, 189, 248, 1),
-                             0 0 30px rgba(56, 189, 248, 0.8);
+                text-shadow: 0 0 20px rgba(56, 189, 248, 1);
             }
             100% { 
                 color: #38bdf8;
@@ -67,12 +46,11 @@
         }
 
         .logo-container {
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 50;
-            cursor: pointer;
             pointer-events: none;
         }
 
@@ -83,14 +61,13 @@
         }
 
         #headline-container {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
             z-index: 100;
-            pointer-events: auto;
-            cursor: pointer;
+            pointer-events: none;
         }
 
         .headline {
@@ -110,23 +87,672 @@
             animation: letterFlash 0.3s ease-out;
         }
 
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            z-index: 200;
+        }
+
+        .scroll-bar {
+            width: 80px;
+            height: 4px;
+            background: #38bdf8;
+            filter: drop-shadow(0 0 15px #38bdf8) drop-shadow(0 0 30px #38bdf8);
+            animation: barGlow 2s ease-in-out infinite;
+        }
+
+        .scroll-arrow {
+            color: #38bdf8;
+            font-size: 1.2rem;
+            filter: drop-shadow(0 0 10px #38bdf8);
+        }
+
+        @keyframes barGlow {
+            0%, 100% { 
+                filter: drop-shadow(0 0 15px #38bdf8) drop-shadow(0 0 30px #38bdf8);
+            }
+            50% { 
+                filter: drop-shadow(0 0 25px #38bdf8) drop-shadow(0 0 50px #38bdf8) drop-shadow(0 0 75px #38bdf8);
+            }
+        }
+
+        /* Second Screen - Black Theme Content */
+        #second-screen {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: #000;
+            position: relative;
+            scroll-snap-align: start;
+        }
+
+        header {
+            background: #000;
+            border-bottom: 1px solid #222;
+            padding: 1rem 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .nav-logo img {
+            height: 40px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #38bdf8;
+        }
+
+        .hero-second {
+            padding: 5rem 5% 4rem;
+            text-align: center;
+            border-bottom: 1px solid #222;
+        }
+
+        .hero-second h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #38bdf8;
+        }
+
+        .hero-second p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            color: #aaa;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #38bdf8;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #0ea5e9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #38bdf8;
+            border: 2px solid #38bdf8;
+        }
+
+        .btn-secondary:hover {
+            background: #38bdf8;
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .features {
+            padding: 4rem 5%;
+            border-bottom: 1px solid #222;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #38bdf8;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: #0a0a0a;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #222;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: #38bdf8;
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #38bdf8;
+        }
+
+        .feature-card p {
+            color: #aaa;
+        }
+
+        .services {
+            padding: 4rem 5%;
+            border-bottom: 1px solid #222;
+        }
+
+        .service-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .service-item {
+            background: #0a0a0a;
+            color: #38bdf8;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: 1px solid #222;
+            transition: all 0.3s;
+        }
+
+        .service-item:hover {
+            border-color: #38bdf8;
+            background: #38bdf8;
+            color: #000;
+        }
+
+        .our-cases {
+            padding: 4rem 5%;
+            border-bottom: 1px solid #222;
+        }
+
+        .cases-grid {
+            display: flex;
+            overflow-x: hidden;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .cases-grid-wrapper {
+            display: flex;
+            animation: scroll 30s linear infinite;
+            gap: 2rem;
+        }
+
+        .cases-grid-wrapper:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(calc(-100% - 2rem));
+            }
+        }
+
+        .case-card {
+            background: #0a0a0a;
+            border-radius: 12px;
+            border: 1px solid #222;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+            flex: 0 0 450px;
+            min-width: 450px;
+        }
+
+        .case-card:hover {
+            border-color: #38bdf8;
+            z-index: 100;
+            transform: scale(1.15);
+            box-shadow: 0 20px 60px rgba(56, 189, 248, 0.3);
+        }
+
+        .case-viewer-container {
+            width: 100%;
+            height: 350px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .case-card:hover .case-viewer-container {
+            height: 550px;
+        }
+
+        .case-viewer-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(56, 189, 248, 0.9);
+            color: #000;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s;
+            opacity: 0;
+        }
+
+        .case-card:hover .fullscreen-btn {
+            opacity: 1;
+        }
+
+        .fullscreen-btn:hover {
+            background: #38bdf8;
+            transform: scale(1.1);
+        }
+
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+
+        .fullscreen-content {
+            width: 95%;
+            height: 95%;
+            position: relative;
+        }
+
+        .fullscreen-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .fullscreen-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: #38bdf8;
+            color: #000;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .fullscreen-close:hover {
+            background: #0ea5e9;
+            transform: rotate(90deg);
+        }
+
+        .how-it-works {
+            padding: 4rem 5%;
+            border-bottom: 1px solid #222;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: #38bdf8;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+
+        .step h3 {
+            margin-bottom: 0.5rem;
+            color: #38bdf8;
+        }
+
+        .step p {
+            color: #aaa;
+        }
+
+        .testimonials {
+            padding: 4rem 5%;
+            border-bottom: 1px solid #222;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .testimonial {
+            background: #0a0a0a;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #222;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+            color: #aaa;
+        }
+
+        .testimonial-author {
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .cta-section {
+            padding: 4rem 5%;
+            text-align: center;
+            background: #0a0a0a;
+        }
+
+        .cta-section h2 {
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            color: #aaa;
+        }
+
+        footer {
+            background: #000;
+            color: #666;
+            padding: 2rem 5%;
+            text-align: center;
+            border-top: 1px solid #222;
+        }
+
         @media (max-width: 768px) {
             .logo-container img { height: 150px; }
             .headline { font-size: 1.3em; }
+            .hero-second h1 { font-size: 2rem; }
+            .hero-second p { font-size: 1rem; }
+            .nav-links { display: none; }
+            
+            .cases-grid {
+                overflow-x: auto;
+            }
+            
+            .case-card {
+                flex: 0 0 320px;
+                min-width: 320px;
+            }
+            
+            .case-card:hover {
+                transform: scale(1.05);
+            }
+            
+            .case-viewer-container {
+                height: 280px;
+            }
+            
+            .case-card:hover .case-viewer-container {
+                height: 400px;
+            }
         }
 
         @media (max-width: 480px) {
             .logo-container img { height: 120px; }
             .headline { font-size: 1em; }
+            
+            .case-card {
+                flex: 0 0 280px;
+                min-width: 280px;
+            }
+            
+            .case-viewer-container {
+                height: 240px;
+            }
+            
+            .case-card:hover .case-viewer-container {
+                height: 350px;
+            }
         }
     </style>
 </head>
-<body onclick="window.location.href='portal-login.html'">
+<body>
 
-    <div id="headline-container"></div>
+    <!-- First Screen: Animated Splash -->
+    <div id="first-screen" onclick="window.location.href='../Landing-page-/portal-login.html'">
+        <div id="headline-container"></div>
+        <div class="logo-container">
+            <img src="../Landing-page-/smile-center-logo.png" alt="Smile Center Pro Logo">
+        </div>
+    </div>
 
-    <div class="logo-container">
-        <img src="smile-center-logo.png" alt="SmileCenter Pro">
+    <!-- Second Screen: Black Theme Landing Page -->
+    <div id="second-screen">
+        <header>
+            <nav>
+                <div class="nav-logo">
+                    <img src="../Landing-page-/smile-center-logo.png" alt="Smile Center Pro Logo">
+                    <span>Smile Center Pro</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#our-cases">Our Cases</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="../Landing-page-/portal-login.html">Portal Login</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <section class="hero-second">
+            <h1>Professional Dental Design Services</h1>
+            <p>Expert CAD/CAM design for modern dental practices. Fast turnaround. Precision results.</p>
+            <div class="cta-buttons">
+                <a href="../Landing-page-/portal-login.html" class="btn btn-primary">Get Started</a>
+                <a href="#how-it-works" class="btn btn-secondary">Learn More</a>
+            </div>
+        </section>
+
+        <section id="services" class="services">
+            <div class="container">
+                <h2>Our Design Services</h2>
+                <div class="service-list">
+                    <div class="service-item">Single Crowns</div>
+                    <div class="service-item">Bridges</div>
+                    <div class="service-item">Implant Crowns</div>
+                    <div class="service-item">Veneers</div>
+                    <div class="service-item">Inlays & Onlays</div>
+                    <div class="service-item">Full Arch Restorations</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="our-cases" class="our-cases">
+            <div class="container">
+                <h2>Our Cases Portfolio</h2>
+                <div class="cases-grid">
+                    <div class="cases-grid-wrapper" id="cases-wrapper">
+                        <!-- Cases loaded from Firebase -->
+                    </div>
+                    <div class="cases-grid-wrapper" id="cases-wrapper-clone">
+                        <!-- Clone for seamless loop -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <h2>How It Works</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Upload Your Case</h3>
+                        <p>Submit scans, photos, and treatment details through our secure portal</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Expert Design</h3>
+                        <p>Our certified technicians create your custom design with precision</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Review & Approve</h3>
+                        <p>Check the design preview and request any modifications needed</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>Download STL</h3>
+                        <p>Get your print-ready STL files and start production immediately</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <h2>Ready to Transform Your Workflow?</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Join hundreds of dental practices using Smile Center Pro</p>
+            <a href="../Landing-page-/portal-login.html" class="btn btn-primary">Start Your First Case</a>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <h2>Why Choose Smile Center Pro</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Fast Turnaround</h3>
+                        <p>Get your dental designs back quickly without compromising quality. Most cases completed within 24-48 hours.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Expert Designers</h3>
+                        <p>Work with certified dental technicians specialized in digital dentistry and CAD/CAM workflows.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Easy Portal Access</h3>
+                        <p>Upload cases, track progress, and download STL files through our intuitive online portal.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💎</div>
+                        <h3>Premium Quality</h3>
+                        <p>Precision designs optimized for 3D printing and milling. Every case reviewed for accuracy.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Revision Support</h3>
+                        <p>Request modifications until you're satisfied. We ensure the final design meets your expectations.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Secure & HIPAA Compliant</h3>
+                        <p>Your patient data is protected with enterprise-grade security and encryption.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 Smile Center Pro. All rights reserved.</p>
+            <p>Professional dental design services for modern practices</p>
+        </footer>
     </div>
 
     <script>
@@ -181,6 +807,12 @@
         }
 
         function showHeadline() {
+            const firstScreen = document.getElementById('first-screen');
+            const isInViewport = firstScreen.getBoundingClientRect().top >= -window.innerHeight && 
+                                firstScreen.getBoundingClientRect().top <= window.innerHeight;
+            
+            if (!isInViewport) return;
+
             const headline = document.createElement('div');
             headline.className = 'headline';
             
@@ -240,6 +872,91 @@
 
         showHeadline();
         setInterval(showHeadline, 5000);
+    </script>
+
+    <!-- Firebase Dynamic Samples Loader -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+            authDomain: "smile-center-7c6f5.firebaseapp.com",
+            projectId: "smile-center-7c6f5",
+            storageBucket: "smile-center-7c6f5.firebasestorage.app",
+            messagingSenderId: "517098616907",
+            appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadSamples() {
+            try {
+                const q = query(collection(db, 'landing-samples'), orderBy('uploadedAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                const wrapper = document.getElementById('cases-wrapper');
+                const clone = document.getElementById('cases-wrapper-clone');
+                
+                if (!wrapper) return;
+
+                wrapper.innerHTML = '';
+                clone.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    wrapper.innerHTML = '<div style="color: #666; text-align: center; width: 100%; padding: 3rem;">No samples available yet</div>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const sample = doc.data();
+                    const card = `
+                        <div class="case-card">
+                            <div class="case-viewer-container">
+                                <iframe src="${sample.url}" allowfullscreen loading="lazy"></iframe>
+                                <button class="fullscreen-btn" onclick="openFullscreen('${sample.url}')">⛶</button>
+                            </div>
+                        </div>
+                    `;
+                    wrapper.innerHTML += card;
+                    clone.innerHTML += card;
+                });
+
+                const itemCount = querySnapshot.size;
+                const duration = Math.max(20, itemCount * 5);
+                wrapper.style.animationDuration = `${duration}s`;
+                clone.style.animationDuration = `${duration}s`;
+
+            } catch (error) {
+                console.error('Error loading samples:', error);
+            }
+        }
+
+        // Fullscreen functionality
+        window.openFullscreen = function(url) {
+            const overlay = document.createElement('div');
+            overlay.className = 'fullscreen-overlay active';
+            overlay.innerHTML = `
+                <div class="fullscreen-content">
+                    <button class="fullscreen-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                    <iframe src="${url}" allowfullscreen></iframe>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadSamples);
+        } else {
+            loadSamples();
+        }
     </script>
 </body>
 </html>
