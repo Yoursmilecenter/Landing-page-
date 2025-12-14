@@ -50,7 +50,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 50;
-            pointer-events: none;
+            cursor: pointer;
         }
 
         .logo-container img {
@@ -274,8 +274,8 @@
 </head>
 <body>
     <section id="first-screen">
-        <div class="logo-container">
-            <img src="../smile-center-logo.png" alt="Smile Center Pro">
+        <div class="logo-container" onclick="window.location.href='portal-login.html'">
+            <img src="smile-center-logo.png" alt="Smile Center Pro">
         </div>
         <div id="headline-container"></div>
         <div class="scroll-indicator">
