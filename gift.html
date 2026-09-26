@@ -70,6 +70,7 @@ const db = getFirestore(app);
 
 // prize key: "teeth_N" = free design of up to N teeth
 const teethOf = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? +m[1] : 5; };
+const drName = n => /^ד["״']?ר/.test(n) ? n : 'ד"ר ' + n;
 const SEG_COLORS = ['#0a84c6', '#38bdf8', '#0e6ba8', '#7dd3fc'];
 
 const token = new URLSearchParams(location.search).get('t');
@@ -92,7 +93,7 @@ async function init() {
         console.error(e);
         return fail('משהו השתבש, נסה שוב');
     }
-    $('hello').textContent = invite.clientName ? `שלום ${invite.clientName} 🔒` : 'הוזמנת 🔒';
+    $('hello').textContent = invite.clientName ? `שלום ${drName(invite.clientName)} 🔒` : 'הוזמנת 🔒';
     if (invite.expiresAt) $('expiry').textContent = 'בתוקף עד ' + new Date(invite.expiresAt).toLocaleDateString('he-IL') + ' · שימוש חד-פעמי';
     show('stateCard');
     drawWheel();

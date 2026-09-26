@@ -1188,6 +1188,7 @@
         };
 
         const GIFT_STATUS = { sealed: '🔒 sealed', opened: '👀 opened', redeemed: '✅ redeemed' };
+        const drName = n => /^ד["״']?ר/.test(n) ? n : 'ד"ר ' + n;
         const giftLabel = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? `עד ${m[1]} שיניים` : ''; };
 
         // wheel of teeth: 5 (40%), 6 (30%), 7 (20%), 8 (10%)
@@ -1241,7 +1242,7 @@
                     expiresAt: now + 7 * 24 * 60 * 60 * 1000
                 });
                 const link = `https://www.smilecenter.pro/gift.html?t=${token}`;
-                const msg = `שלום${name ? ' ' + name : ''} 🔒\nהכנו לך הזמנה אישית, חד-פעמית: סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה 🦷🎡\nבתוקף 7 ימים. רק למספר הזה.\n👉 ${link}`;
+                const msg = `שלום${name ? ' ' + drName(name) : ''} 🔒\nהכנו לך הזמנה אישית, חד-פעמית: סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה 🦷🎡\nבתוקף 7 ימים. רק למספר הזה.\n👉 ${link}`;
                 document.getElementById('giftLink').value = link;
                 document.getElementById('giftWa').href = `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(msg)}`;
                 document.getElementById('giftResult').style.display = 'block';
