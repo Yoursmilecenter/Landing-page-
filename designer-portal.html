@@ -606,8 +606,11 @@
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
                                         <button class="action-btn" onclick="viewHtmlFile('${project.id}')" title="View HTML" style="background: #10b981;">👁</button>
-                                        <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', ${project.htmlApproved})" title="Upload Files">
-                                            📤
+                                        <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', 'html', ${project.htmlApproved})" title="Upload Design (HTML)">
+                                            🎨
+                                        </button>
+                                        <button class="action-btn upload" onclick="openUploadModal('${project.id}', '${project.title}', 'stl', ${project.htmlApproved})" title="Upload Final STL" style="background: #6366f1;">
+                                            📦
                                         </button>
                                         <button class="action-btn view" onclick="openFilesModal('${project.id}')" title="View Files">
                                             📁
@@ -629,9 +632,11 @@
                 <div id="uploadModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeUpload()">&times;</button>
-                        <h2 class="modal-title">Upload Files</h2>
+                        <h2 class="modal-title" id="uploadModalTitle">Upload Files</h2>
                         <p class="modal-subtitle">Patient: <span id="currentProjectTitle"></span></p>
-                        
+                        <div id="uploadWarningBanner" style="display:none; background:#fef3c7; border:1px solid #f59e0b; color:#92400e; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px;">
+                            ⚠️ Client has not approved the HTML design yet. You can still upload the final STL, but the project won't advance to "STL Ready" until the client approves.
+                        </div>
                         <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-secondary); margin-bottom: 10px;"></i>
                             <div style="font-size:18px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
@@ -703,15 +708,31 @@
 
         let currentProjectForUpload = null;
         let currentPatientTitle = '';
+        let currentUploadType = null; // 'html' or 'stl'
 
-        window.openUploadModal = (projectId, projectTitle, isApproved) => {
+        window.openUploadModal = (projectId, projectTitle, uploadType, isApproved) => {
             currentProjectForUpload = projectId;
             currentPatientTitle = projectTitle;
+            currentUploadType = uploadType;
             document.getElementById('currentProjectTitle').textContent = projectTitle;
             document.getElementById('fileInput').value = '';
+            document.getElementById('fileInput').accept = uploadType === 'html' ? '.html,.htm' : '.stl';
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('uploadStatus').className = 'status-msg';
-            
+
+            const titleEl = document.getElementById('uploadModalTitle');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const warningBanner = document.getElementById('uploadWarningBanner');
+            if (uploadType === 'html') {
+                titleEl.textContent = 'Upload Design (HTML)';
+                uploadBtn.textContent = 'Upload HTML Design';
+                warningBanner.style.display = 'none';
+            } else {
+                titleEl.textContent = 'Upload Final STL';
+                uploadBtn.textContent = 'Upload Final STL';
+                warningBanner.style.display = isApproved ? 'none' : 'block';
+            }
+
             document.getElementById('uploadModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -723,12 +744,14 @@
             document.getElementById('uploadStatus').textContent = '';
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('fileInput').value = '';
+            document.getElementById('uploadWarningBanner').style.display = 'none';
         };
 
         window.handleUpload = async () => {
             const input = document.getElementById('fileInput');
             const files = input.files;
             const btn = document.getElementById('uploadBtn');
+            const btnLabel = currentUploadType === 'html' ? 'Upload HTML Design' : 'Upload Final STL';
 
             if (files.length === 0) {
                 showStatus('Please select at least one file.', 'error');
@@ -738,6 +761,15 @@
             const hasHTML = Array.from(files).some(f => f.name.match(/\.html?$/i));
             const hasSTL = Array.from(files).some(f => f.name.match(/\.stl$/i));
 
+            if (currentUploadType === 'html' && !hasHTML) {
+                showStatus('Please select an HTML file for the design upload.', 'error');
+                return;
+            }
+            if (currentUploadType === 'stl' && !hasSTL) {
+                showStatus('Please select an STL file for the final upload.', 'error');
+                return;
+            }
+
             btn.disabled = true;
             btn.textContent = 'Uploading...';
             showStatus('Starting upload...', 'warning');
@@ -746,7 +778,7 @@
                 // Get current project data first
                 const projectSnap = await getDoc(doc(db, 'projects', currentProjectForUpload));
                 const projectData = projectSnap.data();
-                
+
                 for (const file of files) {
                     const ext = file.name.substring(file.name.lastIndexOf('.'));
                     const newFileName = `${currentPatientTitle}${ext}`;
@@ -755,27 +787,35 @@
                 }
 
                 const updateData = {};
-                if (hasHTML) {
+                if (currentUploadType === 'html' && hasHTML) {
+                    // Fresh design upload resets client approval and sends it back for review
                     updateData.status = 'awaiting-client-approval';
+                    updateData.htmlApproved = false;
                 }
-                // If uploading STL and HTML already approved → stl-ready
-                if (hasSTL && projectData.htmlApproved) {
-                    updateData.status = 'stl-ready';
+                if (currentUploadType === 'stl' && hasSTL) {
+                    // Only advances the workflow once the client has approved the design;
+                    // otherwise the file is stored but status stays put (warned in the modal).
+                    if (projectData.htmlApproved) {
+                        updateData.status = 'stl-ready';
+                    }
                 }
-                
+
                 if (Object.keys(updateData).length > 0) {
                     await updateDoc(doc(db, 'projects', currentProjectForUpload), updateData);
                 }
 
-                showStatus('✅ Files uploaded successfully!', 'success');
+                const warnedEarlySTL = currentUploadType === 'stl' && !projectData.htmlApproved;
+                showStatus(warnedEarlySTL
+                    ? '✅ STL uploaded. Status will advance once the client approves the design.'
+                    : '✅ Files uploaded successfully!', 'success');
                 setTimeout(async () => {
                     closeUpload();
                     await loadData(true);
-                }, 1500);
+                }, 1800);
             } catch (error) {
                 showStatus('❌ Error: ' + error.message, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Upload Files';
+                btn.textContent = btnLabel;
             }
         };
 
