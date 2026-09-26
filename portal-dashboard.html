@@ -313,9 +313,9 @@
             }, 5000);
         }
 
-        async function loadData() {
+        async function loadData(force = false) {
             const now = Date.now();
-            if (now - lastLoadTime < CACHE_DURATION && userProjects.length > 0) {
+            if (!force && now - lastLoadTime < CACHE_DURATION && userProjects.length > 0) {
                 render();
                 return;
             }
@@ -752,7 +752,7 @@
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
-                    loadData();
+                    loadData(true);
                 }, 2000);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;
@@ -781,7 +781,7 @@
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeApproval();
-                    loadData();
+                    loadData(true);
                 }, 2000);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;
@@ -837,7 +837,7 @@
                 
                 setTimeout(() => {
                     closeNewProject();
-                    loadData();
+                    loadData(true);
                 }, 1500);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;
@@ -932,7 +932,7 @@
                 
                 setTimeout(async () => {
                     closeClientUpload();
-                    await loadData();
+                    await loadData(true);
                 }, 1500);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;
@@ -1043,7 +1043,7 @@
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeProjectCard();
-                    loadData();
+                    loadData(true);
                 }, 1500);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;
@@ -1072,7 +1072,7 @@
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
                     closeProjectCard();
-                    loadData();
+                    loadData(true);
                 }, 1500);
             } catch (error) {
                 statusEl.textContent = '❌ Error: ' + error.message;

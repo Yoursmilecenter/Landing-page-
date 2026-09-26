@@ -294,9 +294,9 @@
             }
         });
 
-        async function loadData() {
+        async function loadData(force = false) {
             const now = Date.now();
-            if (now - lastLoadTime < CACHE_DURATION && myProjects.length > 0) {
+            if (!force && now - lastLoadTime < CACHE_DURATION && myProjects.length > 0) {
                 applyFilters();
                 return;
             }
@@ -765,7 +765,7 @@
                 showStatus('✅ Files uploaded successfully!', 'success');
                 setTimeout(async () => {
                     closeUpload();
-                    await loadData();
+                    await loadData(true);
                 }, 1500);
             } catch (error) {
                 showStatus('❌ Error: ' + error.message, 'error');
