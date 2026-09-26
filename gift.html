@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>הזמנה אישית - Smile Center</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .gift-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .gift-card { width: 100%; max-width: 420px; text-align: center; background: var(--color-card); border-radius: 20px; padding: 32px 24px; box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+        .gift-steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; font-size: 12px; color: var(--color-text-secondary); }
+        .gift-steps span { padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,.06); }
+        .gift-steps span.on { background: var(--color-primary); color: #fff; }
+        .gift-title { font-size: 24px; font-weight: 700; margin: 0 0 8px; }
+        .gift-sub { color: var(--color-text-secondary); font-size: 15px; margin-bottom: 20px; }
+        .wheel-box { position: relative; width: 270px; height: 270px; margin: 8px auto 20px; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); z-index: 3; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 26px solid #ef4444; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+        #wheel { width: 270px; height: 270px; border-radius: 50%; box-shadow: 0 6px 24px rgba(0,0,0,.4); transition: transform 5s cubic-bezier(.12,.6,.1,1); }
+        .wheel-hub { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); z-index: 2; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .prize-result { font-size: 22px; font-weight: 700; color: var(--color-primary); margin-bottom: 16px; }
+        .gift-msg { padding: 20px 0; font-size: 18px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="gift-wrap">
+    <div class="gift-card">
+        <div id="stateLoading" class="gift-msg">טוען...</div>
+
+        <div id="stateError" class="hidden">
+            <div class="gift-title">🔒</div>
+            <div class="gift-msg" id="errorText"></div>
+            <a class="btn-primary" style="display:inline-block;padding:12px 24px;text-decoration:none" href="https://wa.me/972559339666?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%94%D7%96%D7%9E%D7%A0%D7%94%20%D7%97%D7%93%D7%A9%D7%94" target="_blank">דבר איתנו ב-WhatsApp</a>
+        </div>
+
+        <div id="stateCard" class="hidden">
+            <div class="gift-steps"><span class="on" id="s1">1 🔒 פתח</span><span id="s2">2 🎁 גלה</span><span id="s3">3 🔐 סיסמה</span></div>
+            <h1 class="gift-title" id="hello"></h1>
+            <div class="gift-sub" id="sub">הכנו לך הזמנה אישית, חד-פעמית. סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה.</div>
+            <div class="wheel-box">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheel" width="540" height="540"></canvas>
+                <div class="wheel-hub">🦷</div>
+            </div>
+            <button id="spinBtn" class="btn-primary" style="width:100%;padding:14px" onclick="spinWheel()">🎡 סובב את הגלגל</button>
+            <div id="prizeResult" class="prize-result hidden"></div>
+            <button id="enterBtn" class="btn-primary hidden" style="width:100%;padding:14px" onclick="enterPortal()">כניסה לחשבון האישי שלי</button>
+            <div id="expiry" style="margin-top:14px;font-size:12px;color:var(--color-text-secondary)"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const app = initializeApp({
+    apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
+    authDomain: "smile-center-7c6f5.firebaseapp.com",
+    projectId: "smile-center-7c6f5",
+    storageBucket: "smile-center-7c6f5.firebasestorage.app",
+    messagingSenderId: "517098616907",
+    appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// prize key: "teeth_N" = free design of up to N teeth
+const teethOf = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? +m[1] : 5; };
+const SEG_COLORS = ['#0a84c6', '#38bdf8', '#0e6ba8', '#7dd3fc'];
+
+const token = new URLSearchParams(location.search).get('t');
+const $ = id => document.getElementById(id);
+const show = id => { ['stateLoading', 'stateError', 'stateCard'].forEach(s => $(s).classList.toggle('hidden', s !== id)); };
+const fail = msg => { $('errorText').textContent = msg; show('stateError'); };
+
+let invite = null;
+
+async function init() {
+    if (!token) return fail('קישור לא תקין');
+    try {
+        await signInAnonymously(auth);
+        const snap = await getDoc(doc(db, 'invites', token));
+        if (!snap.exists() || snap.data().type !== 'mystery') return fail('קישור לא תקין');
+        invite = snap.data();
+        if (invite.status === 'redeemed') return fail('ההזמנה הזו כבר מומשה');
+        if (invite.expiresAt && Date.now() > invite.expiresAt) return fail('פג תוקף ההזמנה, בקש הזמנה חדשה');
+    } catch (e) {
+        console.error(e);
+        return fail('משהו השתבש, נסה שוב');
+    }
+    $('hello').textContent = invite.clientName ? `שלום ${invite.clientName} 🔒` : 'הוזמנת 🔒';
+    if (invite.expiresAt) $('expiry').textContent = 'בתוקף עד ' + new Date(invite.expiresAt).toLocaleDateString('he-IL') + ' · שימוש חד-פעמי';
+    show('stateCard');
+    drawWheel();
+}
+
+const SEGS = 8; // values 5,6,7,8,5,6,7,8
+const segValue = i => 5 + (i % 4);
+
+function drawWheel() {
+    const c = $('wheel'), ctx = c.getContext('2d');
+    const R = c.width / 2, step = 2 * Math.PI / SEGS;
+    for (let i = 0; i < SEGS; i++) {
+        const a0 = -Math.PI / 2 + i * step, a1 = a0 + step;
+        ctx.beginPath(); ctx.moveTo(R, R); ctx.arc(R, R, R - 4, a0, a1); ctx.closePath();
+        ctx.fillStyle = SEG_COLORS[i % 4]; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.save();
+        ctx.translate(R, R); ctx.rotate(a0 + step / 2);
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'right';
+        ctx.font = 'bold 54px sans-serif';
+        ctx.fillText(segValue(i), R - 40, 18);
+        ctx.font = '22px sans-serif';
+        ctx.fillText('שיניים', R - 40, 46);
+        ctx.restore();
+    }
+}
+
+let spun = false;
+window.spinWheel = () => {
+    if (spun) return; spun = true;
+    $('spinBtn').classList.add('hidden');
+    const n = teethOf(invite.prize);
+    const opts = [...Array(SEGS).keys()].filter(i => segValue(i) === n);
+    const idx = opts[Math.floor(Math.random() * opts.length)];
+    const center = idx * (360 / SEGS) + 180 / SEGS;
+    const jitter = (Math.random() - .5) * (360 / SEGS) * .6;
+    const w = $('wheel');
+    w.style.transform = `rotate(${360 * 6 + 360 - center + jitter}deg)`;
+    w.addEventListener('transitionend', () => {
+        $('s2').classList.add('on');
+        $('sub').textContent = 'שמור את המתנה בחשבון האישי שלך.';
+        $('prizeResult').textContent = `🎉 זכית בעיצוב חיוך עד ${n} שיניים, במתנה!`;
+        $('prizeResult').classList.remove('hidden');
+        $('enterBtn').classList.remove('hidden');
+    }, { once: true });
+};
+
+window.enterPortal = async () => {
+    const btn = $('enterBtn');
+    btn.disabled = true; btn.textContent = 'נכנס...';
+    try {
+        const uid = auth.currentUser.uid;
+        await setDoc(doc(db, 'users', uid), {
+            uid, role: 'client', loginType: 'gift',
+            username: invite.phone, phone: invite.phone,
+            clientName: invite.clientName || '',
+            email: null, prize: invite.prize,
+            needsPassword: true, inviteCode: token,
+            createdAt: Date.now()
+        });
+        await updateDoc(doc(db, 'invites', token), { status: 'opened', openedAt: Date.now(), uid });
+        location.href = 'portal-dashboard.html';
+    } catch (e) {
+        console.error(e);
+        btn.disabled = false; btn.textContent = 'כניסה לחשבון האישי שלי';
+        alert('שגיאה, נסה שוב');
+    }
+};
+
+init();
+</script>
+</body>
+</html>

@@ -596,6 +596,9 @@
                             <button class="btn-secondary btn-small" onclick="window.location.href='manage-samples.html'" style="background: rgba(0, 102, 204, 0.2); color: #0066cc;">
                                 <i class="fas fa-images"></i> Manage Samples
                             </button>
+                            <button class="btn-primary btn-small" onclick="openGiftModal()" style="background: linear-gradient(135deg, #0a84c6, #38bdf8);">
+                                🎁 Gift Invite
+                            </button>
                             <button class="btn-primary btn-small" onclick="openInviteClientModal()">
                                 <i class="fas fa-link"></i> ${t('inviteClient')}
                             </button>
@@ -795,6 +798,36 @@
                             <div id="addClientStatus" class="status-msg"></div>
                             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Client</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Gift Invite Modal -->
+                <div id="giftModal" class="modal">
+                    <div class="modal-content" style="max-width: 640px;">
+                        <button class="close" onclick="closeGiftModal()">&times;</button>
+                        <h2 class="modal-title">🎁 Gift Invite</h2>
+                        <p class="modal-subtitle">One-time mystery invite, sent via WhatsApp</p>
+                        <form id="giftForm" onsubmit="handleGiftInvite(event)">
+                            <div class="form-group">
+                                <label class="form-label">Client Name</label>
+                                <input type="text" id="giftName" class="form-input" placeholder="ד״ר ...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Client Phone Number *</label>
+                                <input type="tel" id="giftPhone" class="form-input" placeholder="0501234567" required>
+                            </div>
+                            <div id="giftResult" style="display: none; margin: 16px 0;">
+                                <input type="text" id="giftLink" class="form-input" readonly style="margin-bottom: 8px;">
+                                <div style="display: flex; gap: 8px;">
+                                    <a id="giftWa" class="btn-primary" target="_blank" style="flex: 1; text-align: center; text-decoration: none; padding: 12px; background: #25d366;">Send via WhatsApp</a>
+                                    <button type="button" class="btn-secondary" onclick="copyGiftLink()">Copy</button>
+                                </div>
+                            </div>
+                            <div id="giftStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Gift Invite</button>
+                        </form>
+                        <h3 style="margin: 24px 0 8px; font-size: 15px;">Recent gift invites</h3>
+                        <div id="giftList" style="max-height: 220px; overflow: auto; font-size: 13px;"></div>
                     </div>
                 </div>
 
@@ -1153,6 +1186,96 @@
                 statusEl.className = 'status-msg active error';
             }
         };
+
+        const GIFT_STATUS = { sealed: '🔒 sealed', opened: '👀 opened', redeemed: '✅ redeemed' };
+        const giftLabel = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? `עד ${m[1]} שיניים` : ''; };
+
+        // wheel of teeth: 5 (40%), 6 (30%), 7 (20%), 8 (10%)
+        function rollPrize() {
+            const r = Math.random();
+            return r < 0.4 ? 'teeth_5' : r < 0.7 ? 'teeth_6' : r < 0.9 ? 'teeth_7' : 'teeth_8';
+        }
+
+        function randToken() {
+            const a = new Uint8Array(12);
+            crypto.getRandomValues(a);
+            return Array.from(a, b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
+        }
+
+        function waNumber(phone) {
+            const d = phone.replace(/\D/g, '');
+            if (d.startsWith('972')) return d;
+            return '972' + d.replace(/^0/, '');
+        }
+
+        window.openGiftModal = () => {
+            document.getElementById('giftModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('giftForm').reset();
+            document.getElementById('giftResult').style.display = 'none';
+            document.getElementById('giftStatus').className = 'status-msg';
+            loadGiftList();
+        };
+
+        window.closeGiftModal = () => {
+            document.getElementById('giftModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.handleGiftInvite = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('giftName').value.trim();
+            const phone = document.getElementById('giftPhone').value.replace(/\D/g, '');
+            const statusEl = document.getElementById('giftStatus');
+            try {
+                const token = randToken();
+                const prize = rollPrize();
+                const now = Date.now();
+                await setDoc(doc(db, 'invites', token), {
+                    type: 'mystery',
+                    code: token,
+                    phone, clientName: name, prize,
+                    status: 'sealed', used: false,
+                    createdBy: currentUser.email,
+                    createdAt: now,
+                    expiresAt: now + 7 * 24 * 60 * 60 * 1000
+                });
+                const link = `https://www.smilecenter.pro/gift.html?t=${token}`;
+                const msg = `שלום${name ? ' ' + name : ''} 🔒\nהכנו לך הזמנה אישית, חד-פעמית: סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה 🦷🎡\nבתוקף 7 ימים. רק למספר הזה.\n👉 ${link}`;
+                document.getElementById('giftLink').value = link;
+                document.getElementById('giftWa').href = `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(msg)}`;
+                document.getElementById('giftResult').style.display = 'block';
+                statusEl.textContent = '✓ Gift invite created';
+                statusEl.className = 'status-msg active success';
+                loadGiftList();
+            } catch (error) {
+                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        window.copyGiftLink = () => {
+            navigator.clipboard.writeText(document.getElementById('giftLink').value);
+        };
+
+        async function loadGiftList() {
+            const el = document.getElementById('giftList');
+            try {
+                const snap = await getDocs(query(collection(db, 'invites'), orderBy('createdAt', 'desc')));
+                const rows = snap.docs.map(d => d.data()).filter(d => d.type === 'mystery').slice(0, 20);
+                if (!rows.length) { el.textContent = '—'; return; }
+                const expired = d => d.status !== 'redeemed' && d.expiresAt && Date.now() > d.expiresAt;
+                el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + rows.map(d => `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                        <td style="padding:6px;">${d.clientName || ''}</td>
+                        <td style="padding:6px;direction:ltr;">${d.phone}</td>
+                        <td style="padding:6px;">${giftLabel(d.prize)}</td>
+                        <td style="padding:6px;">${expired(d) ? '⌛ expired' : (GIFT_STATUS[d.status] || d.status)}</td>
+                    </tr>`).join('') + '</table>';
+            } catch (err) {
+                el.textContent = 'Error: ' + err.message;
+            }
+        }
 
         window.copyInviteLink = () => {
             const linkInput = document.getElementById('inviteLink');
