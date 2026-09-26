@@ -372,7 +372,8 @@
                     ]);
                     return {
                         name: item.name,
-                        date: new Date(meta.timeCreated).toLocaleDateString()
+                        date: new Date(meta.timeCreated).toLocaleDateString(),
+                        path: item.fullPath
                     };
                 });
                 
