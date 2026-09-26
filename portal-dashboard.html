@@ -1026,11 +1026,13 @@
                 ` : ''}
             `;
 
+            modal.style.display = 'flex';
+
             if (stlFiles.length > 0) {
+                // Modal must be visible first so stlPreviewContainer has a real
+                // width/height - otherwise the renderer initializes at 0x0.
                 load3DPreview(stlFiles[0].url, null);
             }
-
-            modal.style.display = 'flex';
         };
 
         window.loadHtmlPreview = (url, name, btn) => {
