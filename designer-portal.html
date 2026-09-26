@@ -436,6 +436,11 @@
             const htmlFile = project.files.find(f => f.name.match(/\.html?$/i));
             if (htmlFile) {
                 window.open(htmlFile.url, '_blank');
+            } else {
+                // No HTML design file yet (e.g. STL-only patient) - the eye
+                // button used to silently do nothing here. Fall back to the
+                // files list so there's always a visible result when clicked.
+                openFilesModal(projectId);
             }
         };
 
