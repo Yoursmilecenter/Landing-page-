@@ -1066,7 +1066,6 @@
 
             const width = container.clientWidth;
             const height = container.clientHeight;
-            console.log('[stl-debug] container size at init:', width, height, 'modal display:', document.getElementById('projectCardModal').style.display);
 
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf0f2f5);
@@ -1090,9 +1089,12 @@
                 const size = new THREE.Vector3();
                 geometry.boundingBox.getSize(size);
                 const maxDim = Math.max(size.x, size.y, size.z) || 1;
-                const distance = maxDim * 2.2;
 
-                camera.position.set(distance, distance * 0.6, distance);
+                // Fit the model to the frame: true distance-from-origin (not just a
+                // per-axis offset) accounting for the camera's field of view.
+                const fitDistance = (maxDim / 2) / Math.tan((camera.fov / 2) * Math.PI / 180) * 1.4;
+                const dir = new THREE.Vector3(1, 0.6, 1).normalize();
+                camera.position.copy(dir.multiplyScalar(fitDistance));
                 camera.lookAt(0, 0, 0);
 
                 const material = new THREE.MeshStandardMaterial({ color: 0x0099cc, metalness: 0.1, roughness: 0.6 });
