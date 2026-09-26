@@ -374,7 +374,8 @@
                         name: item.name,
                         date: new Date(meta.timeCreated).toLocaleDateString(),
                         url: url,
-                        path: item.fullPath
+                        path: item.fullPath,
+                        size: meta.size
                     };
                 });
                 
@@ -563,7 +564,7 @@
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
                                 <button class="btn-primary" onclick="approveDesign()" style="background: var(--color-success); flex: 1;">✅ Approve Design</button>
-                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">âš  Request Changes</button>
+                                <button class="btn-primary" onclick="showRejectForm()" style="background: var(--color-error); flex: 1;">⚠️ Request Changes</button>
                             </div>
                             <div id="rejectForm" style="display: none; margin-top: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Remarks for Designer:</label>
@@ -754,7 +755,7 @@
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'âŒ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -783,7 +784,7 @@
                     loadData();
                 }, 2000);
             } catch (error) {
-                statusEl.textContent = 'âŒ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -839,7 +840,7 @@
                     loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = 'âŒ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -934,7 +935,7 @@
                     await loadData();
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = 'âŒ Error: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
                 btn.textContent = 'Upload Files';

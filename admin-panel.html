@@ -926,10 +926,18 @@
 
         window.assignDesigner = async (projectId, designerEmail) => {
             try {
-                await updateDoc(doc(db, 'projects', projectId), {
-                    assignedDesignerEmail: designerEmail || null,
-                    status: designerEmail ? 'in-progress' : 'pending'
-                });
+                const project = allProjects.find(p => p.id === projectId);
+                const advancedStatuses = ['awaiting-client-approval', 'approved', 'changes-requested', 'stl-ready', 'completed'];
+                const updates = { assignedDesignerEmail: designerEmail || null };
+
+                // Only auto-move the workflow status for early-stage projects.
+                // Reassigning/unassigning a designer on a project that's already
+                // further along (e.g. completed) must not silently reset its status.
+                if (!project || !advancedStatuses.includes(project.status)) {
+                    updates.status = designerEmail ? 'in-progress' : 'pending';
+                }
+
+                await updateDoc(doc(db, 'projects', projectId), updates);
                 await loadData();
             } catch (error) {
                 alert('Error: ' + error.message);

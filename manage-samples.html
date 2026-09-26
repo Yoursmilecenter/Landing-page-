@@ -13,8 +13,8 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #000;
-            color: #fff;
+            background: #ffffff;
+            color: #1a1a1a;
             padding: 2rem;
         }
 
@@ -24,14 +24,14 @@
         }
 
         h1 {
-            color: #38bdf8;
+            color: #0066cc;
             margin-bottom: 2rem;
             font-size: 2.5rem;
         }
 
         .upload-section {
-            background: #0a0a0a;
-            border: 2px dashed #38bdf8;
+            background: #f8fafc;
+            border: 2px dashed #0066cc;
             border-radius: 12px;
             padding: 3rem;
             text-align: center;
@@ -39,8 +39,8 @@
         }
 
         .upload-btn {
-            background: #38bdf8;
-            color: #000;
+            background: #0066cc;
+            color: #fff;
             padding: 1rem 2rem;
             border: none;
             border-radius: 8px;
@@ -51,7 +51,7 @@
         }
 
         .upload-btn:hover {
-            background: #0ea5e9;
+            background: #0099cc;
             transform: translateY(-2px);
         }
 
@@ -66,22 +66,23 @@
         }
 
         .sample-card {
-            background: #0a0a0a;
-            border: 1px solid #222;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             transition: all 0.3s;
         }
 
         .sample-card:hover {
-            border-color: #38bdf8;
+            border-color: #0066cc;
             transform: translateY(-5px);
         }
 
         .sample-preview {
             width: 100%;
             height: 250px;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .sample-preview iframe {
@@ -95,7 +96,7 @@
         }
 
         .sample-name {
-            color: #38bdf8;
+            color: #0066cc;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
@@ -126,13 +127,14 @@
             position: fixed;
             top: 2rem;
             right: 2rem;
-            background: #38bdf8;
-            color: #000;
+            background: #0066cc;
+            color: #fff;
             padding: 1rem 2rem;
             border-radius: 8px;
             font-weight: 600;
             display: none;
             z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .status-message.show {
@@ -150,10 +152,10 @@
         }
 
         .back-btn {
-            background: #222;
-            color: #38bdf8;
+            background: #f8fafc;
+            color: #0066cc;
             padding: 0.8rem 1.5rem;
-            border: 1px solid #38bdf8;
+            border: 1px solid #0066cc;
             border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
@@ -164,8 +166,8 @@
         }
 
         .back-btn:hover {
-            background: #38bdf8;
-            color: #000;
+            background: #0066cc;
+            color: #fff;
         }
     </style>
 </head>
@@ -176,15 +178,15 @@
         <h1>Manage Landing Page Samples</h1>
 
         <div class="upload-section">
-            <h2 style="color: #38bdf8; margin-bottom: 1rem;">Upload New Sample</h2>
-            <p style="color: #aaa; margin-bottom: 2rem;">Upload HTML files with 3D viewers to showcase on the landing page</p>
+            <h2 style="color: #0066cc; margin-bottom: 1rem;">Upload New Sample</h2>
+            <p style="color: #666; margin-bottom: 2rem;">Upload HTML files with 3D viewers to showcase on the landing page</p>
             <input type="file" id="file-input" accept=".html" onchange="uploadSample(event)">
             <button class="upload-btn" onclick="document.getElementById('file-input').click()">
                 Choose HTML File
             </button>
         </div>
 
-        <h2 style="color: #38bdf8; margin-bottom: 1.5rem;">Current Samples</h2>
+        <h2 style="color: #0066cc; margin-bottom: 1.5rem;">Current Samples</h2>
         <div id="samples-grid" class="samples-grid">
             <!-- Samples will be loaded here -->
         </div>
@@ -212,34 +214,10 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // DEBUG: Check auth and role
-        async function debugAuth() {
-            const user = auth.currentUser;
-            console.log('=== AUTH DEBUG ===');
-            console.log('User email:', user?.email);
-            console.log('User UID:', user?.uid);
-            
-            if (user) {
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    if (userDoc.exists()) {
-                        console.log('Firestore role:', userDoc.data().role);
-                    } else {
-                        console.log('❌ NO USER DOC IN FIRESTORE!');
-                    }
-                } catch (error) {
-                    console.log('Error:', error);
-                }
-            }
-            console.log('==================');
-        }
-
-        setTimeout(debugAuth, 1000);
-
         function showStatus(message, type = 'success') {
             const statusEl = document.getElementById('status-message');
             statusEl.textContent = message;
-            statusEl.style.background = type === 'success' ? '#38bdf8' : '#ef4444';
+            statusEl.style.background = type === 'success' ? '#0066cc' : '#ef4444';
             statusEl.classList.add('show');
             setTimeout(() => statusEl.classList.remove('show'), 3000);
         }
