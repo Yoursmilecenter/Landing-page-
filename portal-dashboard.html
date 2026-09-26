@@ -174,6 +174,9 @@
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import { STLLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -1003,17 +1006,30 @@
                 ` : ''}
                 
                 ${stlFiles.length > 0 ? `
-                    <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
-                        <span style="font-weight: 600; font-size: 13px;">STL:</span>
-                        ${stlFiles.map(file => `
-                            <button class="action-btn-sm" onclick="forceDownload('${file.path}', '${file.name}'); trackStlDownload('${project.id}', '${file.name}')" style="padding: 4px 10px; font-size: 11px;">
-                                <i class="fas fa-download"></i> ${file.name}
-                            </button>
-                        `).join('')}
+                    <div style="margin-top: 12px;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+                            <span style="font-weight: 600; font-size: 13px;">STL:</span>
+                            ${stlFiles.map((file, i) => `
+                                <button class="action-btn-sm stl-preview-btn ${i === 0 ? 'active' : ''}" onclick="load3DPreview('${file.url}', this)" style="padding: 4px 10px; font-size: 11px;">
+                                    <i class="fas fa-cube"></i> ${file.name}
+                                </button>
+                                <button class="action-btn-sm" onclick="forceDownload('${file.path}', '${file.name}'); trackStlDownload('${project.id}', '${file.name}')" style="padding: 4px 10px; font-size: 11px;">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div id="stlPreviewContainer" style="width: 100%; height: 220px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #f0f2f5; position: relative; overflow: hidden;">
+                            <div id="stlPreviewLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">Loading 3D preview...</div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">Drag to rotate · Scroll to zoom</div>
                     </div>
                 ` : ''}
             `;
-            
+
+            if (stlFiles.length > 0) {
+                load3DPreview(stlFiles[0].url, null);
+            }
+
             modal.style.display = 'flex';
         };
 
@@ -1021,6 +1037,92 @@
             document.getElementById('inlinePreviewFrame').src = url;
             document.querySelectorAll('#projectCardContent .action-btn-sm').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        };
+
+        // --- 3D STL preview (small, embedded, rotate/zoom via mouse) ---
+        let stl3D = null; // holds { renderer, scene, camera, controls, animId }
+
+        function stop3DPreview() {
+            if (!stl3D) return;
+            cancelAnimationFrame(stl3D.animId);
+            stl3D.controls?.dispose();
+            stl3D.renderer?.dispose();
+            stl3D = null;
+        }
+
+        window.load3DPreview = (url, btn) => {
+            const container = document.getElementById('stlPreviewContainer');
+            if (!container) return;
+
+            if (btn) {
+                document.querySelectorAll('#projectCardContent .stl-preview-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            stop3DPreview();
+            container.innerHTML = '<div id="stlPreviewLoading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">Loading 3D preview...</div>';
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f2f5);
+
+            const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const loader = new STLLoader();
+            loader.load(url, (geometry) => {
+                if (!document.getElementById('stlPreviewContainer')) return; // modal closed mid-load
+                container.innerHTML = '';
+                container.appendChild(renderer.domElement);
+
+                geometry.computeVertexNormals();
+                geometry.center();
+                geometry.computeBoundingBox();
+
+                const size = new THREE.Vector3();
+                geometry.boundingBox.getSize(size);
+                const maxDim = Math.max(size.x, size.y, size.z) || 1;
+                const distance = maxDim * 2.2;
+
+                camera.position.set(distance, distance * 0.6, distance);
+                camera.lookAt(0, 0, 0);
+
+                const material = new THREE.MeshStandardMaterial({ color: 0x0099cc, metalness: 0.1, roughness: 0.6 });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+                dirLight.position.set(1, 1, 1);
+                scene.add(dirLight);
+                const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+                dirLight2.position.set(-1, -0.5, -1);
+                scene.add(dirLight2);
+
+                const controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.08;
+                controls.target.set(0, 0, 0);
+
+                stl3D = { renderer, scene, camera, controls, animId: null };
+
+                function animate() {
+                    stl3D.animId = requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }, undefined, (error) => {
+                console.error('STL preview error:', error);
+                if (document.getElementById('stlPreviewContainer')) {
+                    container.innerHTML = '<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">3D preview unavailable</div>';
+                }
+            });
         };
 
         window.showCardRejectForm = () => {
@@ -1082,6 +1184,7 @@
 
         window.closeProjectCard = () => {
             document.getElementById('projectCardModal').style.display = 'none';
+            stop3DPreview();
         };
 
         window.previewFile = async (projectId, fileName) => {
@@ -1149,6 +1252,9 @@
                 event.target.style.display = 'none';
                 if (event.target.id === 'previewModal') {
                     document.getElementById('previewFrame').src = '';
+                }
+                if (event.target.id === 'projectCardModal') {
+                    stop3DPreview();
                 }
             }
         };
