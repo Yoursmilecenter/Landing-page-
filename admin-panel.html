@@ -701,7 +701,7 @@
                                 return `
                                 <tr class="${rowClass}">
                                     <td>
-                                        <strong>${project.title}</strong>
+                                        <strong>${project.title}</strong>${project.giftTeeth ? `<div style="font-size:11px;color:#0a84c6;font-weight:600;">🎁 Free design · up to ${project.giftTeeth} teeth</div>` : ''}
                                     </td>
                                     <td style="font-size: 12px;">${project.clientEmail}</td>
                                     <td>

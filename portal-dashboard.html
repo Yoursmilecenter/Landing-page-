@@ -171,7 +171,7 @@
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut, linkWithCredential, EmailAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signOut, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import * as THREE from './vendor/three/three.module.min.js';
@@ -216,6 +216,7 @@
                     await loadData();
                     return; // no session timeout: signing out an anonymous session loses the account
                 }
+                try { const gs = await getDoc(doc(db, 'users', user.uid)); giftUser = gs.exists() ? gs.data() : null; } catch (e) { console.error(e); }
                 await loadData();
                 initSessionTimeout();
             } else {
@@ -435,22 +436,39 @@
             }, 200);
         }
 
-        function giftPrizeLabel(p) {
-            const m = /^teeth_(\d+)$/.exec(p || '');
-            return m ? `עיצוב חיוך עד ${m[1]} שיניים במתנה` : '';
+        function giftTeethOf(u) {
+            const m = /^teeth_(\d+)$/.exec((u && u.prize) || '');
+            return m ? +m[1] : 0;
+        }
+
+        function giftUnused() {
+            return !!(currentUser && !currentUser.isAnonymous && giftUser && giftTeethOf(giftUser) && !giftUser.giftUsed);
         }
 
         function giftBannerHtml() {
-            if (!currentUser || !currentUser.isAnonymous) return '';
-            const prize = giftPrizeLabel(giftUser && giftUser.prize);
-            return `
-                <div style="background: linear-gradient(135deg, #0a84c6, #38bdf8); color: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; direction: rtl;">
+            if (!currentUser) return '';
+            const n = giftTeethOf(giftUser);
+            const box = 'background: linear-gradient(135deg, #0a84c6, #38bdf8); color: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; direction: rtl;';
+            if (currentUser.isAnonymous) {
+                return `
+                <div style="${box}">
                     <div>
-                        ${prize ? `<div style="font-size: 13px; opacity: .9;">🎁 המתנה שלך: ${prize}</div>` : ''}
+                        ${n ? `<div style="font-size: 13px; opacity: .9;">🎁 המתנה שלך: עיצוב חיוך עד ${n} שיניים, חינם</div>` : ''}
                         <div style="font-size: 17px; font-weight: 700;">🔐 שלב 3 מתוך 3: קבע סיסמה לחשבון האישי שלך</div>
                     </div>
                     <button class="btn-primary" style="background: #fff; color: #0a84c6; padding: 10px 22px; font-weight: 700;" onclick="openSetPassword()">קבע סיסמה</button>
                 </div>`;
+            }
+            if (giftUnused()) {
+                return `
+                <div style="${box}">
+                    <div>
+                        <div style="font-size: 17px; font-weight: 700;">🎁 המתנה שלך: עיצוב חיוך עד ${n} שיניים, חינם</div>
+                        <div style="font-size: 13px; opacity: .95;">תמומש אוטומטית בתיק הבא שתפתח. לחץ "מטופל חדש" והעלה את התיק.</div>
+                    </div>
+                </div>`;
+            }
+            return '';
         }
 
         function renderContent() {
@@ -844,6 +862,7 @@
                     <div id="gpwStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
                     <button id="gpwBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#0066cc;" onclick="submitSetPassword()">שמור וסיים</button>
                     <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="document.getElementById('setPwOverlay').remove()">אחר כך</button>
+                    <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="showExistingAccountLogin()">יש לי כבר חשבון</button>
                 </div>`;
             document.body.appendChild(ov);
         };
@@ -869,8 +888,59 @@
             } catch (e) {
                 console.error(e);
                 btn.disabled = false;
+                if (e.code === 'auth/email-already-in-use') { showExistingAccountLogin(); return; }
                 st.textContent = e.code === 'auth/email-already-in-use' ? 'המספר כבר רשום. התחבר עם הסיסמה הקיימת.' :
                                  e.code === 'auth/weak-password' ? 'סיסמה חלשה מדי' : 'שגיאה, נסה שוב';
+            }
+        };
+
+        window.showExistingAccountLogin = () => {
+            const ov = document.getElementById('setPwOverlay');
+            if (!ov) return;
+            const phone = (giftUser && giftUser.phone) || '';
+            ov.firstElementChild.innerHTML = `
+                <h2 style="margin:0 0 6px;font-size:20px;">יש כבר חשבון עם המספר הזה</h2>
+                <p style="margin:0 0 18px;color:#666;font-size:14px;">התחבר עם הסיסמה הקיימת שלך, ואנחנו נצרף אליו את המתנה.</p>
+                <div class="form-group"><input type="text" id="gxUser" class="form-input" value="${phone}" placeholder="שם משתמש / טלפון / אימייל" autocomplete="username"></div>
+                <div class="form-group"><input type="password" id="gxPass" class="form-input" placeholder="סיסמה קיימת" autocomplete="current-password"></div>
+                <div id="gxStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
+                <button id="gxBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#0066cc;" onclick="claimGiftWithLogin()">התחבר וצרף את המתנה</button>
+                <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="document.getElementById('setPwOverlay').remove()">ביטול</button>`;
+        };
+
+        window.claimGiftWithLogin = async () => {
+            const raw = document.getElementById('gxUser').value.trim();
+            const pw = document.getElementById('gxPass').value;
+            const st = document.getElementById('gxStatus');
+            const btn = document.getElementById('gxBtn');
+            if (!raw || !pw) { st.textContent = 'מלא שם משתמש וסיסמה'; return; }
+            const gift = { prize: giftUser && giftUser.prize, inviteCode: giftUser && giftUser.inviteCode };
+            btn.disabled = true; st.textContent = '';
+            try {
+                const email = raw.includes('@') ? raw : raw + '@smilecenter.pro';
+                let cred;
+                try {
+                    cred = await signInWithEmailAndPassword(auth, email, pw);
+                } catch (e1) {
+                    if (raw.includes('@')) throw e1;
+                    cred = await signInWithEmailAndPassword(auth, raw + '@smile.local', pw);
+                }
+                const uref = doc(db, 'users', cred.user.uid);
+                const us = await getDoc(uref);
+                const ud = us.exists() ? us.data() : {};
+                if (!giftTeethOf(ud) && giftTeethOf(gift)) {
+                    await updateDoc(uref, { prize: gift.prize, giftUsed: false, inviteCode: gift.inviteCode || null });
+                }
+                if (gift.inviteCode) {
+                    try { await updateDoc(doc(db, 'invites', gift.inviteCode), { status: 'redeemed', used: true, redeemedAt: Date.now() }); } catch (e2) { console.error(e2); }
+                }
+                if (ud.role === 'admin') { window.location.href = 'admin-panel.html'; return; }
+                if (ud.role === 'designer') { window.location.href = 'designer-portal.html'; return; }
+                location.reload();
+            } catch (e) {
+                console.error(e);
+                btn.disabled = false;
+                st.textContent = 'פרטי התחברות שגויים';
             }
         };
 
@@ -909,8 +979,10 @@
                     assignedDesignerEmail: null,
                     htmlApproved: false,
                     clientRemarks: null,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {})
                 });
+                if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
 
                 if (files.length > 0) {
                     statusEl.textContent = 'Patient created! Uploading files...';
