@@ -835,14 +835,14 @@
             ov.id = 'setPwOverlay';
             ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;';
             ov.innerHTML = `
-                <div style="background:var(--color-card);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;">
+                <div style="background:#fff;color:#1f2937;box-shadow:0 12px 40px rgba(0,0,0,.4);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;">
                     <h2 style="margin:0 0 6px;font-size:20px;">🔐 קבע סיסמה לחשבון האישי שלך</h2>
                     <p style="margin:0 0 18px;color:var(--color-text-secondary);font-size:14px;">כך תוכל להיכנס בעתיד ולשמור את המתנה שלך.</p>
                     <div class="form-group"><input type="password" id="gpw1" class="form-input" placeholder="סיסמה (מינימום 8 תווים)" autocomplete="new-password"></div>
                     <div class="form-group"><input type="password" id="gpw2" class="form-input" placeholder="אימות סיסמה" autocomplete="new-password"></div>
                     <label style="font-size:13px;display:block;margin-bottom:12px;"><input type="checkbox" onchange="document.getElementById('gpw1').type=document.getElementById('gpw2').type=this.checked?'text':'password'"> הצג סיסמה</label>
                     <div id="gpwStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
-                    <button id="gpwBtn" class="btn-primary" style="width:100%;padding:14px;" onclick="submitSetPassword()">שמור וסיים</button>
+                    <button id="gpwBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#0066cc;" onclick="submitSetPassword()">שמור וסיים</button>
                     <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="document.getElementById('setPwOverlay').remove()">אחר כך</button>
                 </div>`;
             document.body.appendChild(ov);
@@ -864,7 +864,7 @@
                 if (giftUser.inviteCode) {
                     try { await updateDoc(doc(db, 'invites', giftUser.inviteCode), { status: 'redeemed', used: true, redeemedAt: Date.now() }); } catch (e) { console.error(e); }
                 }
-                document.getElementById('setPwOverlay').innerHTML = '<div style="background:var(--color-card);border-radius:16px;padding:32px;text-align:center;font-size:18px;">✅ החשבון שלך מוכן<br><small style="opacity:.7">המתנה נשמרה</small></div>';
+                document.getElementById('setPwOverlay').innerHTML = '<div style="background:#fff;color:#1f2937;border-radius:16px;padding:32px;text-align:center;font-size:18px;">✅ החשבון שלך מוכן<br><small style="opacity:.7">המתנה נשמרה</small></div>';
                 setTimeout(() => location.reload(), 1500);
             } catch (e) {
                 console.error(e);
