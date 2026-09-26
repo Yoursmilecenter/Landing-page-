@@ -5,11 +5,11 @@
 }
 
 :root {
-    --color-primary: #38bdf8;
-    --color-secondary: #a78bfa;
+    --color-primary: #0066cc;
+    --color-secondary: #0099cc;
     --color-text: #ffffff;
-    --color-text-secondary: #9ca3af;
-    --color-text-light: #d1d5db;
+    --color-text-secondary: #666666;
+    --color-text-light: #333333;
     --color-success: #22c55e;
     --color-error: #ef4444;
     --color-warning: #f59e0b;
@@ -18,14 +18,14 @@
 html, body {
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #000;
-    color: #fff;
+    background-color: #ffffff;
+    color: #1a1a1a;
     line-height: 1.6;
 }
 
 @keyframes logoGlow {
-    0%, 100% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
-    50% { filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.4)); }
+    50% { filter: drop-shadow(0 0 16px rgba(0, 102, 204, 0.8)); }
 }
 
 @keyframes fadeIn {
@@ -66,16 +66,16 @@ html, body {
 .login-container form {
     width: 100%;
     max-width: 400px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(0, 0, 0, 0.03);
     padding: 40px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .header {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(0, 0, 0, 0.03);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     padding: 20px;
     position: sticky;
     top: 0;
@@ -96,13 +96,13 @@ html, body {
 }
 
 .admin-badge {
-    background: rgba(167, 139, 250, 0.15);
+    background: rgba(0, 153, 204, 0.15);
     color: var(--color-secondary);
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(167, 139, 250, 0.3);
+    border: 1px solid rgba(0, 153, 204, 0.3);
 }
 
 .logout-btn {
@@ -157,8 +157,8 @@ html, body {
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     padding: 16px 20px;
     transition: all 0.3s ease;
@@ -167,7 +167,7 @@ html, body {
 }
 
 .stat-card:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -202,22 +202,22 @@ html, body {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    color: #fff;
+    color: #1a1a1a;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(56, 189, 248, 0.3);
+    box-shadow: 0 8px 16px rgba(0, 102, 204, 0.3);
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     color: var(--color-text);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .btn-small {
@@ -226,9 +226,9 @@ html, body {
 }
 
 .btn-view {
-    background: rgba(56, 189, 248, 0.15);
+    background: rgba(0, 102, 204, 0.15);
     color: var(--color-primary);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid rgba(0, 102, 204, 0.3);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -237,7 +237,7 @@ html, body {
 }
 
 .btn-view:hover {
-    background: rgba(56, 189, 248, 0.25);
+    background: rgba(0, 102, 204, 0.25);
 }
 
 .btn-download {
@@ -277,16 +277,16 @@ html, body {
 }
 
 .project-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     padding: 12px;
     transition: all 0.3s ease;
 }
 
 .project-card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(56, 189, 248, 0.3);
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 102, 204, 0.3);
 }
 
 .project-header {
@@ -330,9 +330,9 @@ html, body {
 }
 
 .status-inprogress {
-    background: rgba(56, 189, 248, 0.15);
+    background: rgba(0, 102, 204, 0.15);
     color: var(--color-primary);
-    border-color: rgba(56, 189, 248, 0.3);
+    border-color: rgba(0, 102, 204, 0.3);
 }
 
 .status-awaitingclientapproval, .status-awaitingapproval {
@@ -386,15 +386,15 @@ html, body {
     justify-content: space-between;
     align-items: center;
     padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 6px;
     transition: all 0.3s ease;
 }
 
 .file-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(56, 189, 248, 0.3);
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 102, 204, 0.3);
 }
 
 .file-info {
@@ -431,8 +431,8 @@ html, body {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 6px;
     font-size: 13px;
     color: var(--color-text-light);
@@ -482,7 +482,7 @@ html, body {
 
 .modal-content {
     background: rgba(10, 10, 10, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 16px;
     padding: 32px;
     max-width: 600px;
@@ -515,7 +515,7 @@ html, body {
 }
 
 .close:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.1);
     color: var(--color-text);
 }
 
@@ -546,10 +546,10 @@ html, body {
 .form-input, .form-textarea {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    color: #fff;
+    color: #1a1a1a;
     font-family: inherit;
     font-size: 14px;
     transition: all 0.3s ease;
@@ -557,9 +557,9 @@ html, body {
 
 .form-input:focus, .form-textarea:focus {
     outline: none;
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 102, 204, 0.5);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .form-textarea {
@@ -579,12 +579,12 @@ html, body {
 
 .upload-area:hover {
     border-color: var(--color-primary);
-    background: rgba(56, 189, 248, 0.05);
+    background: rgba(0, 102, 204, 0.05);
 }
 
 .upload-area.dragover {
     border-color: var(--color-primary);
-    background: rgba(56, 189, 248, 0.1);
+    background: rgba(0, 102, 204, 0.1);
 }
 
 .status-msg {
@@ -620,7 +620,7 @@ html, body {
 .preview-iframe {
     width: 100%;
     height: 500px;
-    border: 2px solid rgba(56, 189, 248, 0.3);
+    border: 2px solid rgba(0, 102, 204, 0.3);
     border-radius: 10px;
     background: #fff;
     margin: 20px 0;
@@ -629,9 +629,9 @@ html, body {
 .approval-section {
     margin-top: 20px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .approval-options {
@@ -644,10 +644,10 @@ html, body {
     width: 100%;
     min-height: 80px;
     padding: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    color: #fff;
+    color: #1a1a1a;
     font-family: inherit;
     resize: vertical;
     margin-bottom: 16px;
@@ -668,9 +668,9 @@ html, body {
 }
 
 select {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #d1d5db !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #333333 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 14px;
@@ -679,12 +679,12 @@ select {
 
 select:focus {
     outline: none;
-    border-color: rgba(56, 189, 248, 0.5) !important;
+    border-color: rgba(0, 102, 204, 0.5) !important;
 }
 
 select option {
     background: rgba(0, 0, 0, 0.98) !important;
-    color: #d1d5db !important;
+    color: #333333 !important;
 }
 
 @media (max-width: 768px) {
@@ -703,23 +703,23 @@ select option {
     width: 60px;
     height: 60px;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #38bdf8;
+    color: #0066cc;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
     z-index: 1000;
     transition: all 0.3s ease;
     text-decoration: none;
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(0, 102, 204, 0.2);
 }
 
 .whatsapp-float:hover {
     background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(56, 189, 248, 0.5);
-    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.5);
+    border-color: rgba(0, 102, 204, 0.4);
 }
 
 .whatsapp-float svg {

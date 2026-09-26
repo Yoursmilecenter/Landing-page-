@@ -28,7 +28,7 @@
             overflow: hidden;
         }
         .ultra-compact-table thead {
-            background: rgba(56, 189, 248, 0.1);
+            background: rgba(0, 102, 204, 0.1);
             position: sticky;
             top: 0;
             z-index: 10;
@@ -38,15 +38,15 @@
             text-align: left;
             font-weight: 600;
             color: var(--color-primary);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
         .ultra-compact-table td {
             padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             vertical-align: middle;
         }
         .ultra-compact-table tr:hover {
-            background: rgba(56, 189, 248, 0.05);
+            background: rgba(0, 102, 204, 0.05);
         }
         .status-pill {
             padding: 4px 12px;
@@ -57,7 +57,7 @@
         }
         .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
         .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .status-awaitingclientapproval { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .status-awaitingclientapproval { background: rgba(0, 153, 204, 0.2); color: #0099cc; }
         .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
         .status-changesrequested { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
         .status-stlready { background: rgba(16, 185, 129, 0.2); color: #10b981; }
@@ -83,7 +83,7 @@
         }
         .lang-dropdown {
             padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--color-text-light);
             border-radius: 6px;
@@ -631,11 +631,11 @@
                 uploadArea.style.borderColor = 'var(--color-primary)';
             });
             uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                uploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
             });
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                uploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
                 fileInput.files = e.dataTransfer.files;
                 fileInput.dispatchEvent(new Event('change'));
             });
@@ -653,11 +653,11 @@
                     clientUploadArea.style.borderColor = 'var(--color-primary)';
                 });
                 clientUploadArea.addEventListener('dragleave', () => {
-                    clientUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    clientUploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
                 });
                 clientUploadArea.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    clientUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    clientUploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
                     clientFileInput.files = e.dataTransfer.files;
                     clientFileInput.dispatchEvent(new Event('change'));
                 });
@@ -977,11 +977,11 @@
                             </button>
                         `).join('')}
                     </div>
-                    <iframe id="inlinePreviewFrame" src="${htmlFiles[0].url}" style="width: 100%; height: 280px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #fff;"></iframe>
+                    <iframe id="inlinePreviewFrame" src="${htmlFiles[0].url}" style="width: 100%; height: 280px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #fff;"></iframe>
                     
                     ${isAwaitingApproval ? `
-                        <div style="margin-top: 12px; padding: 12px; background: rgba(167, 139, 250, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <span style="color: #a78bfa; font-weight: 600;">Review Required</span>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(0, 153, 204, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <span style="color: #0099cc; font-weight: 600;">Review Required</span>
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn-primary" onclick="approveFromCard()" style="background: var(--color-success); padding: 8px 16px;">
                                     <i class="fas fa-check"></i> Approve

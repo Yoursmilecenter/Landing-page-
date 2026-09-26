@@ -27,17 +27,17 @@
             padding: 0 !important;
         }
         select, input[type="text"] {
-            background-color: rgba(255, 255, 255, 0.05) !important;
+            background-color: rgba(0, 0, 0, 0.05) !important;
             color: var(--color-text-light) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 13px;
         }
         select:focus, input[type="text"]:focus {
             outline: none;
-            border-color: rgba(167, 139, 250, 0.5) !important;
-            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+            border-color: rgba(0, 153, 204, 0.5) !important;
+            box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
         }
         select option {
             background-color: rgba(0, 0, 0, 0.98) !important;
@@ -47,12 +47,12 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(0, 0, 0, 0.03);
             border-radius: 12px;
             overflow: hidden;
         }
         .ultra-compact-table thead {
-            background: rgba(167, 139, 250, 0.1);
+            background: rgba(0, 153, 204, 0.1);
             position: sticky;
             top: 0;
             z-index: 10;
@@ -62,18 +62,18 @@
             text-align: left;
             font-weight: 600;
             color: var(--color-secondary);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
         .ultra-compact-table td {
             padding: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             vertical-align: middle;
         }
         .ultra-compact-table tbody tr {
             transition: all 0.2s ease;
         }
         .ultra-compact-table tbody tr:hover {
-            background: rgba(167, 139, 250, 0.08);
+            background: rgba(0, 153, 204, 0.08);
         }
         .urgent-row {
             background: rgba(239, 68, 68, 0.1) !important;
@@ -117,7 +117,7 @@
             border: none;
             cursor: pointer;
             margin: 0 2px;
-            background: #a78bfa;
+            background: #0099cc;
             color: white;
             transition: all 0.2s ease;
         }
@@ -168,7 +168,7 @@
         }
         .lang-dropdown {
             padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--color-text-light);
             border-radius: 6px;
@@ -222,7 +222,7 @@
             white-space: nowrap;
         }
         .lang-option:hover {
-            background: rgba(167, 139, 250, 0.1);
+            background: rgba(0, 153, 204, 0.1);
         }
         [dir="rtl"] .lang-menu {
             right: auto;
@@ -491,7 +491,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <span class="admin-badge" style="background: rgba(167, 139, 250, 0.2); color: var(--color-secondary); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">DESIGNER</span>
+                            <span class="admin-badge" style="background: rgba(0, 153, 204, 0.2); color: var(--color-secondary); border: 1px solid rgba(0, 153, 204, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">DESIGNER</span>
                             <span style="color: var(--color-text-secondary); font-size: 14px; direction: ltr;">${currentUser.email}</span>
                             <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
