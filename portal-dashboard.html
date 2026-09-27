@@ -647,7 +647,8 @@
                         <form id="nameChangeForm" onsubmit="submitNameChangeRequest(event)">
                             <div class="form-group">
                                 <label class="form-label">New Username *</label>
-                                <input type="text" id="myAccountNewName" class="form-input" placeholder="Enter new username" required>
+                                <input type="text" id="myAccountNewName" class="form-input" placeholder="Enter new username" minlength="3" maxlength="40" pattern="\S.{1,38}\S" title="3-40 characters, no leading/trailing spaces" required>
+                                <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px;">3–40 characters. Letters (Hebrew or English) and numbers are fine; no leading/trailing spaces.</div>
                             </div>
                             <div id="myAccountStatus" class="status-msg"></div>
                             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Request Name Change</button>
