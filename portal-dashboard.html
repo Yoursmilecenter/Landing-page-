@@ -28,7 +28,7 @@
             overflow: hidden;
         }
         .ultra-compact-table thead {
-            background: rgba(0, 102, 204, 0.1);
+            background: rgba(251, 148, 120, 0.1);
             position: sticky;
             top: 0;
             z-index: 10;
@@ -46,7 +46,7 @@
             vertical-align: middle;
         }
         .ultra-compact-table tr:hover {
-            background: rgba(0, 102, 204, 0.05);
+            background: rgba(251, 148, 120, 0.05);
         }
         .status-pill {
             padding: 4px 12px;
@@ -57,7 +57,7 @@
         }
         .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
         .status-inprogress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .status-awaitingclientapproval { background: rgba(0, 153, 204, 0.2); color: #0099cc; }
+        .status-awaitingclientapproval { background: rgba(0, 153, 204, 0.2); color: #b95039; }
         .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
         .status-changesrequested { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
         .status-stlready { background: rgba(16, 185, 129, 0.2); color: #10b981; }
@@ -860,7 +860,7 @@
                     <div class="form-group"><input type="password" id="gpw2" class="form-input" placeholder="אימות סיסמה" autocomplete="new-password"></div>
                     <label style="font-size:13px;display:block;margin-bottom:12px;"><input type="checkbox" onchange="document.getElementById('gpw1').type=document.getElementById('gpw2').type=this.checked?'text':'password'"> הצג סיסמה</label>
                     <div id="gpwStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
-                    <button id="gpwBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#0066cc;" onclick="submitSetPassword()">שמור וסיים</button>
+                    <button id="gpwBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#fb9478;" onclick="submitSetPassword()">שמור וסיים</button>
                     <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="document.getElementById('setPwOverlay').remove()">אחר כך</button>
                     <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="showExistingAccountLogin()">יש לי כבר חשבון</button>
                 </div>`;
@@ -904,7 +904,7 @@
                 <div class="form-group"><input type="text" id="gxUser" class="form-input" value="${phone}" placeholder="שם משתמש / טלפון / אימייל" autocomplete="username"></div>
                 <div class="form-group"><input type="password" id="gxPass" class="form-input" placeholder="סיסמה קיימת" autocomplete="current-password"></div>
                 <div id="gxStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
-                <button id="gxBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#0066cc;" onclick="claimGiftWithLogin()">התחבר וצרף את המתנה</button>
+                <button id="gxBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#fb9478;" onclick="claimGiftWithLogin()">התחבר וצרף את המתנה</button>
                 <button class="btn-secondary" style="width:100%;padding:10px;margin-top:8px;" onclick="document.getElementById('setPwOverlay').remove()">ביטול</button>`;
         };
 
@@ -1146,7 +1146,7 @@
                     
                     ${isAwaitingApproval ? `
                         <div style="margin-top: 12px; padding: 12px; background: rgba(0, 153, 204, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <span style="color: #0099cc; font-weight: 600;">Review Required</span>
+                            <span style="color: #b95039; font-weight: 600;">Review Required</span>
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn-primary" onclick="approveFromCard()" style="background: var(--color-success); padding: 8px 16px;">
                                     <i class="fas fa-check"></i> Approve

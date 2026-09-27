@@ -5,8 +5,8 @@
 }
 
 :root {
-    --color-primary: #0066cc;
-    --color-secondary: #0099cc;
+    --color-primary: #fb9478;
+    --color-secondary: #b95039;
     --color-text: #ffffff;
     --color-text-secondary: #666666;
     --color-text-light: #333333;
@@ -24,8 +24,8 @@ html, body {
 }
 
 @keyframes logoGlow {
-    0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.4)); }
-    50% { filter: drop-shadow(0 0 16px rgba(0, 102, 204, 0.8)); }
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(251, 148, 120, 0.4)); }
+    50% { filter: drop-shadow(0 0 16px rgba(251, 148, 120, 0.8)); }
 }
 
 @keyframes fadeIn {
@@ -207,7 +207,7 @@ html, body {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 102, 204, 0.3);
+    box-shadow: 0 8px 16px rgba(251, 148, 120, 0.3);
 }
 
 .btn-secondary {
@@ -226,9 +226,9 @@ html, body {
 }
 
 .btn-view {
-    background: rgba(0, 102, 204, 0.15);
+    background: rgba(251, 148, 120, 0.15);
     color: var(--color-primary);
-    border: 1px solid rgba(0, 102, 204, 0.3);
+    border: 1px solid rgba(251, 148, 120, 0.3);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -237,7 +237,7 @@ html, body {
 }
 
 .btn-view:hover {
-    background: rgba(0, 102, 204, 0.25);
+    background: rgba(251, 148, 120, 0.25);
 }
 
 .btn-download {
@@ -286,7 +286,7 @@ html, body {
 
 .project-card:hover {
     background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 102, 204, 0.3);
+    border-color: rgba(251, 148, 120, 0.3);
 }
 
 .project-header {
@@ -330,9 +330,9 @@ html, body {
 }
 
 .status-inprogress {
-    background: rgba(0, 102, 204, 0.15);
+    background: rgba(251, 148, 120, 0.15);
     color: var(--color-primary);
-    border-color: rgba(0, 102, 204, 0.3);
+    border-color: rgba(251, 148, 120, 0.3);
 }
 
 .status-awaitingclientapproval, .status-awaitingapproval {
@@ -394,7 +394,7 @@ html, body {
 
 .file-item:hover {
     background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 102, 204, 0.3);
+    border-color: rgba(251, 148, 120, 0.3);
 }
 
 .file-info {
@@ -516,7 +516,7 @@ html, body {
 
 .close:hover {
     background: rgba(0, 0, 0, 0.08);
-    color: #0066cc;
+    color: #fb9478;
 }
 
 .modal-title {
@@ -557,8 +557,8 @@ html, body {
 
 .form-input:focus, .form-textarea:focus {
     outline: none;
-    border-color: rgba(0, 102, 204, 0.5);
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    border-color: rgba(251, 148, 120, 0.5);
+    box-shadow: 0 0 0 3px rgba(251, 148, 120, 0.1);
     background: rgba(0, 0, 0, 0.08);
 }
 
@@ -568,23 +568,23 @@ html, body {
 }
 
 .upload-area {
-    border: 2px dashed rgba(0, 102, 204, 0.3);
+    border: 2px dashed rgba(251, 148, 120, 0.3);
     border-radius: 12px;
     padding: 40px 20px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(0, 102, 204, 0.02);
+    background: rgba(251, 148, 120, 0.02);
 }
 
 .upload-area:hover {
     border-color: var(--color-primary);
-    background: rgba(0, 102, 204, 0.05);
+    background: rgba(251, 148, 120, 0.05);
 }
 
 .upload-area.dragover {
     border-color: var(--color-primary);
-    background: rgba(0, 102, 204, 0.1);
+    background: rgba(251, 148, 120, 0.1);
 }
 
 .status-msg {
@@ -620,7 +620,7 @@ html, body {
 .preview-iframe {
     width: 100%;
     height: 500px;
-    border: 2px solid rgba(0, 102, 204, 0.3);
+    border: 2px solid rgba(251, 148, 120, 0.3);
     border-radius: 10px;
     background: #fff;
     margin: 20px 0;
@@ -679,7 +679,7 @@ select {
 
 select:focus {
     outline: none;
-    border-color: rgba(0, 102, 204, 0.5) !important;
+    border-color: rgba(251, 148, 120, 0.5) !important;
 }
 
 select option {
@@ -703,23 +703,23 @@ select option {
     width: 60px;
     height: 60px;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #0066cc;
+    color: #fb9478;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 148, 120, 0.3);
     z-index: 1000;
     transition: all 0.3s ease;
     text-decoration: none;
-    border: 1px solid rgba(0, 102, 204, 0.2);
+    border: 1px solid rgba(251, 148, 120, 0.2);
 }
 
 .whatsapp-float:hover {
     background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.5);
-    border-color: rgba(0, 102, 204, 0.4);
+    box-shadow: 0 6px 16px rgba(251, 148, 120, 0.5);
+    border-color: rgba(251, 148, 120, 0.4);
 }
 
 .whatsapp-float svg {

@@ -24,14 +24,14 @@
         }
 
         h1 {
-            color: #0066cc;
+            color: #fb9478;
             margin-bottom: 2rem;
             font-size: 2.5rem;
         }
 
         .upload-section {
             background: #f8fafc;
-            border: 2px dashed #0066cc;
+            border: 2px dashed #fb9478;
             border-radius: 12px;
             padding: 3rem;
             text-align: center;
@@ -39,7 +39,7 @@
         }
 
         .upload-btn {
-            background: #0066cc;
+            background: #fb9478;
             color: #fff;
             padding: 1rem 2rem;
             border: none;
@@ -51,7 +51,7 @@
         }
 
         .upload-btn:hover {
-            background: #0099cc;
+            background: #b95039;
             transform: translateY(-2px);
         }
 
@@ -75,7 +75,7 @@
         }
 
         .sample-card:hover {
-            border-color: #0066cc;
+            border-color: #fb9478;
             transform: translateY(-5px);
         }
 
@@ -96,7 +96,7 @@
         }
 
         .sample-name {
-            color: #0066cc;
+            color: #fb9478;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
@@ -127,7 +127,7 @@
             position: fixed;
             top: 2rem;
             right: 2rem;
-            background: #0066cc;
+            background: #fb9478;
             color: #fff;
             padding: 1rem 2rem;
             border-radius: 8px;
@@ -153,9 +153,9 @@
 
         .back-btn {
             background: #f8fafc;
-            color: #0066cc;
+            color: #fb9478;
             padding: 0.8rem 1.5rem;
-            border: 1px solid #0066cc;
+            border: 1px solid #fb9478;
             border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
@@ -166,7 +166,7 @@
         }
 
         .back-btn:hover {
-            background: #0066cc;
+            background: #fb9478;
             color: #fff;
         }
     </style>
@@ -178,7 +178,7 @@
         <h1>Manage Landing Page Samples</h1>
 
         <div class="upload-section">
-            <h2 style="color: #0066cc; margin-bottom: 1rem;">Upload New Sample</h2>
+            <h2 style="color: #fb9478; margin-bottom: 1rem;">Upload New Sample</h2>
             <p style="color: #666; margin-bottom: 2rem;">Upload HTML files with 3D viewers to showcase on the landing page</p>
             <input type="file" id="file-input" accept=".html" onchange="uploadSample(event)">
             <button class="upload-btn" onclick="document.getElementById('file-input').click()">
@@ -186,7 +186,7 @@
             </button>
         </div>
 
-        <h2 style="color: #0066cc; margin-bottom: 1.5rem;">Current Samples</h2>
+        <h2 style="color: #fb9478; margin-bottom: 1.5rem;">Current Samples</h2>
         <div id="samples-grid" class="samples-grid">
             <!-- Samples will be loaded here -->
         </div>
@@ -217,7 +217,7 @@
         function showStatus(message, type = 'success') {
             const statusEl = document.getElementById('status-message');
             statusEl.textContent = message;
-            statusEl.style.background = type === 'success' ? '#0066cc' : '#ef4444';
+            statusEl.style.background = type === 'success' ? '#fb9478' : '#ef4444';
             statusEl.classList.add('show');
             setTimeout(() => statusEl.classList.remove('show'), 3000);
         }
