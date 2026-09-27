@@ -641,13 +641,13 @@
                         <h2 class="modal-title">My Account</h2>
                         <p class="modal-subtitle">Name changes require admin approval</p>
                         <div class="form-group">
-                            <label class="form-label">Current Name</label>
+                            <label class="form-label">Current Username</label>
                             <input type="text" id="myAccountCurrentName" class="form-input" readonly>
                         </div>
                         <form id="nameChangeForm" onsubmit="submitNameChangeRequest(event)">
                             <div class="form-group">
-                                <label class="form-label">Requested New Name *</label>
-                                <input type="text" id="myAccountNewName" class="form-input" placeholder="Enter new full name" required>
+                                <label class="form-label">New Username *</label>
+                                <input type="text" id="myAccountNewName" class="form-input" placeholder="Enter new username" required>
                             </div>
                             <div id="myAccountStatus" class="status-msg"></div>
                             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Request Name Change</button>
@@ -972,11 +972,8 @@
             document.getElementById('nameChangeForm').reset();
             document.getElementById('myAccountStatus').className = 'status-msg';
             document.getElementById('myAccountPending').textContent = '';
+            document.getElementById('myAccountCurrentName').value = (giftUser && giftUser.fullName) || '';
             try {
-                const uSnap = await getDoc(doc(db, 'users', currentUser.uid));
-                const currentName = uSnap.exists() ? (uSnap.data().fullName || '') : '';
-                document.getElementById('myAccountCurrentName').value = currentName;
-
                 const q = query(collection(db, 'nameChangeRequests'), where('uid', '==', currentUser.uid), where('status', '==', 'pending'));
                 const snap = await getDocs(q);
                 if (!snap.empty) {
