@@ -848,6 +848,10 @@
                                 <label class="form-label">Client Name</label>
                                 <input type="text" id="giftName" class="form-input" placeholder="ד״ר ...">
                             </div>
+                            <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                                <input type="checkbox" id="giftIsDoctor" checked style="width:auto;">
+                                <label class="form-label" style="margin:0;" for="giftIsDoctor">Add "ד״ר" title before the name</label>
+                            </div>
                             <div class="form-group">
                                 <label class="form-label">Client Phone Number *</label>
                                 <input type="tel" id="giftPhone" class="form-input" placeholder="0501234567" required>
@@ -1337,6 +1341,7 @@
             document.getElementById('giftModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             document.getElementById('giftForm').reset();
+            document.getElementById('giftIsDoctor').checked = true;
             document.getElementById('giftResult').style.display = 'none';
             document.getElementById('giftStatus').className = 'status-msg';
             loadGiftList();
@@ -1350,6 +1355,7 @@
         window.handleGiftInvite = async (e) => {
             e.preventDefault();
             const name = document.getElementById('giftName').value.trim();
+            const isDoctor = document.getElementById('giftIsDoctor').checked;
             const phone = document.getElementById('giftPhone').value.replace(/\D/g, '');
             const statusEl = document.getElementById('giftStatus');
             try {
@@ -1359,14 +1365,15 @@
                 await setDoc(doc(db, 'invites', token), {
                     type: 'mystery',
                     code: token,
-                    phone, clientName: name, prize,
+                    phone, clientName: name, isDoctor, prize,
                     status: 'sealed', used: false,
                     createdBy: currentUser.email,
                     createdAt: now,
                     expiresAt: now + 7 * 24 * 60 * 60 * 1000
                 });
                 const link = `https://www.smilecenter.pro/gift.html?t=${token}`;
-                const msg = `שלום${name ? ' ' + drName(name) : ''} 🔒\nהכנו לך הזמנה אישית, חד-פעמית: סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה 🦷🎡\nבתוקף 7 ימים. רק למספר הזה.\n👉 ${link}`;
+                const displayName = name ? (isDoctor ? drName(name) : name) : '';
+                const msg = `שלום${displayName ? ' ' + displayName : ''} 🔒\nהכנו לך הזמנה אישית, חד-פעמית: סובב את הגלגל וגלה כמה שיניים נעצב לך במתנה 🦷🎡\nבתוקף 7 ימים. רק למספר הזה.\n👉 ${link}`;
                 document.getElementById('giftLink').value = link;
                 document.getElementById('giftWa').href = `https://wa.me/${waNumber(phone)}?text=${encodeURIComponent(msg)}`;
                 document.getElementById('giftResult').style.display = 'block';

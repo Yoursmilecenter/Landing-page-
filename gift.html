@@ -38,7 +38,7 @@
         <div id="stateCard" class="hidden">
             <div class="gift-steps"><span class="on" id="s1">1 🔒 פתח</span><span id="s2">2 🎁 גלה</span><span id="s3">3 🔐 סיסמה</span></div>
             <h1 class="gift-title" id="hello"></h1>
-            <div class="gift-sub" id="sub">הכנו לך הזמנה אישית, חד-פעמית. סובב את הגלגל וגלה בכמה שיניים נעצב לך במתנה.</div>
+            <div class="gift-sub" id="sub">הכנו לך הזמנה אישית, חד-פעמית. סובב את הגלגל וגלה כמה שיניים נעצב לך במתנה.</div>
             <div class="wheel-box">
                 <div class="wheel-pointer"></div>
                 <canvas id="wheel" width="540" height="540"></canvas>
@@ -93,7 +93,8 @@ async function init() {
         console.error(e);
         return fail('משהו השתבש, נסה שוב');
     }
-    $('hello').textContent = invite.clientName ? `שלום ${drName(invite.clientName)} 🔒` : 'הוזמנת 🔒';
+    const displayName = invite.clientName ? (invite.isDoctor === false ? invite.clientName : drName(invite.clientName)) : '';
+    $('hello').textContent = displayName ? `שלום ${displayName} 🔒` : 'הוזמנת 🔒';
     if (invite.expiresAt) $('expiry').textContent = 'בתוקף עד ' + new Date(invite.expiresAt).toLocaleDateString('he-IL') + ' · שימוש חד-פעמי';
     show('stateCard');
     drawWheel();
