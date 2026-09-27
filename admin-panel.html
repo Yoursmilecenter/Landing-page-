@@ -1269,7 +1269,7 @@
             if (!email) return;
             try {
                 const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
-                if (!snap.empty) nameEl.value = snap.docs[0].data().fullName || '';
+                if (!snap.empty) nameEl.value = snap.docs[0].data().username || snap.docs[0].data().fullName || '';
             } catch (err) {
                 console.error(err);
             }
@@ -1283,7 +1283,7 @@
             try {
                 const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
                 if (snap.empty) throw new Error('Client user not found');
-                await updateDoc(doc(db, 'users', snap.docs[0].id), { fullName: newName });
+                await updateDoc(doc(db, 'users', snap.docs[0].id), { username: newName });
                 statusEl.textContent = '✓ Client renamed';
                 statusEl.className = 'status-msg active success';
                 document.getElementById('renameClientForm').reset();
@@ -1316,7 +1316,7 @@
 
         window.approveNameRequest = async (requestId, uid, requestedName) => {
             try {
-                await updateDoc(doc(db, 'users', uid), { fullName: requestedName });
+                await updateDoc(doc(db, 'users', uid), { username: requestedName });
                 await updateDoc(doc(db, 'nameChangeRequests', requestId), {
                     status: 'approved', resolvedAt: Date.now(), resolvedBy: currentUser.email
                 });

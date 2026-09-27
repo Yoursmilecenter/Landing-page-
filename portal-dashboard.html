@@ -972,7 +972,7 @@
             document.getElementById('nameChangeForm').reset();
             document.getElementById('myAccountStatus').className = 'status-msg';
             document.getElementById('myAccountPending').textContent = '';
-            document.getElementById('myAccountCurrentName').value = (giftUser && giftUser.fullName) || '';
+            document.getElementById('myAccountCurrentName').value = (giftUser && (giftUser.username || giftUser.fullName)) || '';
             try {
                 const q = query(collection(db, 'nameChangeRequests'), where('uid', '==', currentUser.uid), where('status', '==', 'pending'));
                 const snap = await getDocs(q);
