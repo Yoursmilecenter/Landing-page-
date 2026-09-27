@@ -81,9 +81,20 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if false; // Audit logs should never be modified
     }
+
+    // Name change requests (client requests, admin approves)
+    match /nameChangeRequests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.status == 'pending';
+      allow update: if isAdmin(); // only admin can approve/reject
+      allow delete: if isAdmin();
+    }
   }
 }
 ```
+
+**Note:** the admin panel's pending-requests list queries `nameChangeRequests` with `where('status','==','pending')` + `orderBy('createdAt','desc')` — Firestore will ask for a composite index the first time this runs. Click the link in the console error to create it (one click), no rule change needed for that.
 
 ---
 

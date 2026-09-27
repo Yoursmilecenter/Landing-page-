@@ -502,6 +502,7 @@
                                 </div>
                             </div>
                             <span style="color: var(--color-text-secondary); font-size: 14px; direction: ltr;">${currentUser.email || (giftUser && giftUser.phone) || ''}</span>
+                            <button class="btn-secondary btn-small" onclick="openMyAccount()"><i class="fas fa-user"></i> My Account</button>
                             <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
                     </div>
@@ -631,6 +632,27 @@
                             </div>
                             <div id="approvalStatus" class="status-msg"></div>
                         </div>
+                    </div>
+                </div>
+
+                <div id="myAccountModal" class="modal">
+                    <div class="modal-content">
+                        <button class="close" onclick="closeMyAccount()" aria-label="Close my account">&times;</button>
+                        <h2 class="modal-title">My Account</h2>
+                        <p class="modal-subtitle">Name changes require admin approval</p>
+                        <div class="form-group">
+                            <label class="form-label">Current Name</label>
+                            <input type="text" id="myAccountCurrentName" class="form-input" readonly>
+                        </div>
+                        <form id="nameChangeForm" onsubmit="submitNameChangeRequest(event)">
+                            <div class="form-group">
+                                <label class="form-label">Requested New Name *</label>
+                                <input type="text" id="myAccountNewName" class="form-input" placeholder="Enter new full name" required>
+                            </div>
+                            <div id="myAccountStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Request Name Change</button>
+                        </form>
+                        <div id="myAccountPending" style="margin-top: 12px; font-size: 13px; color: var(--color-text-secondary);"></div>
                     </div>
                 </div>
 
@@ -941,6 +963,58 @@
                 console.error(e);
                 btn.disabled = false;
                 st.textContent = 'פרטי התחברות שגויים';
+            }
+        };
+
+        window.openMyAccount = async () => {
+            document.getElementById('myAccountModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('nameChangeForm').reset();
+            document.getElementById('myAccountStatus').className = 'status-msg';
+            document.getElementById('myAccountPending').textContent = '';
+            try {
+                const uSnap = await getDoc(doc(db, 'users', currentUser.uid));
+                const currentName = uSnap.exists() ? (uSnap.data().fullName || '') : '';
+                document.getElementById('myAccountCurrentName').value = currentName;
+
+                const q = query(collection(db, 'nameChangeRequests'), where('uid', '==', currentUser.uid), where('status', '==', 'pending'));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const req = snap.docs[0].data();
+                    document.getElementById('myAccountPending').textContent = `⏳ Pending request: "${req.requestedName}" (awaiting admin approval)`;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        window.closeMyAccount = () => {
+            document.getElementById('myAccountModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.submitNameChangeRequest = async (e) => {
+            e.preventDefault();
+            const requestedName = document.getElementById('myAccountNewName').value.trim();
+            const currentName = document.getElementById('myAccountCurrentName').value;
+            const statusEl = document.getElementById('myAccountStatus');
+            try {
+                await addDoc(collection(db, 'nameChangeRequests'), {
+                    uid: currentUser.uid,
+                    email: currentUser.email || null,
+                    phone: (giftUser && giftUser.phone) || null,
+                    currentName,
+                    requestedName,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                statusEl.textContent = '✓ Request sent. An admin will review it shortly.';
+                statusEl.className = 'status-msg active success';
+                document.getElementById('nameChangeForm').reset();
+                document.getElementById('myAccountPending').textContent = `⏳ Pending request: "${requestedName}" (awaiting admin approval)`;
+            } catch (err) {
+                statusEl.textContent = '✗ Error: ' + err.message;
+                statusEl.className = 'status-msg active error';
             }
         };
 

@@ -224,7 +224,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, deleteDoc, addDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, deleteDoc, addDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -596,8 +596,11 @@
                             <button class="btn-secondary btn-small" onclick="window.location.href='manage-samples.html'" style="background: rgba(251, 148, 120, 0.2); color: #fb9478;">
                                 <i class="fas fa-images"></i> Manage Samples
                             </button>
-                            <button class="btn-primary btn-small" onclick="openGiftModal()" style="background: linear-gradient(135deg, #0a84c6, #38bdf8);">
+                            <button class="btn-primary btn-small" onclick="openGiftModal()" style="background: linear-gradient(135deg, #fb9478, #b95039);">
                                 🎁 Gift Invite
+                            </button>
+                            <button class="btn-secondary btn-small" onclick="openRenameModal()">
+                                <i class="fas fa-user-edit"></i> Rename Client
                             </button>
                             <button class="btn-primary btn-small" onclick="openInviteClientModal()">
                                 <i class="fas fa-link"></i> ${t('inviteClient')}
@@ -797,6 +800,39 @@
                             </div>
                             <div id="addClientStatus" class="status-msg"></div>
                             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Client</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Rename Client Modal -->
+                <div id="renameModal" class="modal">
+                    <div class="modal-content" style="max-width: 560px;">
+                        <button class="close" onclick="closeRenameModal()">&times;</button>
+                        <h2 class="modal-title">Rename Client</h2>
+                        <p class="modal-subtitle">Pending requests from clients, and direct rename</p>
+
+                        <h3 style="margin: 0 0 8px; font-size: 15px;">Pending name change requests</h3>
+                        <div id="nameRequestsList" style="max-height: 200px; overflow: auto; font-size: 13px; margin-bottom: 20px;">Loading…</div>
+
+                        <h3 style="margin: 0 0 8px; font-size: 15px;">Direct rename</h3>
+                        <form id="renameClientForm" onsubmit="handleRenameClient(event)">
+                            <div class="form-group">
+                                <label class="form-label">Client *</label>
+                                <select id="renameClientEmail" class="form-input" onchange="loadRenameCurrentName()" required>
+                                    <option value="">Select client…</option>
+                                    ${clients.filter(Boolean).map(c => `<option value="${c}">${c}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Current Name</label>
+                                <input type="text" id="renameCurrentName" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Full Name *</label>
+                                <input type="text" id="renameNewName" class="form-input" placeholder="Enter new full name" required>
+                            </div>
+                            <div id="renameStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Rename Client</button>
                         </form>
                     </div>
                 </div>
@@ -1208,6 +1244,94 @@
             if (d.startsWith('972')) return d;
             return '972' + d.replace(/^0/, '');
         }
+
+        window.openRenameModal = () => {
+            document.getElementById('renameModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('renameClientForm').reset();
+            document.getElementById('renameStatus').className = 'status-msg';
+            loadNameRequests();
+        };
+
+        window.closeRenameModal = () => {
+            document.getElementById('renameModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.loadRenameCurrentName = async () => {
+            const email = document.getElementById('renameClientEmail').value;
+            const nameEl = document.getElementById('renameCurrentName');
+            nameEl.value = '';
+            if (!email) return;
+            try {
+                const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
+                if (!snap.empty) nameEl.value = snap.docs[0].data().fullName || '';
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.handleRenameClient = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('renameClientEmail').value;
+            const newName = document.getElementById('renameNewName').value.trim();
+            const statusEl = document.getElementById('renameStatus');
+            try {
+                const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
+                if (snap.empty) throw new Error('Client user not found');
+                await updateDoc(doc(db, 'users', snap.docs[0].id), { fullName: newName });
+                statusEl.textContent = '✓ Client renamed';
+                statusEl.className = 'status-msg active success';
+                document.getElementById('renameClientForm').reset();
+            } catch (err) {
+                statusEl.textContent = '✗ Error: ' + err.message;
+                statusEl.className = 'status-msg active error';
+            }
+        };
+
+        async function loadNameRequests() {
+            const el = document.getElementById('nameRequestsList');
+            try {
+                const snap = await getDocs(query(collection(db, 'nameChangeRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')));
+                if (snap.empty) { el.textContent = 'No pending requests'; return; }
+                el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + snap.docs.map(d => {
+                    const r = d.data();
+                    return `<tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                        <td style="padding:6px;">${r.currentName || '—'} → <strong>${r.requestedName}</strong></td>
+                        <td style="padding:6px;direction:ltr;">${r.email || r.phone || ''}</td>
+                        <td style="padding:6px;white-space:nowrap;">
+                            <button type="button" class="btn-primary btn-small" onclick="approveNameRequest('${d.id}','${r.uid}','${r.requestedName.replace(/'/g, "\\'")}')">✓</button>
+                            <button type="button" class="btn-secondary btn-small" onclick="rejectNameRequest('${d.id}')">✗</button>
+                        </td>
+                    </tr>`;
+                }).join('') + '</table>';
+            } catch (err) {
+                el.textContent = 'Error loading requests: ' + err.message;
+            }
+        }
+
+        window.approveNameRequest = async (requestId, uid, requestedName) => {
+            try {
+                await updateDoc(doc(db, 'users', uid), { fullName: requestedName });
+                await updateDoc(doc(db, 'nameChangeRequests', requestId), {
+                    status: 'approved', resolvedAt: Date.now(), resolvedBy: currentUser.email
+                });
+                loadNameRequests();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        };
+
+        window.rejectNameRequest = async (requestId) => {
+            try {
+                await updateDoc(doc(db, 'nameChangeRequests', requestId), {
+                    status: 'rejected', resolvedAt: Date.now(), resolvedBy: currentUser.email
+                });
+                loadNameRequests();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        };
 
         window.openGiftModal = () => {
             document.getElementById('giftModal').classList.add('active');
