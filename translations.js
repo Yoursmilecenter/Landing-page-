@@ -78,7 +78,30 @@ window.portalTranslations = {
         upload: 'Upload',
         noPatientsYet: 'No Patients Yet',
         patientsAppearHere: 'Your patients will appear here once they are created',
-        
+        delete: 'Delete',
+        deleteThisPatient: 'Delete this patient?',
+        deleteFailed: 'Delete failed',
+        couldNotDelete: 'Could not delete.',
+
+        // New Patient modal
+        createNewPatient: 'Create New Patient',
+        patientName: 'Patient Name',
+        enterPatientName: 'Enter patient name',
+        enterPatientDescription: 'Enter patient description',
+        uploadFilesOptional: 'Upload Files (Optional)',
+        dragDropFiles: 'Drag & drop files here',
+        orClickBrowse: 'or click to browse',
+        createPatient: 'Create Patient',
+        uploadFilesToPatient: 'Upload Files to Patient',
+        uploadFiles: 'Upload Files',
+        uploading: 'Uploading...',
+        startingUpload: 'Starting upload...',
+        selectAtLeastOneFile: 'Please select at least one file.',
+        filesUploadedSuccess: 'Files uploaded successfully!',
+        patientCreatedUploading: 'Patient created! Uploading files...',
+        patientCreatedSuccess: 'Patient created successfully!',
+        errorPrefix: 'Error: ',
+
         // Status translations
         statusPending: 'PENDING',
         statusInProgress: 'IN PROGRESS',
@@ -228,7 +251,30 @@ window.portalTranslations = {
         upload: 'העלה',
         noPatientsYet: 'אין מטופלים עדיין',
         patientsAppearHere: 'המטופלים שלך יופיעו כאן לאחר יצירתם',
-        
+        delete: 'מחק',
+        deleteThisPatient: 'למחוק את המטופל?',
+        deleteFailed: 'המחיקה נכשלה',
+        couldNotDelete: 'לא ניתן היה למחוק.',
+
+        // New Patient modal
+        createNewPatient: 'יצירת מטופל חדש',
+        patientName: 'שם המטופל',
+        enterPatientName: 'הזן שם מטופל',
+        enterPatientDescription: 'הזן תיאור מטופל',
+        uploadFilesOptional: 'העלאת קבצים (אופציונלי)',
+        dragDropFiles: 'גרור ושחרר קבצים כאן',
+        orClickBrowse: 'או לחץ לבחירה',
+        createPatient: 'צור מטופל',
+        uploadFilesToPatient: 'העלאת קבצים למטופל',
+        uploadFiles: 'העלה קבצים',
+        uploading: 'מעלה...',
+        startingUpload: 'מתחיל העלאה...',
+        selectAtLeastOneFile: 'נא לבחור לפחות קובץ אחד.',
+        filesUploadedSuccess: 'הקבצים הועלו בהצלחה!',
+        patientCreatedUploading: 'המטופל נוצר! מעלה קבצים...',
+        patientCreatedSuccess: 'המטופל נוצר בהצלחה!',
+        errorPrefix: 'שגיאה: ',
+
         // Status translations
         statusPending: 'ממתין',
         statusInProgress: 'בביצוע',

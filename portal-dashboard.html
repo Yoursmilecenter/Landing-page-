@@ -660,28 +660,28 @@
                 <div id="newProjectModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeNewProject()" aria-label="Close new patient form">&times;</button>
-                        <h2 class="modal-title">Create New Patient</h2>
+                        <h2 class="modal-title">${t('createNewPatient')}</h2>
                         <form id="newProjectForm" onsubmit="createProject(event)">
                             <div class="form-group">
-                                <label class="form-label">Patient Name *</label>
-                                <input type="text" id="projectTitle" class="form-input" placeholder="Enter patient name" required>
+                                <label class="form-label">${t('patientName')} *</label>
+                                <input type="text" id="projectTitle" class="form-input" placeholder="${t('enterPatientName')}" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Description *</label>
-                                <textarea id="projectDescription" class="form-textarea" placeholder="Enter patient description" required></textarea>
+                                <label class="form-label">${t('description')} *</label>
+                                <textarea id="projectDescription" class="form-textarea" placeholder="${t('enterPatientDescription')}" required></textarea>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Upload Files (Optional)</label>
+                                <label class="form-label">${t('uploadFilesOptional')}</label>
                                 <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
                                     <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
-                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
-                                    <div style="color:var(--color-text-secondary); font-size:13px;">or click to browse</div>
+                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">${t('dragDropFiles')}</div>
+                                    <div style="color:var(--color-text-secondary); font-size:13px;">${t('orClickBrowse')}</div>
                                 </div>
                                 <input type="file" id="fileInput" multiple style="display:none;">
                                 <div id="fileList" class="file-list" style="margin-top: 12px;"></div>
                             </div>
                             <div id="createStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Patient</button>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">${t('createPatient')}</button>
                         </form>
                     </div>
                 </div>
@@ -689,18 +689,18 @@
                 <div id="clientUploadModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeClientUpload()" aria-label="Close upload dialog">&times;</button>
-                        <h2 class="modal-title">Upload Files to Patient</h2>
-                        <p class="modal-subtitle">Patient: <span id="currentUploadPatientTitle"></span></p>
+                        <h2 class="modal-title">${t('uploadFilesToPatient')}</h2>
+                        <p class="modal-subtitle">${t('patient')}: <span id="currentUploadPatientTitle"></span></p>
                         
                         <div class="upload-area" id="clientUploadArea" onclick="document.getElementById('clientFileInput').click()">
                             <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
-                            <div style="font-size:16px; font-weight:500; margin-bottom:8px;">Drag & drop files here</div>
-                            <div style="color:var(--color-text-secondary); font-size:13px;">or click to browse</div>
+                            <div style="font-size:16px; font-weight:500; margin-bottom:8px;">${t('dragDropFiles')}</div>
+                            <div style="color:var(--color-text-secondary); font-size:13px;">${t('orClickBrowse')}</div>
                         </div>
                         <input type="file" id="clientFileInput" multiple style="display:none;">
                         <div id="clientFileList" class="file-list" style="margin-top: 12px;"></div>
                         <div id="clientUploadStatus" class="status-msg"></div>
-                        <button class="btn-primary" style="width:100%; padding:16px; margin-top:20px;" id="clientUploadBtn" onclick="handleClientUpload()">Upload Files</button>
+                        <button class="btn-primary" style="width:100%; padding:16px; margin-top:20px;" id="clientUploadBtn" onclick="handleClientUpload()">${t('uploadFiles')}</button>
                     </div>
                 </div>
             `;
@@ -1057,7 +1057,7 @@
                 if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
 
                 if (files.length > 0) {
-                    statusEl.textContent = 'Patient created! Uploading files...';
+                    statusEl.textContent = t('patientCreatedUploading');
                     statusEl.className = 'status-msg active warning';
                     
                     for (const file of files) {
@@ -1066,7 +1066,7 @@
                     }
                 }
 
-                statusEl.textContent = '✅ Patient created successfully!';
+                statusEl.textContent = '✅ ' + t('patientCreatedSuccess');
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(() => {
@@ -1074,7 +1074,7 @@
                     loadData(true);
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = '❌ ' + t('errorPrefix') + error.message;
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -1145,14 +1145,14 @@
             const statusEl = document.getElementById('clientUploadStatus');
 
             if (files.length === 0) {
-                statusEl.textContent = 'Please select at least one file.';
+                statusEl.textContent = t('selectAtLeastOneFile');
                 statusEl.className = 'status-msg active error';
                 return;
             }
 
             btn.disabled = true;
-            btn.textContent = 'Uploading...';
-            statusEl.textContent = 'Starting upload...';
+            btn.textContent = t('uploading');
+            statusEl.textContent = t('startingUpload');
             statusEl.className = 'status-msg active warning';
 
             try {
@@ -1161,7 +1161,7 @@
                     await uploadBytesResumable(storageRef, file);
                 }
 
-                statusEl.textContent = '✅ Files uploaded successfully!';
+                statusEl.textContent = '✅ ' + t('filesUploadedSuccess');
                 statusEl.className = 'status-msg active success';
                 
                 setTimeout(async () => {
@@ -1169,10 +1169,10 @@
                     await loadData(true);
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ Error: ' + error.message;
+                statusEl.textContent = '❌ ' + t('errorPrefix') + error.message;
                 statusEl.className = 'status-msg active error';
                 btn.disabled = false;
-                btn.textContent = 'Upload Files';
+                btn.textContent = t('uploadFiles');
             }
         };
 
@@ -1501,14 +1501,14 @@
             menu.dataset.id = projectId;
             menu.style.top = (rect.bottom + 4) + 'px';
             menu.style.left = Math.max(8, rect.right - 140) + 'px';
-            menu.innerHTML = `<button onclick="deleteProject('${projectId}')">🗑️ Delete</button>`;
+            menu.innerHTML = `<button onclick="deleteProject('${projectId}')">🗑️ ${t('delete')}</button>`;
             document.body.appendChild(menu);
         };
 
         window.deleteProject = async (projectId) => {
             const menu = document.getElementById('rowMenu');
             if (menu) menu.remove();
-            if (!confirm('Delete this patient?')) return;
+            if (!confirm(t('deleteThisPatient'))) return;
             try {
                 await updateDoc(doc(db, 'projects', projectId), { clientDeleted: true, clientDeletedAt: Date.now() });
                 userProjects = userProjects.filter(p => p.id !== projectId);
@@ -1516,7 +1516,7 @@
                 render();
             } catch (error) {
                 console.error('Error deleting project:', error);
-                showErrorNotification('Delete failed', error.message || 'Could not delete.');
+                showErrorNotification(t('deleteFailed'), error.message || t('couldNotDelete'));
             }
         };
 

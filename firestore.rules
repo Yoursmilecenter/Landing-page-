@@ -41,7 +41,7 @@ service cloud.firestore {
       allow update: if isClient() &&
                       resource.data.clientEmail == request.auth.token.email &&
                       request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['htmlApproved', 'clientRemarks', 'remarksAt', 'approvedAt', 'stlDownloaded', 'stlDownloadedAt', 'stlDownloadedFile', 'status']);
+                        .hasOnly(['htmlApproved', 'clientRemarks', 'remarksAt', 'approvedAt', 'stlDownloaded', 'stlDownloadedAt', 'stlDownloadedFile', 'status', 'clientDeleted', 'clientDeletedAt']);
     }
 
     match /invites/{inviteId} {
