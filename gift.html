@@ -71,7 +71,7 @@ const db = getFirestore(app);
 // prize key: "teeth_N" = free design of up to N teeth
 const teethOf = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? +m[1] : 5; };
 const drName = n => /^ד["״']?ר/.test(n) ? n : 'ד"ר ' + n;
-const SEG_COLORS = ['#0a84c6', '#38bdf8', '#0e6ba8', '#7dd3fc'];
+const SEG_COLORS = ['#fb9478', '#b95039', '#fdb69c', '#8a3a28'];
 
 const token = new URLSearchParams(location.search).get('t');
 const $ = id => document.getElementById(id);
