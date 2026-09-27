@@ -416,6 +416,22 @@
             return bytes.toFixed(1) + ' ' + units[u];
         }
 
+        function statusLabel(status) {
+            const map = {
+                'pending': 'statusPending',
+                'in-progress': 'statusInProgress',
+                'awaiting-client-approval': 'statusAwaitingApproval',
+                'approved': 'statusApproved',
+                'changes-requested': 'statusChangesRequested',
+                'stl-ready': 'statusStlReady',
+                'completed': 'statusCompleted',
+                'canceled': 'statusCanceled',
+                'cancelled': 'statusCanceled'
+            };
+            const key = map[status];
+            return key ? t(key) : status.toUpperCase().replace(/-/g, ' ');
+        }
+
         function render() {
             if (searchTimeout) {
                 clearTimeout(searchTimeout);
@@ -569,7 +585,7 @@
                                         <tr style="cursor: pointer;">
                                             <td><strong>${project.title}</strong></td>
                                             <td>${project.description}</td>
-                                            <td><span class="status-pill status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span></td>
+                                            <td><span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span></td>
                                             <td>${new Date(project.createdAt).toLocaleDateString()}</td>
                                             <td><span class="files-count">${htmlCount} HTML, ${stlCount} STL</span></td>
                                             <td>
@@ -1198,7 +1214,7 @@
                         <h2 style="margin: 0;">${project.title}</h2>
                         <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 13px;">${project.description}</p>
                     </div>
-                    <span class="status-pill status-${project.status.replace(/-/g, '')}">${project.status.toUpperCase().replace(/-/g, ' ')}</span>
+                    <span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span>
                 </div>
                 
                 ${project.clientRemarks ? `<div style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"><strong>Your Remarks:</strong> ${project.clientRemarks}</div>` : ''}
