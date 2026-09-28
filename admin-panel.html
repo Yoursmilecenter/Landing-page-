@@ -226,6 +226,9 @@
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, deleteDoc, addDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+        // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const js = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
@@ -656,7 +659,7 @@
                         <select onchange="updateFilter('designer', this.value)">
                             <option value="all">${t('allDesigners')}</option>
                             <option value="null">${t('unassigned')}</option>
-                            ${designers.map(d => `<option value="${d.email}">${d.name}</option>`).join('')}
+                            ${designers.map(d => `<option value="${esc(d.email)}">${esc(d.name)}</option>`).join('')}
                         </select>
                         <select onchange="updateFilter('client', this.value)">
                             <option value="all">${t('allClients')}</option>
@@ -704,17 +707,17 @@
                                 return `
                                 <tr class="${rowClass}">
                                     <td>
-                                        <strong>${project.title}</strong>${project.giftTeeth ? `<div style="font-size:11px;color:#0a84c6;font-weight:600;">🎁 Free design · up to ${project.giftTeeth} teeth</div>` : ''}
+                                        <strong>${esc(project.title)}</strong>${project.giftTeeth ? `<div style="font-size:11px;color:#0a84c6;font-weight:600;">🎁 Free design · up to ${project.giftTeeth} teeth</div>` : ''}
                                     </td>
-                                    <td style="font-size: 12px;">${project.clientEmail}</td>
+                                    <td style="font-size: 12px;">${esc(project.clientEmail)}</td>
                                     <td>
-                                        <select onchange="assignDesigner('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 12px;">
+                                        <select onchange="assignDesigner('${js(project.id)}', this.value)" style="width: 100%; padding: 4px; font-size: 12px;">
                                             <option value="">Unassigned</option>
-                                            ${designers.map(d => `<option value="${d.email}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>${d.name}</option>`).join('')}
+                                            ${designers.map(d => `<option value="${esc(d.email)}" ${project.assignedDesignerEmail === d.email ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
                                         </select>
                                     </td>
                                     <td>
-                                        <select onchange="updateStatus('${project.id}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
+                                        <select onchange="updateStatus('${js(project.id)}', this.value)" style="width: 100%; padding: 4px; font-size: 11px;">
                                             <option value="pending" ${project.status === 'pending' ? 'selected' : ''} disabled>Pending</option>
                                             <option value="in-progress" ${project.status === 'in-progress' ? 'selected' : ''} disabled>In Progress</option>
                                             <option value="awaiting-client-approval" ${project.status === 'awaiting-client-approval' ? 'selected' : ''} disabled>Awaiting</option>
@@ -733,10 +736,10 @@
                                     <td style="font-size: 12px;">${project.files.length} files</td>
                                     <td style="font-size: 11px;">${new Date(project.createdAt).toLocaleDateString()}</td>
                                     <td>
-                                        <button class="action-btn" onclick="togglePriority('${project.id}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
-                                        <button class="action-btn" onclick="viewHtmlFile('${project.id}')" style="background: #10b981; color: white;" title="View HTML">👁</button>
-                                        <button class="action-btn" onclick="openFilesModal('${project.id}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
-                                        <button class="action-btn" onclick="deletePatient('${project.id}', '${project.title}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑</button>
+                                        <button class="action-btn" onclick="togglePriority('${js(project.id)}', 'vip')" style="background: ${project.isVIP ? '#fbbf24' : '#555'}; color: ${project.isVIP ? '#000' : 'white'};" title="Mark VIP">⭐</button>
+                                        <button class="action-btn" onclick="viewHtmlFile('${js(project.id)}')" style="background: #10b981; color: white;" title="View HTML">👁</button>
+                                        <button class="action-btn" onclick="openFilesModal('${js(project.id)}')" style="background: #6366f1; color: white;" title="Manage Files">📁</button>
+                                        <button class="action-btn" onclick="deletePatient('${js(project.id)}', '${js(project.title)}')" style="background: #ef4444; color: white;" title="Delete Patient">🗑</button>
                                     </td>
                                 </tr>
                             `}).join('') : `<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">${t('noPatients')}</td></tr>`}
@@ -937,14 +940,14 @@
                     <div class="file-info">
                         <div class="file-icon"></div>
                         <div>
-                            <div class="file-name">${file.name}</div>
+                            <div class="file-name">${esc(file.name)}</div>
                             <div class="file-meta">${formatSize(file.size)}  ${file.date}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${file.url}', '_blank')">View</button>` : ''}
-                        <button class="btn-download" onclick="forceDownload('${file.path}', '${file.name}')">Download</button>
-                        <button type="button" class="btn-download" onclick="copyLink('${file.url}')" style="background: #10b981; color: white;">Copy</button>
+                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${js(file.url)}', '_blank')">View</button>` : ''}
+                        <button class="btn-download" onclick="forceDownload('${js(file.path)}', '${js(file.name)}')">Download</button>
+                        <button type="button" class="btn-download" onclick="copyLink('${js(file.url)}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
@@ -1202,10 +1205,10 @@
 
             try {
                 // Generate unique invite code
-                const inviteCode = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+                const inviteCode = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
                 
                 // Store invite in Firestore
-                await addDoc(collection(db, 'invites'), {
+                await setDoc(doc(db, 'invites', inviteCode), {
                     phone: phone,
                     code: inviteCode,
                     createdBy: currentUser.email,
@@ -1301,11 +1304,11 @@
                 el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + snap.docs.map(d => {
                     const r = d.data();
                     return `<tr style="border-bottom:1px solid rgba(255,255,255,.08);">
-                        <td style="padding:6px;">${r.currentName || '—'} → <strong>${r.requestedName}</strong></td>
-                        <td style="padding:6px;direction:ltr;">${r.email || r.phone || ''}</td>
+                        <td style="padding:6px;">${esc(r.currentName || '—')} → <strong>${esc(r.requestedName)}</strong></td>
+                        <td style="padding:6px;direction:ltr;">${esc(r.email || r.phone || '')}</td>
                         <td style="padding:6px;white-space:nowrap;">
-                            <button type="button" class="btn-primary btn-small" onclick="approveNameRequest('${d.id}','${r.uid}','${r.requestedName.replace(/'/g, "\\'")}')">✓</button>
-                            <button type="button" class="btn-secondary btn-small" onclick="rejectNameRequest('${d.id}')">✗</button>
+                            <button type="button" class="btn-primary btn-small" onclick="approveNameRequest('${js(d.id)}','${js(r.uid)}','${js(r.requestedName)}')">✓</button>
+                            <button type="button" class="btn-secondary btn-small" onclick="rejectNameRequest('${js(d.id)}')">✗</button>
                         </td>
                     </tr>`;
                 }).join('') + '</table>';
@@ -1399,8 +1402,8 @@
                 const expired = d => d.status !== 'redeemed' && d.expiresAt && Date.now() > d.expiresAt;
                 el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + rows.map(d => `
                     <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
-                        <td style="padding:6px;">${d.clientName || ''}</td>
-                        <td style="padding:6px;direction:ltr;">${d.phone}</td>
+                        <td style="padding:6px;">${esc(d.clientName || '')}</td>
+                        <td style="padding:6px;direction:ltr;">${esc(d.phone)}</td>
                         <td style="padding:6px;">${giftLabel(d.prize)}</td>
                         <td style="padding:6px;">${expired(d) ? '⌛ expired' : (GIFT_STATUS[d.status] || d.status)}</td>
                     </tr>`).join('') + '</table>';

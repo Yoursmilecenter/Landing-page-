@@ -23,8 +23,13 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn()
+                    && request.auth.uid == userId
+                    && request.resource.data.uid == userId
+                    && request.resource.data.role == 'client';
+      allow update: if isAdmin() ||
+                    (request.auth.uid == userId &&
+                     !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid']));
       allow delete: if isAdmin();
     }
 
@@ -37,7 +42,8 @@ service cloud.firestore {
 
       allow read: if isClient() &&
                     resource.data.clientEmail == request.auth.token.email;
-      allow create: if isClient();
+      allow create: if isClient() &&
+                      request.resource.data.clientEmail == request.auth.token.email;
       allow update: if isClient() &&
                       resource.data.clientEmail == request.auth.token.email &&
                       request.resource.data.diff(resource.data).affectedKeys()
@@ -45,10 +51,13 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      allow read: if true;
-      allow create: if isAdmin();
-      allow update: if true;
-      allow delete: if isAdmin();
+      allow get: if true;
+      allow list, create, delete: if isAdmin();
+      allow update: if isSignedIn()
+                    && resource.data.get('used', false) == false
+                    && resource.data.get('status', '') != 'redeemed'
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'openedAt', 'uid', 'used', 'usedAt', 'redeemedAt']);
     }
 
     match /auditLogs/{logId} {
