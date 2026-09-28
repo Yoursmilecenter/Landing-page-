@@ -1553,6 +1553,16 @@
         </svg>
     </a>
 
+    <!-- Email Float Button -->
+    <a href="mailto:info@smilecenter.pro?subject=Smile%20Center%20Inquiry"
+       class="email-float"
+       aria-label="Send email">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-10 6L2 7"/>
+        </svg>
+    </a>
+
     <style>
         .row-menu {
             position: fixed;
@@ -1577,7 +1587,7 @@
             cursor: pointer;
         }
         .row-menu button:hover { background: rgba(229,57,53,0.12); }
-        .whatsapp-float {
+        .whatsapp-float, .email-float {
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -1594,10 +1604,11 @@
             z-index: 1000;
         }
         
-        .whatsapp-float:hover {
+        .whatsapp-float:hover, .email-float:hover {
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
         }
+        .whatsapp-float { bottom: 90px; }
     </style>
 </body>
 </html>
