@@ -553,9 +553,9 @@
                                 <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
                                     <div class="acct-option" onclick="openMyDetails()"><i class="fas fa-id-card"></i> ${currentLang === 'he' ? 'הפרטים שלי' : 'My details'}</div>
                                     <div class="acct-option" onclick="openMyAccount()"><i class="fas fa-pen"></i> ${currentLang === 'he' ? 'שינוי שם משתמש' : 'Change username'}</div>
+                                    <div class="acct-option" style="color: var(--color-error, #dc2626); border-top: 1px solid rgba(0,0,0,0.08);" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ${t('logout')}</div>
                                 </div>
                             </div>
-                            <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
                     </div>
                 </div>
