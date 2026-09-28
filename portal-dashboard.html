@@ -209,6 +209,9 @@
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
 
+        // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const js = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
@@ -619,16 +622,16 @@
                                     const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
                                     return `
                                         <tr style="cursor: pointer;">
-                                            <td><strong>${project.title}</strong></td>
+                                            <td><strong>${esc(project.title)}</strong></td>
                                             <td>${project.description}</td>
                                             <td><span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span></td>
                                             <td>${new Date(project.createdAt).toLocaleDateString()}</td>
                                             <td><span class="files-count">${htmlCount} HTML, ${stlCount} STL</span></td>
                                             <td>
-                                                <button class="action-btn-sm" onclick="openProjectCard('${project.id}')"><i class="fas fa-folder-open"></i> ${t('view')}</button>
-                                                ${stlCount > 0 ? `<button class="action-btn-sm" onclick="forceDownload('${stlFiles[0].path}', '${stlFiles[0].name}'); trackStlDownload('${project.id}', '${stlFiles[0].name}')" style="margin-left: 8px;"><i class="fas fa-download"></i> STL</button>` : ''}
-                                                <button class="action-btn-sm" onclick="openClientUploadModal('${project.id}', '${project.title}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> ${t('upload')}</button>
-                                                <button class="action-btn-sm" onclick="toggleRowMenu(event, '${project.id}')" style="margin-left: 8px;" aria-label="More options">&#8943;</button>
+                                                <button class="action-btn-sm" onclick="openProjectCard('${js(project.id)}')"><i class="fas fa-folder-open"></i> ${t('view')}</button>
+                                                ${stlCount > 0 ? `<button class="action-btn-sm" onclick="forceDownload('${js(stlFiles[0].path)}', '${js(stlFiles[0].name)}'); trackStlDownload('${js(project.id)}', '${js(stlFiles[0].name)}')" style="margin-left: 8px;"><i class="fas fa-download"></i> STL</button>` : ''}
+                                                <button class="action-btn-sm" onclick="openClientUploadModal('${js(project.id)}', '${js(project.title)}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> ${t('upload')}</button>
+                                                <button class="action-btn-sm" onclick="toggleRowMenu(event, '${js(project.id)}')" style="margin-left: 8px;" aria-label="More options">&#8943;</button>
                                             </td>
                                         </tr>
                                     `;
@@ -834,7 +837,7 @@
             }
             listEl.innerHTML = Array.from(files).map((file, i) => `
                 <div class="file-list-item">
-                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <span>${esc(file.name)} (${formatSize(file.size)})</span>
                     <button class="btn-icon" onclick="removeFile(${i})" type="button">
                         <i class="fas fa-times-circle"></i>
                     </button>
@@ -990,7 +993,7 @@
             ov.firstElementChild.innerHTML = `
                 <h2 style="margin:0 0 6px;font-size:20px;">יש כבר חשבון עם המספר הזה</h2>
                 <p style="margin:0 0 18px;color:#666;font-size:14px;">התחבר עם הסיסמה הקיימת שלך, ואנחנו נצרף אליו את המתנה.</p>
-                <div class="form-group"><input type="text" id="gxUser" class="form-input" value="${phone}" placeholder="שם משתמש / טלפון / אימייל" autocomplete="username"></div>
+                <div class="form-group"><input type="text" id="gxUser" class="form-input" value="${esc(phone)}" placeholder="שם משתמש / טלפון / אימייל" autocomplete="username"></div>
                 <div class="form-group"><input type="password" id="gxPass" class="form-input" placeholder="סיסמה קיימת" autocomplete="current-password"></div>
                 <div id="gxStatus" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:8px;"></div>
                 <button id="gxBtn" class="btn-primary" style="width:100%;padding:14px;color:#fff;font-weight:700;background:#fb9478;" onclick="claimGiftWithLogin()">התחבר וצרף את המתנה</button>
@@ -1232,7 +1235,7 @@
             }
             listEl.innerHTML = Array.from(files).map((file, i) => `
                 <div class="file-list-item">
-                    <span>${file.name} (${formatSize(file.size)})</span>
+                    <span>${esc(file.name)} (${formatSize(file.size)})</span>
                     <button class="btn-icon" onclick="removeClientFile(${i})" type="button">
                         <i class="fas fa-times-circle"></i>
                     </button>
@@ -1309,24 +1312,24 @@
             content.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                     <div>
-                        <h2 style="margin: 0;">${project.title}</h2>
-                        <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 13px;">${project.description}</p>
+                        <h2 style="margin: 0;">${esc(project.title)}</h2>
+                        <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 13px;">${esc(project.description)}</p>
                     </div>
                     <span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span>
                 </div>
                 
-                ${project.clientRemarks ? `<div style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"><strong>Your Remarks:</strong> ${project.clientRemarks}</div>` : ''}
+                ${project.clientRemarks ? `<div style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"><strong>Your Remarks:</strong> ${esc(project.clientRemarks)}</div>` : ''}
                 
                 ${htmlFiles.length > 0 ? `
                     <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                         <span style="font-weight: 600; font-size: 13px;">Preview:</span>
                         ${htmlFiles.map((file, i) => `
-                            <button class="action-btn-sm ${i === 0 ? 'active' : ''}" onclick="loadHtmlPreview('${file.url}', '${file.name}', this)" style="padding: 4px 10px; font-size: 11px;">
-                                ${file.name}
+                            <button class="action-btn-sm ${i === 0 ? 'active' : ''}" onclick="loadHtmlPreview('${js(file.url)}', '${js(file.name)}', this)" style="padding: 4px 10px; font-size: 11px;">
+                                ${esc(file.name)}
                             </button>
                         `).join('')}
                     </div>
-                    <iframe id="inlinePreviewFrame" src="${htmlFiles[0].url}" style="width: 100%; height: 280px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #fff;"></iframe>
+                    <iframe id="inlinePreviewFrame" src="${esc(htmlFiles[0].url)}" style="width: 100%; height: 280px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #fff;"></iframe>
                     
                     ${isAwaitingApproval ? `
                         <div style="margin-top: 12px; padding: 12px; background: rgba(0, 153, 204, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -1353,10 +1356,10 @@
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
                             <span style="font-weight: 600; font-size: 13px;">STL:</span>
                             ${stlFiles.map((file, i) => `
-                                <button class="action-btn-sm stl-preview-btn ${i === 0 ? 'active' : ''}" onclick="load3DPreview('${file.url}', this)" style="padding: 4px 10px; font-size: 11px;">
-                                    <i class="fas fa-cube"></i> ${file.name}
+                                <button class="action-btn-sm stl-preview-btn ${i === 0 ? 'active' : ''}" onclick="load3DPreview('${js(file.url)}', this)" style="padding: 4px 10px; font-size: 11px;">
+                                    <i class="fas fa-cube"></i> ${esc(file.name)}
                                 </button>
-                                <button class="action-btn-sm" onclick="forceDownload('${file.path}', '${file.name}'); trackStlDownload('${project.id}', '${file.name}')" style="padding: 4px 10px; font-size: 11px;">
+                                <button class="action-btn-sm" onclick="forceDownload('${js(file.path)}', '${js(file.name)}'); trackStlDownload('${js(project.id)}', '${js(file.name)}')" style="padding: 4px 10px; font-size: 11px;">
                                     <i class="fas fa-download"></i>
                                 </button>
                             `).join('')}

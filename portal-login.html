@@ -284,18 +284,16 @@
                 statusEl.className = 'status-msg active warning';
 
                 // Verify invite code
-                const invitesRef = collection(db, 'invites');
-                const q = query(invitesRef, where('code', '==', inviteCode), where('phone', '==', phone));
-                const snapshot = await getDocs(q);
+                const inviteSnap = await getDoc(doc(db, 'invites', inviteCode));
 
-                if (snapshot.empty) {
+                if (!inviteSnap.exists() || inviteSnap.data().phone !== phone) {
                     statusEl.textContent = '✗ Invalid or expired invite link';
                     statusEl.className = 'status-msg active error';
                     return;
                 }
 
-                const inviteDoc = snapshot.docs[0];
-                const inviteData = inviteDoc.data();
+                const inviteDoc = inviteSnap;
+                const inviteData = inviteSnap.data();
 
                 if (inviteData.used) {
                     statusEl.textContent = '✗ This invite has already been used';
