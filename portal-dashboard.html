@@ -77,10 +77,41 @@
         .action-btn-sm:hover {
             opacity: 0.8;
         }
-        .lang-toggle {
+        .lang-toggle, .acct-toggle {
             position: relative;
             display: inline-block;
         }
+        .acct-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--color-card);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+            min-width: 170px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .acct-menu.active { display: block; }
+        [dir="rtl"] .acct-menu { right: auto; left: 0; }
+        .acct-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .acct-option:hover { background: rgba(99, 102, 241, 0.1); }
+        .details-row { padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .details-row:last-of-type { border-bottom: none; }
+        .details-row label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .details-row input { width: 100%; border: none; background: transparent; font-size: 14px; padding: 4px 0; outline: none; color: var(--color-text-secondary); font-family: inherit; }
+        .details-row input:focus { color: inherit; border-bottom: 1px solid var(--color-primary); }
         .lang-dropdown {
             padding: 6px 12px;
             background: rgba(0, 0, 0, 0.1);
@@ -173,7 +204,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import * as THREE from './vendor/three/three.module.min.js';
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
@@ -518,7 +549,13 @@
                                 </div>
                             </div>
                             <span style="color: var(--color-text-secondary); font-size: 14px; direction: ltr;">${currentUser.email || (giftUser && giftUser.phone) || ''}</span>
-                            <button class="btn-secondary btn-small" onclick="openMyAccount()"><i class="fas fa-user"></i> My Account</button>
+                            <div class="acct-toggle">
+                                <button class="btn-secondary btn-small acct-btn" onclick="toggleAcctMenu(event)" aria-label="Account"><i class="fas fa-user"></i> <span style="font-size:10px;">▼</span></button>
+                                <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
+                                    <div class="acct-option" onclick="openMyDetails()"><i class="fas fa-id-card"></i> ${currentLang === 'he' ? 'הפרטים שלי' : 'My details'}</div>
+                                    <div class="acct-option" onclick="openMyAccount()"><i class="fas fa-pen"></i> ${currentLang === 'he' ? 'שינוי שם משתמש' : 'Change username'}</div>
+                                </div>
+                            </div>
                             <button class="logout-btn" onclick="logout()">${t('logout')}</button>
                         </div>
                     </div>
@@ -649,10 +686,26 @@
                     </div>
                 </div>
 
+                <div id="myDetailsModal" class="modal">
+                    <div class="modal-content" style="max-width: 420px;">
+                        <button class="close" onclick="closeMyDetails()" aria-label="Close">&times;</button>
+                        <h2 class="modal-title">${currentLang === 'he' ? 'הפרטים שלי' : 'My details'}</h2>
+                        <form id="myDetailsForm" onsubmit="saveMyDetails(event)">
+                            <div class="details-row"><label>${currentLang === 'he' ? 'שם מלא' : 'Full name'}</label><input type="text" id="detFullName" autocomplete="off"></div>
+                            <div class="details-row"><label>${currentLang === 'he' ? 'אימייל' : 'Email'}</label><input type="email" id="detEmail" readonly></div>
+                            <div class="details-row"><label>${currentLang === 'he' ? 'טלפון' : 'Phone'}</label><input type="tel" id="detPhone" dir="ltr" autocomplete="off"></div>
+                            <div class="details-row"><label>${currentLang === 'he' ? 'שם מרפאה' : 'Clinic name'}</label><input type="text" id="detClinic" autocomplete="off"></div>
+                            <div class="details-row"><label>${currentLang === 'he' ? 'כתובת' : 'Address'}</label><input type="text" id="detAddress" autocomplete="off"></div>
+                            <div id="myDetailsStatus" class="status-msg"></div>
+                            <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 12px;">${currentLang === 'he' ? 'שמור' : 'Save'}</button>
+                        </form>
+                    </div>
+                </div>
+
                 <div id="myAccountModal" class="modal">
                     <div class="modal-content">
                         <button class="close" onclick="closeMyAccount()" aria-label="Close my account">&times;</button>
-                        <h2 class="modal-title">My Account</h2>
+                        <h2 class="modal-title">${currentLang === 'he' ? 'שינוי שם משתמש' : 'Change username'}</h2>
                         <p class="modal-subtitle">Name changes require admin approval</p>
                         <div class="form-group">
                             <label class="form-label">Current Username</label>
@@ -981,7 +1034,53 @@
             }
         };
 
+        window.toggleAcctMenu = (e) => {
+            e.stopPropagation();
+            document.getElementById('acctMenu').classList.toggle('active');
+        };
+
+        window.openMyDetails = () => {
+            document.getElementById('acctMenu').classList.remove('active');
+            const d = giftUser || {};
+            document.getElementById('detFullName').value = d.fullName || '';
+            document.getElementById('detEmail').value = (currentUser && currentUser.email) || d.email || '';
+            document.getElementById('detPhone').value = d.phone || '';
+            document.getElementById('detClinic').value = d.clinic || '';
+            document.getElementById('detAddress').value = d.address || '';
+            document.getElementById('myDetailsStatus').className = 'status-msg';
+            document.getElementById('myDetailsModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeMyDetails = () => {
+            document.getElementById('myDetailsModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        window.saveMyDetails = async (e) => {
+            e.preventDefault();
+            const st = document.getElementById('myDetailsStatus');
+            const data = {
+                fullName: document.getElementById('detFullName').value.trim(),
+                phone: document.getElementById('detPhone').value.trim(),
+                clinic: document.getElementById('detClinic').value.trim(),
+                address: document.getElementById('detAddress').value.trim()
+            };
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), data, { merge: true });
+                giftUser = Object.assign({}, giftUser || {}, data);
+                st.textContent = '✓';
+                st.className = 'status-msg active success';
+                setTimeout(closeMyDetails, 700);
+            } catch (err) {
+                console.error(err);
+                st.textContent = '✗ ' + err.message;
+                st.className = 'status-msg active error';
+            }
+        };
+
         window.openMyAccount = async () => {
+            document.getElementById('acctMenu').classList.remove('active');
             document.getElementById('myAccountModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             document.getElementById('nameChangeForm').reset();
@@ -1535,6 +1634,8 @@
         };
 
         document.addEventListener('click', () => {
+            const am = document.getElementById('acctMenu');
+            if (am) am.classList.remove('active');
             const m = document.getElementById('rowMenu');
             if (m) m.remove();
         });
