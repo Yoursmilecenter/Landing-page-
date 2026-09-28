@@ -1570,7 +1570,8 @@
     <!-- Email Float Button -->
     <a href="mailto:info@smilecenter.pro?subject=Smile%20Center%20Inquiry"
        class="email-float"
-       aria-label="Send email">
+       aria-label="Send email"
+       onclick="setTimeout(function(){ if(!document.hidden){ navigator.clipboard.writeText('info@smilecenter.pro').then(function(){ alert('No email app detected. Address copied: info@smilecenter.pro'); }); } }, 400)">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
             <path d="m22 7-10 6L2 7"/>
