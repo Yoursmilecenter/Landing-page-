@@ -1197,7 +1197,7 @@
                                                     </td>
                                                     <td>${project.isVIP ? '<span class="dx-tag">VIP</span>' : `<span class="dx-muted">${dxa('normal')}</span>`}</td>
                                                     <td>
-                                                        ${project.clientRemarks ? `<div class="dx-desc">${esc(project.clientRemarks)}</div>` : ''}
+                                                        ${project.clientRemarks ? `<div class="dx-desc" dir="auto" title="${esc(project.clientRemarks)}">${esc(project.clientRemarks)}</div>` : ''}
                                                         ${project.stlDownloaded ? `<span class="dx-sub">${dxa('stlDownloaded')} ${esc(new Date(project.stlDownloadedAt).toLocaleDateString())}</span>` : ''}
                                                         ${!project.clientRemarks && !project.stlDownloaded ? '<span class="dx-muted">—</span>' : ''}
                                                     </td>
