@@ -13,6 +13,8 @@
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     
     <title>Patients Dashboard - Smile Center Portal</title>
+    <link rel="preload" href="fonts/heebo-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/heebo-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
@@ -191,9 +193,131 @@
             color: var(--color-text-secondary);
             font-size: 12px;
         }
+        /* ===== Smile Center Pro client dashboard (dx-) ===== */
+        @font-face { font-family: 'Heebo'; src: url('fonts/heebo-hebrew-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+        @font-face { font-family: 'Heebo'; src: url('fonts/heebo-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+        body.dx-page { background: #f7f7f8; color: #0f172a; font-family: Heebo, Arial, sans-serif; line-height: 1.5; height: auto; min-height: 100dvh; }
+        .dx-page button, .dx-page input { font-family: inherit; }
+        .dx-i { flex: none; display: block; }
+
+        .dx-shell { display: flex; min-height: 100dvh; }
+
+        /* Sidebar */
+        .dx-sidebar {
+            position: sticky; top: 0; align-self: flex-start;
+            display: flex; flex-direction: column;
+            width: 232px; flex: 0 0 232px; height: 100dvh; box-sizing: border-box;
+            padding: 20px 14px; background: #ffffff;
+            border-inline-end: 1px solid #e2e8f0;
+        }
+        .dx-brand { display: inline-flex; align-items: center; gap: 10px; direction: ltr; padding: 4px 8px 20px; font-size: 15px; font-weight: 600; color: #0f172a; text-decoration: none; white-space: nowrap; }
+        .dx-brand svg { width: 32px; height: 32px; flex: none; }
+        .dx-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+        .dx-nav a, .dx-nav button {
+            display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+            min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px;
+            background: none; color: #475569; font-size: 14px; font-weight: 600; text-align: start; text-decoration: none; cursor: pointer;
+        }
+        .dx-nav a:hover, .dx-nav button:hover { background: #f8fafc; }
+        .dx-nav [aria-current="page"] { background: #fff3ed; color: #b95039; }
+        .dx-nav a:focus-visible, .dx-nav button:focus-visible, .dx-avatar:focus-visible, .dx-btn:focus-visible, .dx-act:focus-visible, .dx-lang button:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+        .dx-side-account { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; min-width: 0; }
+        .dx-side-account .dx-av { width: 36px; height: 36px; border-radius: 50%; background: #fff3ed; color: #b95039; border: 1px solid #f8d4c8; display: grid; place-items: center; font-size: 14px; font-weight: 600; flex: none; }
+        .dx-side-account .dx-who { min-width: 0; }
+        .dx-side-account .dx-who small { display: block; font-size: 12px; color: #64748b; }
+        .dx-side-account .dx-who span { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Main + topbar */
+        .dx-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .dx-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 72px; padding: 0 38px; box-sizing: border-box; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+        .dx-topbar-title { font-size: 14px; font-weight: 600; color: #64748b; }
+        .dx-topbar-end { display: flex; align-items: center; gap: 14px; }
+        .dx-lang { display: inline-flex; direction: ltr; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .dx-lang button { min-height: 36px; padding: 0 12px; border: 0; background: #ffffff; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .dx-lang button + button { border-inline-start: 1px solid #e2e8f0; }
+        .dx-lang button.is-active { background: #fff3ed; color: #b95039; }
+        .dx-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #f8d4c8; background: #fff3ed; color: #b95039; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .dx-topbar .acct-menu { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.10); }
+        .dx-topbar .acct-option { color: #0f172a; }
+        .dx-topbar .acct-option:hover { background: #fff3ed; }
+
+        .dx-content { padding: 32px 38px 48px; }
+        .dx-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+        .dx-head h1 { margin: 0; font-size: 26px; line-height: 1.25; font-weight: 600; color: #0f172a; }
+        .dx-head p { margin: 4px 0 0; font-size: 14px; color: #64748b; }
+        .dx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #fb9478; color: #0f172a; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+        .dx-btn:hover { background: #f38163; }
+
+        .dx-search { position: relative; max-width: 560px; margin-bottom: 20px; }
+        .dx-search .dx-i { position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; }
+        .dx-search input { width: 100%; box-sizing: border-box; height: 44px; padding: 0 14px; padding-inline-start: 42px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a; font-size: 14px; }
+        .dx-search input::placeholder { color: #64748b; }
+        .dx-search input:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039; }
+
+        /* Stat cards */
+        .dx-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; margin-bottom: 24px; }
+        .dx-stat { box-sizing: border-box; min-height: 100px; padding: 14px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; }
+        .dx-stat-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+        .dx-stat-label .dx-i { color: #94a3b8; }
+        .dx-stat-value { font-size: 27px; line-height: 1.1; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
+        .dx-stat--stl { background: #fffaf7; border-color: #f8d4c8; }
+        .dx-stat--stl .dx-stat-value, .dx-stat--stl .dx-stat-label .dx-i { color: #b95039; }
+
+        /* Table */
+        .dx-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .dx-card-title { margin: 0; padding: 16px 20px; font-size: 15px; font-weight: 600; border-bottom: 1px solid #edf0f3; }
+        .dx-table-wrap { overflow-x: auto; }
+        .dx-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+        .dx-table th { padding: 12px 16px; background: #fff8f5; color: #b95039; border-bottom: 1px solid #f4ded4; font-size: 12px; font-weight: 600; text-align: start; }
+        .dx-table td { height: 65px; padding: 10px 16px; border-bottom: 1px solid #edf0f3; vertical-align: middle; text-align: start; }
+        .dx-table tbody tr:last-child td { border-bottom: 0; }
+        .dx-table tbody tr:hover td { background: #fffdfc; }
+        .dx-patient { font-weight: 600; overflow-wrap: anywhere; }
+        .dx-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #475569; }
+        .dx-date { color: #64748b; white-space: nowrap; }
+        .dx-files { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .dx-files small { display: block; font-size: 11px; font-weight: 400; color: #94a3b8; direction: ltr; text-align: start; }
+        [dir="rtl"] .dx-files small { text-align: right; }
+
+        .dx-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+        .dx-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+        .dx-chip--progress { background: #f1f5f9; color: #475569; }
+        .dx-chip--await { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+        .dx-chip--stl { background: #fff3ed; color: #b95039; }
+        .dx-chip--done { background: #f1f5f9; color: #334155; }
+
+        .dx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+        .dx-act { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: none; color: #475569; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .dx-act:hover { background: #f1f5f9; }
+        .dx-act--accent { background: #fff3ed; border-color: #f8d4c8; color: #b95039; }
+        .dx-act--accent:hover { background: #ffe9df; }
+
+        .dx-empty { padding: 56px 20px; background: #fbfcfd; text-align: center; }
+        .dx-empty .dx-i { margin: 0 auto 12px; color: #fb9478; }
+        .dx-empty h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+        .dx-empty p { margin: 0 0 18px; font-size: 14px; color: #64748b; }
+
+        @media (max-width: 1250px) { .dx-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 1100px) { .dx-table { min-width: 950px; } }
+        @media (max-width: 800px) {
+            .dx-shell { flex-direction: column; }
+            .dx-sidebar { position: static; width: 100%; flex: none; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 20px; border-inline-end: 0; border-bottom: 1px solid #e2e8f0; }
+            .dx-brand { padding: 0; }
+            .dx-nav { flex-direction: row; flex: 1; margin: 0; justify-content: flex-end; }
+            .dx-nav a, .dx-nav button { width: auto; }
+            .dx-side-account { display: none; }
+            .dx-topbar { padding: 0 20px; }
+            .dx-content { padding: 20px; }
+            .dx-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .dx-search { max-width: none; }
+            .dx-act { min-height: 44px; }
+        }
+        @media (max-width: 480px) { .dx-stats { grid-template-columns: 1fr; } }
+        @media (prefers-reduced-motion: reduce) { .dx-page * { transition: none !important; } }
     </style>
 </head>
-<body>
+<body class="dx-page">
     <div id="app">
         <div class="header-content">
             <div class="logo">Loading...</div>
@@ -521,6 +645,45 @@
             return '';
         }
 
+        // ---- Client dashboard design helpers ----
+        const DX_ICONS = {
+            dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+            plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+            users: '<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
+            clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16.5 12"/>',
+            clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+            box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+            check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+            files: '<path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>',
+            search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+            eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+            upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+            download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'
+        };
+        const dxIcon = (name, size = 16) => `<svg class="dx-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DX_ICONS[name]}</svg>`;
+
+        const DX_BRAND_MARK = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="155 160 700 710" aria-hidden="true"><g fill="#fb9478"><path d="M 692.0 187.5 L 726.0 191.5 L 752.0 200.5 L 775.0 214.5 L 798.5 237.0 L 816.5 264.0 L 830.5 298.0 L 838.5 338.0 L 839.5 377.0 L 836.5 404.0 L 825.5 450.0 L 792.5 555.0 L 775.5 616.0 L 765.5 663.0 L 757.5 722.0 L 745.5 767.0 L 730.5 799.0 L 720.5 813.0 L 711.0 822.5 L 701.0 829.5 L 692.0 833.5 L 674.0 836.5 L 659.0 833.5 L 651.0 828.5 L 641.5 818.0 L 634.5 804.0 L 628.5 784.0 L 624.5 763.0 L 617.5 702.0 L 608.5 649.0 L 598.5 614.0 L 585.5 586.0 L 576.5 572.0 L 566.0 561.5 L 556.0 554.5 L 533.0 545.5 L 512.5 543.0 L 512.5 242.0 L 534.0 239.5 L 549.0 234.5 L 601.0 208.5 L 632.0 196.5 L 657.0 190.5 L 692.0 187.5 Z"/><path d="M 371.0 813.5 L 390.5 826.0 L 385.5 833.0 L 375.0 841.5 L 366.0 845.5 L 358.0 847.5 L 341.0 847.5 L 342.5 824.0 L 358.0 823.5 L 364.0 820.5 L 371.0 813.5 Z"/><path d="M 243.0 204.5 L 247.5 207.0 L 258.5 222.0 L 247.0 231.5 L 229.0 251.5 L 214.0 240.5 L 211.5 236.0 L 220.5 225.0 L 243.0 204.5 Z"/><path d="M 257.0 608.5 L 259.5 612.0 L 268.5 653.0 L 246.0 657.5 L 244.5 656.0 L 235.5 615.0 L 237.0 613.5 L 257.0 608.5 Z"/><path d="M 273.0 693.5 L 274.5 694.0 L 277.5 717.0 L 282.5 736.0 L 281.0 737.5 L 260.0 742.5 L 253.5 716.0 L 251.5 697.0 L 273.0 693.5 Z"/><path d="M 190.0 275.5 L 211.5 285.0 L 205.5 299.0 L 199.0 325.5 L 176.5 321.0 L 182.5 294.0 L 190.0 275.5 Z"/><path d="M 208.0 444.5 L 210.5 446.0 L 215.5 467.0 L 222.5 487.0 L 200.0 494.5 L 187.5 451.0 L 208.0 444.5 Z"/><path d="M 234.0 525.5 L 247.5 569.0 L 225.0 575.5 L 211.5 533.0 L 234.0 525.5 Z"/><path d="M 404.0 650.5 L 426.5 656.0 L 419.0 698.5 L 396.5 696.0 L 399.5 669.0 L 404.0 650.5 Z"/><path d="M 317.0 176.5 L 331.5 177.0 L 332.5 199.0 L 314.0 200.5 L 291.0 205.5 L 284.5 184.0 L 298.0 179.5 L 317.0 176.5 Z"/><path d="M 391.0 736.5 L 414.5 739.0 L 408.5 779.0 L 406.0 784.5 L 384.5 779.0 L 391.0 736.5 Z"/><path d="M 397.0 186.5 L 418.0 193.5 L 439.5 204.0 L 430.0 224.5 L 389.5 208.0 L 397.0 186.5 Z"/><path d="M 437.0 566.5 L 452.0 578.5 L 454.5 583.0 L 448.5 592.0 L 437.5 617.0 L 434.0 617.5 L 416.0 610.5 L 415.5 608.0 L 424.5 587.0 L 437.0 566.5 Z"/><path d="M 173.0 363.5 L 196.5 364.0 L 197.5 390.0 L 200.5 405.0 L 199.0 406.5 L 177.5 410.0 L 173.5 386.0 L 173.0 363.5 Z"/><path d="M 293.0 773.5 L 294.5 774.0 L 303.5 793.0 L 315.5 808.0 L 298.0 823.5 L 283.5 805.0 L 272.5 783.0 L 293.0 773.5 Z"/><path d="M 476.0 221.5 L 491.0 227.5 L 511.0 230.5 L 511.5 253.0 L 501.0 253.5 L 490.0 251.5 L 467.0 243.5 L 466.5 242.0 L 476.0 221.5 Z"/><path d="M 508.0 531.5 L 511.5 532.0 L 511.5 555.0 L 496.0 556.5 L 483.0 560.5 L 473.5 540.0 L 487.0 534.5 L 508.0 531.5 Z"/></g></svg>`;
+
+        function dxStatusChip(status) {
+            const lang = localStorage.getItem('lang') || 'en';
+            const known = {
+                'in-progress': ['In Progress', 'בתהליך', 'dx-chip--progress'],
+                'awaiting-client-approval': ['Awaiting Approval', 'ממתין לאישור', 'dx-chip--await'],
+                'stl-ready': ['STL Ready', 'STL מוכן', 'dx-chip--stl'],
+                'completed': ['Completed', 'הושלם', 'dx-chip--done']
+            };
+            let label, cls;
+            if (known[status]) {
+                label = known[status][lang === 'he' ? 1 : 0];
+                cls = known[status][2];
+            } else {
+                label = statusLabel(status);
+                if (lang !== 'he') label = String(label).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+                cls = ({ 'pending': 'dx-chip--await', 'changes-requested': 'dx-chip--await', 'approved': 'dx-chip--done', 'canceled': 'dx-chip--done', 'cancelled': 'dx-chip--done' })[status] || 'dx-chip--progress';
+            }
+            return `<span class="dx-chip ${cls}"><span class="dx-dot" aria-hidden="true"></span>${esc(label)}</span>`;
+        }
+
         function renderContent() {
 
             const stats = {
@@ -533,120 +696,128 @@
             };
             const currentLang = localStorage.getItem('lang') || 'en';
 
+            const dxName = (giftUser && (giftUser.fullName || giftUser.clientName)) || (currentUser && currentUser.email) || '';
+            const dxInitial = (String(dxName).trim()[0] || 'D').toUpperCase();
+
             document.getElementById('app').innerHTML = `
-                <div class="header">
-                    <div class="header-content">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div class="lang-toggle">
-                                <button class="lang-dropdown" id="langDropdown" onclick="toggleLangMenu(event)">
-                                    <img src="https://flagcdn.com/w20/${currentLang === 'he' ? 'il' : 'gb'}.png" alt="Flag">
-                                    <span>▼</span>
-                                </button>
-                                <div class="lang-menu" id="langMenu">
-                                    <div class="lang-option" onclick="switchLang('en')">
-                                        <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
-                                    </div>
-                                    <div class="lang-option" onclick="switchLang('he')">
-                                        <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
+                <div class="dx-shell">
+                    <aside class="dx-sidebar">
+                        <div>
+                            <a class="dx-brand" href="portal-dashboard.html" dir="ltr" aria-label="Smile Center Pro">${DX_BRAND_MARK}<span>Smile Center Pro</span></a>
+                        </div>
+                        <nav class="dx-nav" aria-label="${esc(t('mainNavigation'))}">
+                            <a href="portal-dashboard.html" aria-current="page">${dxIcon('dashboard', 17)}<span>${t('myProjects')}</span></a>
+                            <button type="button" onclick="openNewProjectModal()">${dxIcon('plus', 17)}<span>${t('newPatient')}</span></button>
+                        </nav>
+                        <div class="dx-side-account">
+                            <div class="dx-av" aria-hidden="true">${esc(dxInitial)}</div>
+                            <div class="dx-who"><small>${t('doctorAccount')}</small><span dir="auto">${esc(dxName)}</span></div>
+                        </div>
+                    </aside>
+
+                    <div class="dx-main">
+                        <header class="dx-topbar">
+                            <div class="dx-topbar-title">${t('doctorPortal')}</div>
+                            <div class="dx-topbar-end">
+                                <div class="dx-lang" role="group" aria-label="Language">
+                                    <button type="button" class="${currentLang !== 'he' ? 'is-active' : ''}" aria-pressed="${currentLang !== 'he'}" onclick="switchLang('en')">EN</button>
+                                    <button type="button" class="${currentLang === 'he' ? 'is-active' : ''}" aria-pressed="${currentLang === 'he'}" onclick="switchLang('he')">HE</button>
+                                </div>
+                                <div class="acct-toggle">
+                                    <button type="button" class="dx-avatar" onclick="toggleAcctMenu(event)" aria-label="${esc(t('doctorAccount'))}" aria-haspopup="true">${esc(dxInitial)}</button>
+                                    <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
+                                        <div class="acct-option" onclick="openMyDetails()"><i class="fas fa-id-card"></i> ${currentLang === 'he' ? 'הפרטים שלי' : 'My details'}</div>
+                                        <div class="acct-option" onclick="openMyAccount()"><i class="fas fa-pen"></i> ${currentLang === 'he' ? 'שינוי שם משתמש' : 'Change username'}</div>
+                                        <div class="acct-option" style="color: var(--color-error, #dc2626); border-top: 1px solid rgba(0,0,0,0.08);" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ${t('logout')}</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="acct-toggle">
-                                <button class="btn-secondary btn-small acct-btn" onclick="toggleAcctMenu(event)" aria-label="Account"><i class="fas fa-user"></i> <span style="font-size:10px;">▼</span></button>
-                                <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
-                                    <div class="acct-option" onclick="openMyDetails()"><i class="fas fa-id-card"></i> ${currentLang === 'he' ? 'הפרטים שלי' : 'My details'}</div>
-                                    <div class="acct-option" onclick="openMyAccount()"><i class="fas fa-pen"></i> ${currentLang === 'he' ? 'שינוי שם משתמש' : 'Change username'}</div>
-                                    <div class="acct-option" style="color: var(--color-error, #dc2626); border-top: 1px solid rgba(0,0,0,0.08);" onclick="logout()"><i class="fas fa-sign-out-alt"></i> ${t('logout')}</div>
+                        </header>
+
+                        <main class="dx-content">
+                            ${giftBannerHtml()}
+
+                            <div class="dx-head">
+                                <div>
+                                    <h1>${t('myProjects')}</h1>
+                                    <p>${t('myProjectsSubtitle')}</p>
                                 </div>
+                                <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('newPatient')}</button>
                             </div>
-                        </div>
+
+                            <div class="dx-search">
+                                ${dxIcon('search', 16)}
+                                <input type="search" id="searchInput" placeholder="${esc(t('searchPatients'))}" aria-label="${esc(t('searchPatients'))}" oninput="handleSearch(this.value)" autocomplete="off" value="${esc(searchQuery || '')}">
+                            </div>
+
+                            <div class="dx-stats">
+                                ${[
+                                    ['users', t('totalPatients'), stats.total, ''],
+                                    ['clock', t('inProgress'), stats.inProgress, ''],
+                                    ['clipboard', t('awaitingApproval'), stats.awaitingApproval, ''],
+                                    ['box', t('stlReady'), stats.stlReady, ' dx-stat--stl'],
+                                    ['check', t('completed'), stats.completed, ''],
+                                    ['files', t('totalFiles'), stats.totalFiles, '']
+                                ].map(([icon, label, value, extra]) => `
+                                    <div class="dx-stat${extra}">
+                                        <div class="dx-stat-label">${dxIcon(icon, 16)}<span>${label}</span></div>
+                                        <div class="dx-stat-value">${value}</div>
+                                    </div>`).join('')}
+                            </div>
+
+                            <section class="dx-card" aria-labelledby="dxTableTitle">
+                                <h2 class="dx-card-title" id="dxTableTitle">${t('patientProjects')}</h2>
+                                <div class="dx-table-wrap">
+                                    <table class="dx-table">
+                                        <colgroup><col style="width:14%"><col style="width:18%"><col style="width:15%"><col style="width:11%"><col style="width:7%"><col style="width:35%"></colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">${t('patient')}</th>
+                                                <th scope="col">${t('description')}</th>
+                                                <th scope="col">${t('status')}</th>
+                                                <th scope="col">${t('date')}</th>
+                                                <th scope="col">${t('files')}</th>
+                                                <th scope="col">${t('actions')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${filteredProjects.map(project => {
+                                                const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
+                                                const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
+                                                const stlCount = stlFiles.length;
+                                                return `
+                                                    <tr>
+                                                        <td class="dx-patient">${esc(project.title)}</td>
+                                                        <td><div class="dx-desc">${esc(project.description)}</div></td>
+                                                        <td>${dxStatusChip(project.status)}</td>
+                                                        <td class="dx-date"><bdi dir="ltr">${esc(new Date(project.createdAt).toLocaleDateString())}</bdi></td>
+                                                        <td class="dx-files" title="${htmlCount} HTML, ${stlCount} STL"><bdi>${project.files.length}</bdi></td>
+                                                        <td>
+                                                            <div class="dx-actions">
+                                                                <button type="button" class="dx-act" onclick="openProjectCard('${js(project.id)}')">${dxIcon('eye', 13)} ${t('view')}</button>
+                                                                ${stlCount > 0 ? `<button type="button" class="dx-act dx-act--accent" onclick="forceDownload('${js(stlFiles[0].path)}', '${js(stlFiles[0].name)}'); trackStlDownload('${js(project.id)}', '${js(stlFiles[0].name)}')">${dxIcon('download', 13)} ${t('downloadStl')}</button>` : ''}
+                                                                <button type="button" class="dx-act" onclick="openClientUploadModal('${js(project.id)}', '${js(project.title)}')">${dxIcon('upload', 13)} ${t('uploadFile')}</button>
+                                                                <button type="button" class="dx-act" onclick="toggleRowMenu(event, '${js(project.id)}')" aria-label="${esc(t('moreOptions'))}" aria-haspopup="true">&#8943;</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                ${filteredProjects.length === 0 ? `
+                                    <div class="dx-empty">
+                                        ${dxIcon('files', 40)}
+                                        <h2>${searchQuery ? t('noProjectsFound') : t('noPatientsYet')}</h2>
+                                        ${searchQuery ? '' : `<p>${t('patientsAppearHere')}</p>`}
+                                        <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('newPatient')}</button>
+                                    </div>` : ''}
+                            </section>
+                        </main>
                     </div>
                 </div>
 
-                <div class="main">
-                    ${giftBannerHtml()}
-                    <div class="section-header">
-                        <div></div>
-                        <button class="btn-primary" onclick="openNewProjectModal()">
-                            <i class="fas fa-plus"></i> ${t('newPatient')}
-                        </button>
-                    </div>
-
-                    <div class="filter-bar">
-                        <input type="text" id="searchInput" class="form-input" placeholder="🔍 ${t('searchPatients')}" style="flex: 1; max-width: 600px; padding: 10px 16px;" oninput="handleSearch(this.value)" autocomplete="off" value="${searchQuery || ''}">
-                    </div>
-
-                    <div class="stats">
-                        <div class="stat-card">
-                            <div class="stat-label">${t('totalPatients')}</div>
-                            <div class="stat-value">${stats.total}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">${t('inProgress')}</div>
-                            <div class="stat-value">${stats.inProgress}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">${t('awaitingApproval')}</div>
-                            <div class="stat-value">${stats.awaitingApproval}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">${t('stlReady')}</div>
-                            <div class="stat-value">${stats.stlReady}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">${t('completed')}</div>
-                            <div class="stat-value">${stats.completed}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">${t('totalFiles')}</div>
-                            <div class="stat-value">${stats.totalFiles}</div>
-                        </div>
-                    </div>
-
-                    <div style="background: var(--color-card); border-radius: 12px; overflow: hidden;">
-                        <table class="ultra-compact-table">
-                            <thead>
-                                <tr>
-                                    <th>${t('patient')}</th>
-                                    <th>${t('description')}</th>
-                                    <th>${t('status')}</th>
-                                    <th>${t('date')}</th>
-                                    <th>${t('files')}</th>
-                                    <th>${t('actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${filteredProjects.length > 0 ? filteredProjects.map(project => {
-                                    const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
-                                    const stlCount = project.files.filter(f => f.name.match(/\.stl$/i)).length;
-                                    const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
-                                    return `
-                                        <tr style="cursor: pointer;">
-                                            <td><strong>${esc(project.title)}</strong></td>
-                                            <td>${project.description}</td>
-                                            <td><span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span></td>
-                                            <td>${new Date(project.createdAt).toLocaleDateString()}</td>
-                                            <td><span class="files-count">${htmlCount} HTML, ${stlCount} STL</span></td>
-                                            <td>
-                                                <button class="action-btn-sm" onclick="openProjectCard('${js(project.id)}')"><i class="fas fa-folder-open"></i> ${t('view')}</button>
-                                                ${stlCount > 0 ? `<button class="action-btn-sm" onclick="forceDownload('${js(stlFiles[0].path)}', '${js(stlFiles[0].name)}'); trackStlDownload('${js(project.id)}', '${js(stlFiles[0].name)}')" style="margin-left: 8px;"><i class="fas fa-download"></i> STL</button>` : ''}
-                                                <button class="action-btn-sm" onclick="openClientUploadModal('${js(project.id)}', '${js(project.title)}')" style="margin-left: 8px;"><i class="fas fa-upload"></i> ${t('upload')}</button>
-                                                <button class="action-btn-sm" onclick="toggleRowMenu(event, '${js(project.id)}')" style="margin-left: 8px;" aria-label="More options">&#8943;</button>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('') : `
-                                    <tr><td colspan="6" style="text-align: center; padding: 40px;">
-                                        <div style="font-size: 48px;">📋</div>
-                                        <div style="margin: 16px 0 8px; font-size: 18px; font-weight: 600;">${t('noPatientsYet')}</div>
-                                        <p style="color: var(--color-text-secondary);">${t('patientsAppearHere')}</p>
-                                    </td></tr>
-                                `}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
                 <div id="projectCardModal" class="modal">
                     <div class="modal-content large" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
                         <button class="close" onclick="closeProjectCard()" aria-label="Close modal">&times;</button>
@@ -773,6 +944,11 @@
                     </div>
                 </div>
             `;
+
+            if (searchInputWasFocused) {
+                const si = document.getElementById('searchInput');
+                if (si) { si.focus(); const n = si.value.length; try { si.setSelectionRange(n, n); } catch (e) {} }
+            }
 
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
@@ -1727,6 +1903,8 @@
             box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
         }
         .whatsapp-float { bottom: 90px; }
+        [dir="rtl"] .whatsapp-float, [dir="rtl"] .email-float { right: auto; left: 20px; }
+        .dx-page .dx-content { padding-bottom: 170px; }
     </style>
 </body>
 </html>
