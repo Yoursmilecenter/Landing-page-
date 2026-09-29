@@ -227,7 +227,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, deleteDoc, addDoc, setDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, deleteDoc, addDoc, setDoc, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -493,6 +493,7 @@
             
             searchTimeout = setTimeout(() => {
                 filteredProjects = allProjects.filter(p => {
+                    if (adminPatientKey && dxKeyOf(p) !== adminPatientKey) return false;
                     const sq = adminSearch.trim().toLowerCase();
                     if (sq && ![p.title, p.clientEmail, p.provisionalClientName, p.description].some(v => String(v || '').toLowerCase().includes(sq))) return false;
                     if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
@@ -566,6 +567,7 @@
 
         // ---- Admin design helpers ----
         const DX_ICONS = {
+            user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
             x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
             search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
             dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -596,6 +598,7 @@
                 actClientLog: 'Client log', actManageSamples: 'Manage Samples', actGiftInvite: 'Gift Invite', actRenameClient: 'Rename Client',
                 actInviteClient: 'Invite client', actAddClient: 'Add client', actSignOut: 'Sign out',
                 fStatus: 'Status', fDesigners: 'Designers', fClients: 'Clients', fPriorities: 'Priorities', optAll: 'All', searchPlaceholder: 'Search patient or client', noResults: 'No patients match your search or filters', resetSearch: 'Reset search and filters',
+                navProjects: 'Projects', navDoctors: 'Doctors', navPatientsView: 'Patients', subtitleProjects: 'All projects across all doctors', titleDoctors: 'Doctors', subtitleDoctors: 'Registered and pending doctor / client accounts', titlePatients: 'Patients', subtitlePatients: 'All patients across all doctors', colProject: 'Project', colDoctor: 'Doctor', colPhone: 'Phone', colEmail: 'Email', colPatientsCount: 'Patients', colProjectsCount: 'Projects', colLastProject: 'Last project', searchDoctors: 'Search doctors', searchPatientsList: 'Search patients', noDoctors: 'No doctors found', noPatientsFound: 'No patients found', viewProjects: 'View projects', projectDetails: 'Project details', projNo: 'Project number', descLabel: 'Description', dueDate: 'Due date', remarksLabel: 'Client remarks', closeLbl: 'Close', numbersMissing: '{n} project(s) have no project number.', assignNumbers: 'Assign numbers', assignConfirm: 'Assign project numbers to {n} existing project(s), in order of creation? This cannot be undone.', numbersAssigned: 'Project numbers assigned.', patientFilter: 'Patient', clearFilter: 'Clear', statusActive: 'Active',
                 navNewProject: 'New Project', editClient: 'Edit client', editClientTitle: 'Edit client', currentClient: 'Current client', registeredClient: 'Registered doctor / client', chooseClient: 'Choose a registered client', noRegisteredClients: 'No other registered clients found', scopeNote: 'This changes the client for this patient and all of its {n} project(s).', updateClient: 'Update client', cancel: 'Cancel', notRegistered: 'Not yet registered', updateFailed: 'Could not update the client.',
                 adminAccount: 'Admin account', adminBadge: 'ADMIN', heading: 'Admin panel', subtitle: 'Manage all patients and designs',
                 mTotal: 'Total', mPending: 'Pending', mInProgress: 'In progress', mCompleted: 'Completed', mVip: 'VIP',
@@ -609,6 +612,7 @@
                 actClientLog: 'יומן לקוחות', actManageSamples: 'ניהול דוגמאות', actGiftInvite: 'הזמנת מתנה', actRenameClient: 'שינוי שם לקוח',
                 actInviteClient: 'הזמן לקוח', actAddClient: 'הוסף לקוח', actSignOut: 'התנתק',
                 fStatus: 'סטטוס', fDesigners: 'מעצבים', fClients: 'לקוחות', fPriorities: 'עדיפויות', optAll: 'הכל', searchPlaceholder: 'חיפוש מטופל או לקוח', noResults: 'לא נמצאו מטופלים התואמים לחיפוש או לסינון', resetSearch: 'איפוס חיפוש וסינון',
+                navProjects: 'פרויקטים', navDoctors: 'רופאים', navPatientsView: 'מטופלים', subtitleProjects: 'כל הפרויקטים של כל הרופאים', titleDoctors: 'רופאים', subtitleDoctors: 'חשבונות רופאים / לקוחות רשומים וממתינים', titlePatients: 'מטופלים', subtitlePatients: 'כל המטופלים של כל הרופאים', colProject: 'פרויקט', colDoctor: 'רופא', colPhone: 'טלפון', colEmail: 'אימייל', colPatientsCount: 'מטופלים', colProjectsCount: 'פרויקטים', colLastProject: 'פרויקט אחרון', searchDoctors: 'חיפוש רופא', searchPatientsList: 'חיפוש מטופל', noDoctors: 'לא נמצאו רופאים', noPatientsFound: 'לא נמצאו מטופלים', viewProjects: 'צפייה בפרויקטים', projectDetails: 'פרטי פרויקט', projNo: 'מספר פרויקט', descLabel: 'תיאור', dueDate: 'תאריך יעד', remarksLabel: 'הערות הלקוח', closeLbl: 'סגירה', numbersMissing: 'ל-{n} פרויקטים אין מספר פרויקט.', assignNumbers: 'הקצאת מספרים', assignConfirm: 'להקצות מספרי פרויקט ל-{n} פרויקטים קיימים, לפי סדר יצירתם? לא ניתן לבטל פעולה זו.', numbersAssigned: 'מספרי הפרויקטים הוקצו.', patientFilter: 'מטופל', clearFilter: 'ניקוי', statusActive: 'פעיל',
                 navNewProject: 'פרויקט חדש', editClient: 'עריכת לקוח', editClientTitle: 'עריכת לקוח', currentClient: 'לקוח נוכחי', registeredClient: 'רופא / לקוח רשום', chooseClient: 'בחירת לקוח רשום', noRegisteredClients: 'לא נמצאו לקוחות רשומים נוספים', scopeNote: 'פעולה זו משנה את הלקוח של המטופל ושל כל {n} הפרויקטים שלו.', updateClient: 'עדכון לקוח', cancel: 'ביטול', notRegistered: 'לא רשום עדיין', updateFailed: 'לא ניתן היה לעדכן את הלקוח.',
                 adminAccount: 'חשבון אדמין', adminBadge: 'אדמין', heading: 'פאנל מנהל', subtitle: 'ניהול כל המטופלים והעיצובים',
                 mTotal: 'סך הכל', mPending: 'ממתין', mInProgress: 'בביצוע', mCompleted: 'הושלם', mVip: 'VIP',
@@ -760,11 +764,250 @@
             }
         };
 
+        // ---- Admin views: Projects / Doctors / Patients ----
+        let adminView = 'projects';
+        let listQuery = '';
+        let listSearchFocused = false;
+        let adminPatientKey = '';
+        let adminPatientLabel = '';
+
+        const dxNo = (p) => (p && p.projectNo) ? '#' + p.projectNo : '—';
+        const dxKeyOf = (p) => String(p.clientEmail || '') + '|' + (p.patientId || p.id);
+
+        window.setAdminView = (v) => { adminView = v; listQuery = ''; listSearchFocused = false; render(); window.scrollTo(0, 0); };
+        window.handleListSearch = (value) => { listSearchFocused = true; listQuery = value; render(); };
+        window.clearPatientFilter = () => { adminPatientKey = ''; adminPatientLabel = ''; applyFilters(); };
+        window.viewPatientProjects = (key, label) => {
+            adminPatientKey = key; adminPatientLabel = label; adminSearch = '';
+            currentFilters.client = 'all';
+            adminView = 'projects';
+            applyFilters();
+            window.scrollTo(0, 0);
+        };
+        window.viewDoctorProjects = (email) => {
+            if (!email) return;
+            adminPatientKey = ''; adminPatientLabel = ''; adminSearch = '';
+            currentFilters.client = email;
+            adminView = 'projects';
+            applyFilters();
+            window.scrollTo(0, 0);
+        };
+
+        function dxHead(title, subtitle) {
+            return `<div class="dx-head">
+                <div><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div>
+                <button type="button" class="dx-btn" onclick="openNewPatientOverlay()">${dxIcon('plus', 16)} ${esc(dxa('navNewProject'))}</button>
+            </div>`;
+        }
+
+        function dxPatientChip() {
+            if (!adminPatientKey) return '';
+            return `<span class="dx-filter-chip">${esc(dxa('patientFilter'))}: <bdi>${esc(adminPatientLabel)}</bdi><button type="button" class="dx-file-rm" onclick="clearPatientFilter()" aria-label="${esc(dxa('clearFilter'))}">${dxIcon('x', 14)}</button></span>`;
+        }
+
+        function dxNumberBanner() {
+            const n = allProjects.filter(p => !p.projectNo).length;
+            if (!n) return '';
+            return `<div class="dx-banner" role="status"><span>${esc(dxa('numbersMissing').replace('{n}', n))}</span><button type="button" class="dx-obtn dx-obtn--primary" onclick="assignProjectNumbers()">${esc(dxa('assignNumbers'))}</button></div>`;
+        }
+
+        // One-time: number existing projects in creation order, continuing the shared counter
+        window.assignProjectNumbers = async () => {
+            const legacy = allProjects.filter(p => !p.projectNo).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            if (!legacy.length) return;
+            if (!confirm(dxa('assignConfirm').replace('{n}', legacy.length))) return;
+            const cref = doc(db, 'counters', 'projects');
+            try {
+                for (let i = 0; i < legacy.length; i += 400) {
+                    const chunk = legacy.slice(i, i + 400);
+                    let assigned = [];
+                    await runTransaction(db, async (tx) => {
+                        assigned = [];
+                        const snap = await tx.get(cref);
+                        let next = snap.exists() ? snap.data().next : 1;
+                        chunk.forEach(p => { tx.update(doc(db, 'projects', p.id), { projectNo: next }); assigned.push([p, next]); next++; });
+                        tx.set(cref, { next });
+                    });
+                    assigned.forEach(([p, no]) => { p.projectNo = no; });
+                }
+                render();
+                alert(dxa('numbersAssigned'));
+            } catch (err) {
+                console.error(err);
+                alert(dxa('updateFailed') + ' ' + (err.message || ''));
+                render();
+            }
+        };
+
+        function dxAdminPatients() {
+            const map = new Map();
+            allProjects.forEach(p => {
+                const key = dxKeyOf(p);
+                let g = map.get(key);
+                if (!g) { g = { key, name: p.title || '', clientEmail: p.clientEmail || '', provisional: !!p.provisionalClient, provisionalName: p.provisionalClientName || '', count: 0, last: 0 }; map.set(key, g); }
+                g.count++;
+                if ((p.createdAt || 0) > g.last) g.last = p.createdAt || 0;
+            });
+            const q = listQuery.trim().toLowerCase();
+            return Array.from(map.values())
+                .filter(g => !q || [g.name, g.clientEmail, g.provisionalName].some(v => String(v || '').toLowerCase().includes(q)))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function dxAdminDoctors() {
+            const rows = [];
+            clientsData.forEach(c => {
+                const keys = [c.email, c.phone && c.phone + '@smilecenter.pro', c.username && c.username + '@smilecenter.pro', c.username && c.username + '@smile.local']
+                    .filter(Boolean).map(x => String(x).toLowerCase());
+                const projects = allProjects.filter(p => !p.provisionalClient && keys.includes(String(p.clientEmail || '').toLowerCase()));
+                rows.push({
+                    name: c.clientName || c.fullName || c.username || c.email || c.phone || '—',
+                    phone: c.phone || '', email: c.email || '',
+                    patients: new Set(projects.map(p => p.patientId || p.id)).size,
+                    works: projects.length, registered: true,
+                    filterEmail: projects[0] ? projects[0].clientEmail : ''
+                });
+            });
+            const prov = new Map();
+            allProjects.filter(p => p.provisionalClient).forEach(p => {
+                let r = prov.get(p.clientEmail);
+                if (!r) { r = { name: p.provisionalClientName || p.clientEmail, phone: '', email: '', ids: new Set(), works: 0, registered: false, filterEmail: p.clientEmail }; prov.set(p.clientEmail, r); }
+                r.ids.add(p.patientId || p.id); r.works++;
+            });
+            prov.forEach(r => rows.push({ name: r.name, phone: '', email: '', patients: r.ids.size, works: r.works, registered: false, filterEmail: r.filterEmail }));
+            const q = listQuery.trim().toLowerCase();
+            return rows.filter(r => !q || [r.name, r.phone, r.email].some(v => String(v || '').toLowerCase().includes(q)))
+                       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        }
+
+        function dxListSearch(placeholder) {
+            return `<div class="dx-filters"><div class="dx-fsearch">${dxIcon('search', 16)}<input type="search" id="listSearchInput" dir="auto" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" oninput="handleListSearch(this.value)" autocomplete="off" value="${esc(listQuery)}"></div></div>`;
+        }
+
+        function dxDoctorsView() {
+            const rows = dxAdminDoctors();
+            return `${dxHead(dxa('titleDoctors'), dxa('subtitleDoctors'))}
+                ${dxListSearch(dxa('searchDoctors'))}
+                <section class="dx-card" aria-labelledby="dxTableTitle">
+                    <h2 class="dx-card-title" id="dxTableTitle">${esc(dxa('titleDoctors'))}</h2>
+                    <div class="dx-table-wrap" role="region" aria-label="${esc(dxa('tableScroll'))}" tabindex="0">
+                        <table class="dx-table dx-table--doctors">
+                            <colgroup><col style="width:22%"><col style="width:14%"><col style="width:22%"><col style="width:9%"><col style="width:9%"><col style="width:12%"><col style="width:12%"></colgroup>
+                            <thead><tr>
+                                <th scope="col">${esc(dxa('colDoctor'))}</th><th scope="col">${esc(dxa('colPhone'))}</th><th scope="col">${esc(dxa('colEmail'))}</th>
+                                <th scope="col">${esc(dxa('colPatientsCount'))}</th><th scope="col">${esc(dxa('colProjectsCount'))}</th><th scope="col">${esc(dxa('colStatus'))}</th><th scope="col">${esc(dxa('colActions'))}</th>
+                            </tr></thead>
+                            <tbody>
+                                ${rows.map(r => `<tr>
+                                    <td class="dx-patient"><bdi>${esc(r.name)}</bdi></td>
+                                    <td class="dx-contact">${r.phone ? `<span class="dx-ltr">${esc(r.phone)}</span>` : '—'}</td>
+                                    <td class="dx-contact">${r.email ? `<span class="dx-ltr">${esc(r.email)}</span>` : '—'}</td>
+                                    <td class="dx-num"><bdi>${r.patients}</bdi></td>
+                                    <td class="dx-num"><bdi>${r.works}</bdi></td>
+                                    <td>${r.registered ? `<span class="dx-chip dx-chip--progress"><span class="dx-dot" aria-hidden="true"></span>${esc(dxa('statusActive'))}</span>` : `<span class="dx-chip dx-chip--await"><span class="dx-dot" aria-hidden="true"></span>${esc(dxa('notRegistered'))}</span>`}</td>
+                                    <td><div class="dx-actions"><button type="button" class="dx-act" ${r.filterEmail ? `onclick="viewDoctorProjects('${js(r.filterEmail)}')"` : 'disabled'}>${dxIcon('eye', 13)} ${esc(dxa('viewProjects'))}</button></div></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${rows.length === 0 ? `<div class="dx-empty">${dxIcon('files', 40)}<h2>${esc(dxa('noDoctors'))}</h2></div>` : ''}
+                </section>`;
+        }
+
+        function dxPatientsView() {
+            const rows = dxAdminPatients();
+            return `${dxHead(dxa('titlePatients'), dxa('subtitlePatients'))}
+                ${dxListSearch(dxa('searchPatientsList'))}
+                <section class="dx-card" aria-labelledby="dxTableTitle">
+                    <h2 class="dx-card-title" id="dxTableTitle">${esc(dxa('titlePatients'))}</h2>
+                    <div class="dx-table-wrap" role="region" aria-label="${esc(dxa('tableScroll'))}" tabindex="0">
+                        <table class="dx-table dx-table--plist">
+                            <colgroup><col style="width:26%"><col style="width:28%"><col style="width:12%"><col style="width:16%"><col style="width:18%"></colgroup>
+                            <thead><tr>
+                                <th scope="col">${esc(dxa('colPatient'))}</th><th scope="col">${esc(dxa('colDoctor'))}</th><th scope="col">${esc(dxa('colProjectsCount'))}</th>
+                                <th scope="col">${esc(dxa('colLastProject'))}</th><th scope="col">${esc(dxa('colActions'))}</th>
+                            </tr></thead>
+                            <tbody>
+                                ${rows.map(g => `<tr>
+                                    <td class="dx-patient"><bdi>${esc(g.name)}</bdi></td>
+                                    <td class="dx-contact">${g.provisional ? `<div class="dx-client-cell"><bdi>${esc(g.provisionalName)}</bdi><span class="dx-tag dx-tag--muted">${esc(dxa('notRegistered'))}</span></div>` : `<span class="dx-ltr">${esc(g.clientEmail)}</span>`}</td>
+                                    <td class="dx-num"><bdi>${g.count}</bdi></td>
+                                    <td class="dx-date"><bdi dir="ltr">${esc(g.last ? new Date(g.last).toLocaleDateString() : '—')}</bdi></td>
+                                    <td><div class="dx-actions"><button type="button" class="dx-act" onclick="viewPatientProjects('${js(g.key)}', '${js(g.name)}')">${dxIcon('eye', 13)} ${esc(dxa('viewProjects'))}</button></div></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${rows.length === 0 ? `<div class="dx-empty">${dxIcon('files', 40)}<h2>${esc(dxa('noPatientsFound'))}</h2></div>` : ''}
+                </section>`;
+        }
+
+        // ---- Project details (full description lives here) ----
+        window.openProjectDetails = (id) => {
+            const p = allProjects.find(x => x.id === id);
+            if (!p || document.getElementById('projectDetailsModal')) return;
+            const designer = designers.find(d => d.email === p.assignedDesignerEmail);
+            const client = p.provisionalClient
+                ? `<bdi>${esc(p.provisionalClientName)}</bdi> <span class="dx-tag dx-tag--muted">${esc(dxa('notRegistered'))}</span>`
+                : `<span class="dx-ltr">${esc(p.clientEmail)}</span>`;
+            const rows = [
+                [dxa('projNo'), `<bdi>${esc(dxNo(p))}</bdi>`],
+                [dxa('colPatient'), `<bdi>${esc(p.title)}</bdi>`],
+                [dxa('colClient'), client],
+                [dxa('colDesigner'), esc(designer ? designer.name : dxa('unassigned'))],
+                [dxa('colStatus'), dxStatusChip(p.status)],
+                [dxa('colDate'), `<bdi dir="ltr">${esc(new Date(p.createdAt).toLocaleDateString())}</bdi>`],
+                [dxa('dueDate'), p.dueDate ? `<bdi dir="ltr">${esc(p.dueDate)}</bdi>` : '—'],
+                [dxa('colFiles'), `<bdi>${(p.files || []).length}</bdi>`]
+            ];
+            window.__pdOpener = document.activeElement;
+            const wrap = document.createElement('div');
+            wrap.id = 'projectDetailsModal';
+            wrap.className = 'dx-modal active';
+            wrap.setAttribute('role', 'dialog');
+            wrap.setAttribute('aria-modal', 'true');
+            wrap.setAttribute('aria-labelledby', 'pdTitle');
+            wrap.innerHTML = `
+                <div class="dx-dialog" style="max-width:640px;">
+                    <div class="dx-dialog-head">
+                        <div><h2 id="pdTitle">${esc(dxa('projectDetails'))} <bdi>${esc(dxNo(p))}</bdi></h2></div>
+                        <button type="button" class="dx-dlg-close" aria-label="${esc(dxa('closeLbl'))}" onclick="closeProjectDetails()">${dxIcon('x', 18)}</button>
+                    </div>
+                    <div class="dx-dialog-body">
+                        <dl class="dx-dl">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>
+                        <h3 class="dx-dl-h">${esc(dxa('descLabel'))}</h3>
+                        <div class="dx-fulltext" dir="auto">${esc(p.description || '—')}</div>
+                        ${p.clientRemarks ? `<h3 class="dx-dl-h">${esc(dxa('remarksLabel'))}</h3><div class="dx-fulltext" dir="auto">${esc(p.clientRemarks)}</div>` : ''}
+                    </div>
+                    <div class="dx-dialog-foot">
+                        <button type="button" class="dx-btn-ghost" onclick="openFilesModal('${js(p.id)}'); closeProjectDetails();">${esc(dxa('manageFiles'))}</button>
+                        <button type="button" class="dx-btn" onclick="closeProjectDetails()">${esc(dxa('closeLbl'))}</button>
+                    </div>
+                </div>`;
+            wrap.addEventListener('click', (e) => { if (e.target === wrap) window.closeProjectDetails(); });
+            document.body.appendChild(wrap);
+            const appEl = document.getElementById('app');
+            if (appEl) appEl.inert = true;
+            document.addEventListener('keydown', window.__pdKey = (e) => { if (e.key === 'Escape') window.closeProjectDetails(); });
+            setTimeout(() => { const b = wrap.querySelector('.dx-dlg-close'); if (b) b.focus(); }, 0);
+        };
+
+        window.closeProjectDetails = () => {
+            const m = document.getElementById('projectDetailsModal');
+            if (m) m.remove();
+            const appEl = document.getElementById('app');
+            if (appEl) appEl.inert = false;
+            if (window.__pdKey) { document.removeEventListener('keydown', window.__pdKey); window.__pdKey = null; }
+            const op = window.__pdOpener; window.__pdOpener = null;
+            if (op && op.focus && document.contains(op)) op.focus();
+        };
+
         let adminSearch = '';
         let adminSearchFocused = false;
         window.handleAdminSearch = (value) => { adminSearchFocused = true; adminSearch = value; applyFilters(); };
         window.resetAdminFilters = () => {
             adminSearch = '';
+            adminPatientKey = ''; adminPatientLabel = '';
             currentFilters.status = 'all'; currentFilters.designer = 'all'; currentFilters.client = 'all'; currentFilters.priority = 'all';
             applyFilters();
         };
@@ -825,10 +1068,9 @@
                             <a class="dx-brand" href="admin-panel.html" dir="ltr" aria-label="Smile Center Pro">${DX_BRAND_MARK}<span>Smile Center Pro</span></a>
                         </div>
                         <nav class="dx-nav" aria-label="${esc(dxa('mainNavigation'))}">
-                            <a href="portal-dashboard.html">${dxIcon('dashboard', 17)}<span>${dxa('navMyProjects')}</span></a>
-                            <button type="button" onclick="openNewPatientOverlay()">${dxIcon('plus', 17)}<span>${dxa('navNewProject')}</span></button>
-                            <div class="dx-nav-label">${dxa('navAdmin')}</div>
-                            <a href="admin-panel.html" aria-current="page">${dxIcon('users', 17)}<span>${dxa('navPatients')}</span></a>
+                            <button type="button" ${adminView === 'projects' ? 'aria-current="page"' : ''} onclick="setAdminView('projects')">${dxIcon('dashboard', 17)}<span>${dxa('navProjects')}</span></button>
+                            <button type="button" ${adminView === 'doctors' ? 'aria-current="page"' : ''} onclick="setAdminView('doctors')">${dxIcon('users', 17)}<span>${dxa('navDoctors')}</span></button>
+                            <button type="button" ${adminView === 'patients' ? 'aria-current="page"' : ''} onclick="setAdminView('patients')">${dxIcon('user', 17)}<span>${dxa('navPatientsView')}</span></button>
                         </nav>
                         <div class="dx-side-account">
                             <div class="dx-av" aria-hidden="true">${esc(dxInitial)}</div>
@@ -858,12 +1100,8 @@
                         </header>
 
                         <main class="dx-content">
-                            <div class="dx-head">
-                                <div>
-                                    <h1>${dxa('heading')}</h1>
-                                    <p>${dxa('subtitle')}</p>
-                                </div>
-                            </div>
+                        ${adminView === 'doctors' ? dxDoctorsView() : adminView === 'patients' ? dxPatientsView() : `
+                            ${dxHead(dxa('navProjects'), dxa('subtitleProjects'))}
 
                             <div class="dx-stats dx-stats--5">
                                 ${[
@@ -879,11 +1117,13 @@
                                     </div>`).join('')}
                             </div>
 
+                            ${dxNumberBanner()}
                             <div class="dx-filters">
                                 <div class="dx-fsearch">
                                     ${dxIcon('search', 16)}
                                     <input type="search" id="adminSearchInput" dir="auto" placeholder="${esc(dxa('searchPlaceholder'))}" aria-label="${esc(dxa('searchPlaceholder'))}" oninput="handleAdminSearch(this.value)" autocomplete="off" value="${esc(adminSearch)}">
                                 </div>
+                                ${dxPatientChip()}
                                 <label class="dx-fsel"><span>${dxa('fStatus')}</span>
                                     <select aria-label="${esc(dxa('fStatus'))}" onchange="updateFilter('status', this.value)">
                                         ${[['all', dxa('optAll')], ['pending', t('pending')], ['in-progress', t('inProgress')], ['awaiting-client-approval', 'Awaiting Approval'], ['approved', 'Approved'], ['changes-requested', 'Changes Requested'], ['stl-ready', 'STL Ready'], ['completed', t('completed')], ['canceled', 'Canceled']].map(([v, l]) => `<option value="${v}" ${currentFilters.status === v ? 'selected' : ''}>${l}</option>`).join('')}
@@ -922,9 +1162,10 @@
                                 <h2 class="dx-card-title" id="dxTableTitle">${dxa('tableTitle')}</h2>
                                 <div class="dx-table-wrap" role="region" aria-label="${esc(dxa('tableScroll'))}" tabindex="0">
                                     <table class="dx-table dx-table--patients">
-                                        <colgroup><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:12%"><col style="width:7%"><col style="width:14%"><col style="width:6%"><col style="width:8%"><col style="width:14%"></colgroup>
+                                        <colgroup><col style="width:18%"><col style="width:11%"><col style="width:13%"><col style="width:10%"><col style="width:10%"><col style="width:6%"><col style="width:9%"><col style="width:4%"><col style="width:7%"><col style="width:12%"></colgroup>
                                         <thead>
                                             <tr>
+                                                <th scope="col">${dxa('colProject')}</th>
                                                 <th scope="col">${dxa('colPatient')}</th>
                                                 <th scope="col">${dxa('colClient')}</th>
                                                 <th scope="col">${dxa('colDesigner')}</th>
@@ -939,7 +1180,8 @@
                                         <tbody>
                                             ${pageProjects.map(project => `
                                                 <tr>
-                                                    <td class="dx-patient">${esc(project.title)}${project.description ? `<span class="dx-workline" dir="auto" title="${esc(project.description)}">${esc(project.description)}</span>` : ''}${project.giftTeeth ? `<span class="dx-sub" style="color:#b95039;font-weight:600;">🎁 up to ${project.giftTeeth} teeth</span>` : ''}</td>
+                                                    <td class="dx-projcell"><button type="button" class="dx-projbtn" onclick="openProjectDetails('${js(project.id)}')" title="${esc(project.description || '')}"><span class="dx-projno">${dxNo(project)}</span><span class="dx-projdesc" dir="auto">${esc(project.description || '')}</span></button></td>
+                                                    <td class="dx-patient">${esc(project.title)}${project.giftTeeth ? `<span class="dx-sub" style="color:#b95039;font-weight:600;">🎁 up to ${project.giftTeeth} teeth</span>` : ''}</td>
                                                     <td class="dx-contact"><div class="dx-client-cell">${project.provisionalClient ? `<bdi>${esc(project.provisionalClientName)}</bdi><span class="dx-tag dx-tag--muted">${dxa('notRegistered')}</span>` : `<span class="dx-ltr">${esc(project.clientEmail)}</span>`}<button type="button" class="dx-icon-btn dx-mini" aria-label="${esc(dxa('editClient'))}" title="${esc(dxa('editClient'))}" onclick="openClientEdit('${js(project.id)}')">${dxIcon('pencil', 13)}</button></div></td>
                                                     <td>
                                                         <select class="dx-cell-select" aria-label="${esc(dxa('colDesigner'))}" onchange="assignDesigner('${js(project.id)}', this.value)">
@@ -985,6 +1227,7 @@
                                     <button type="button" onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>${t('next')}</button>
                                 </div>
                             </section>
+                        `}
                         </main>
                     </div>
                 </div>
@@ -1138,6 +1381,10 @@
                 </div>
             `;
 
+            if (listSearchFocused && adminView !== 'projects') {
+                const li = document.getElementById('listSearchInput');
+                if (li) { li.focus(); const n = li.value.length; try { li.setSelectionRange(n, n); } catch (e) {} }
+            }
             if (adminSearchFocused) {
                 const si = document.getElementById('adminSearchInput');
                 if (si) { si.focus(); const n = si.value.length; try { si.setSelectionRange(n, n); } catch (e) {} }
