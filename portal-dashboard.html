@@ -336,6 +336,14 @@
         // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const js = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n'));
+
+        // Embed mode: opened by the admin panel inside an overlay iframe; shows only the New Patient modal
+        const DX_EMBED = window.parent !== window && new URLSearchParams(location.search).get('embed') === '1';
+        if (DX_EMBED) {
+            document.documentElement.classList.add('dx-embed');
+            document.addEventListener('click', (e) => { if (e.target && e.target.id === 'newProjectModal') window.closeNewProject(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeNewProject(); });
+        }
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
@@ -949,7 +957,7 @@
                 const si = document.getElementById('searchInput');
                 if (si) { si.focus(); const n = si.value.length; try { si.setSelectionRange(n, n); } catch (e) {} }
             }
-            if (location.hash === '#new' && !window.__dxNewOpened) { window.__dxNewOpened = true; setTimeout(() => { if (window.openNewProjectModal) window.openNewProjectModal(); }, 0); }
+            if (location.hash === '#new' && !window.__dxNewOpened) { window.__dxNewOpened = true; setTimeout(() => { if (window.openNewProjectModal) window.openNewProjectModal(); if (DX_EMBED && !document.getElementById('newProjectModal').classList.contains('active')) window.parent.postMessage({ type: 'dx-new-patient-closed', created: false }, location.origin); }, 50); }
 
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
@@ -1324,6 +1332,7 @@
             document.getElementById('newProjectForm').reset();
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('createStatus').className = 'status-msg';
+            if (DX_EMBED) window.parent.postMessage({ type: 'dx-new-patient-closed', created: !!window.__dxCreated }, location.origin);
         };
 
         window.createProject = async (e) => {
@@ -1358,6 +1367,7 @@
                     }
                 }
 
+                window.__dxCreated = true;
                 statusEl.textContent = '✅ ' + t('patientCreatedSuccess');
                 statusEl.className = 'status-msg active success';
                 
@@ -1906,6 +1916,8 @@
         .whatsapp-float { bottom: 90px; }
         [dir="rtl"] .whatsapp-float, [dir="rtl"] .email-float { right: auto; left: 20px; }
         .dx-page .dx-content { padding-bottom: 170px; }
+        html.dx-embed, html.dx-embed body.dx-page { background: transparent !important; }
+        html.dx-embed .dx-shell, html.dx-embed .whatsapp-float, html.dx-embed .email-float { display: none !important; }
     </style>
 </body>
 </html>
