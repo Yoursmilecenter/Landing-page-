@@ -648,6 +648,9 @@
         // New Patient: shown as an overlay on top of the admin panel (never navigates away)
         window.openNewPatientOverlay = () => {
             if (document.getElementById('newPatientOverlay')) return;
+            window.__npOpener = document.activeElement;
+            const appEl = document.getElementById('app');
+            if (appEl) appEl.inert = true;
             const ov = document.createElement('div');
             ov.id = 'newPatientOverlay';
             ov.style.cssText = 'position:fixed;inset:0;z-index:5000;background:transparent;';
@@ -659,7 +662,12 @@
             ov.appendChild(fr);
             document.body.appendChild(ov);
         };
-        window.closeNewPatientOverlay = () => { const ov = document.getElementById('newPatientOverlay'); if (ov) ov.remove(); };
+        window.closeNewPatientOverlay = () => {
+            const ov = document.getElementById('newPatientOverlay'); if (ov) ov.remove();
+            const appEl = document.getElementById('app'); if (appEl) appEl.inert = false;
+            const op = window.__npOpener; window.__npOpener = null;
+            if (op && op.focus && document.contains(op)) op.focus();
+        };
         window.addEventListener('message', (e) => {
             if (e.origin !== location.origin || !e.data || e.data.type !== 'dx-new-patient-closed') return;
             window.closeNewPatientOverlay();

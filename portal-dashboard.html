@@ -339,11 +339,21 @@
 
         // Embed mode: opened by the admin panel inside an overlay iframe; shows only the New Patient modal
         const DX_EMBED = window.parent !== window && new URLSearchParams(location.search).get('embed') === '1';
-        if (DX_EMBED) {
-            document.documentElement.classList.add('dx-embed');
-            document.addEventListener('click', (e) => { if (e.target && e.target.id === 'newProjectModal') window.closeNewProject(); });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeNewProject(); });
-        }
+        if (DX_EMBED) document.documentElement.classList.add('dx-embed');
+        // New Patient dialog: backdrop click, Esc and Tab focus trap (close only, never navigates)
+        document.addEventListener('click', (e) => { if (e.target && e.target.id === 'newProjectModal') window.closeNewProject(); });
+        document.addEventListener('keydown', (e) => {
+            const m = document.getElementById('newProjectModal');
+            if (!m || !m.classList.contains('active')) return;
+            if (e.key === 'Escape') { window.closeNewProject(); return; }
+            if (e.key === 'Tab') {
+                const f = Array.from(m.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')).filter(el => !el.disabled && el.offsetParent !== null);
+                if (!f.length) return;
+                const first = f[0], last = f[f.length - 1];
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
@@ -655,6 +665,8 @@
 
         // ---- Client dashboard design helpers ----
         const DX_ICONS = {
+            x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+            user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
             dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
             plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
             users: '<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
@@ -905,31 +917,56 @@
                     </div>
                 </div>
 
-                <div id="newProjectModal" class="modal">
-                    <div class="modal-content">
-                        <button class="close" onclick="closeNewProject()" aria-label="Close new patient form">&times;</button>
-                        <h2 class="modal-title">${t('createNewPatient')}</h2>
-                        <form id="newProjectForm" onsubmit="createProject(event)">
-                            <div class="form-group">
-                                <label class="form-label">${t('patientName')} *</label>
-                                <input type="text" id="projectTitle" class="form-input" placeholder="${t('enterPatientName')}" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">${t('description')} *</label>
-                                <textarea id="projectDescription" class="form-textarea" placeholder="${t('enterPatientDescription')}" required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">${t('uploadFilesOptional')}</label>
-                                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-                                    <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--color-primary); margin-bottom: 10px;"></i>
-                                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">${t('dragDropFiles')}</div>
-                                    <div style="color:var(--color-text-secondary); font-size:13px;">${t('orClickBrowse')}</div>
+                <div id="newProjectModal" class="modal dx-modal" role="dialog" aria-modal="true" aria-labelledby="npTitle">
+                    <div class="modal-content dx-dialog">
+                        <form id="newProjectForm" class="dx-dialog-form" onsubmit="createProject(event)">
+                            <header class="dx-dialog-head">
+                                <div>
+                                    <span class="dx-dlg-eyebrow">Smile Center Pro</span>
+                                    <h2 id="npTitle">${t('npTitle')}</h2>
+                                    <p>${t('npSubtitle')}</p>
                                 </div>
-                                <input type="file" id="fileInput" multiple style="display:none;">
-                                <div id="fileList" class="file-list" style="margin-top: 12px;"></div>
+                                <button type="button" class="dx-dlg-close" onclick="closeNewProject()" aria-label="${esc(t('npClose'))}">${dxIcon('x', 18)}</button>
+                            </header>
+
+                            <div class="dx-dialog-body">
+                                <section aria-labelledby="npSecPatient">
+                                    <h3 id="npSecPatient">${dxIcon('user', 16)}${t('npSecPatient')}</h3>
+                                    <div class="dx-grid2">
+                                        <div class="dx-field">
+                                            <label for="projectTitle">${t('npName')}</label>
+                                            <input type="text" id="projectTitle" dir="auto" autocomplete="off" required>
+                                        </div>
+                                        <div class="dx-field">
+                                            <label for="projectDueDate">${t('npDue')}</label>
+                                            <input type="date" id="projectDueDate">
+                                        </div>
+                                    </div>
+                                    <div class="dx-field">
+                                        <label for="projectDescription">${t('npDesc')}</label>
+                                        <textarea id="projectDescription" dir="auto" required></textarea>
+                                    </div>
+                                </section>
+
+                                <section aria-labelledby="npSecFiles">
+                                    <h3 id="npSecFiles">${dxIcon('upload', 16)}${t('npSecFiles')}</h3>
+                                    <div class="dx-drop" id="uploadArea" role="button" tabindex="0" aria-label="${esc(t('npDrop'))}" onclick="document.getElementById('fileInput').click()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.getElementById('fileInput').click(); }">
+                                        ${dxIcon('upload', 26)}
+                                        <strong>${t('npDrop')}</strong>
+                                        <small>${t('npDropHelp')}</small>
+                                        <span class="dx-drop-btn">${t('npBrowse')}</span>
+                                    </div>
+                                    <input type="file" id="fileInput" multiple hidden>
+                                    <div id="fileList" class="dx-files"></div>
+                                </section>
+
+                                <div id="createStatus" class="status-msg" role="status" style="margin-top: 14px;"></div>
                             </div>
-                            <div id="createStatus" class="status-msg"></div>
-                            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">${t('createPatient')}</button>
+
+                            <footer class="dx-dialog-foot">
+                                <button type="button" class="dx-btn-ghost" onclick="closeNewProject()">${t('npCancel')}</button>
+                                <button type="submit" class="dx-btn" id="createSubmitBtn">${dxIcon('plus', 16)} ${t('npSubmit')}</button>
+                            </footer>
                         </form>
                     </div>
                 </div>
@@ -969,11 +1006,11 @@
                 uploadArea.style.borderColor = 'var(--color-primary)';
             });
             uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                uploadArea.style.borderColor = '';
             });
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadArea.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                uploadArea.style.borderColor = '';
                 fileInput.files = e.dataTransfer.files;
                 fileInput.dispatchEvent(new Event('change'));
             });
@@ -1016,16 +1053,13 @@
 
         function renderFileList(files) {
             const listEl = document.getElementById('fileList');
-            if (!listEl || files.length === 0) {
-                if (listEl) listEl.innerHTML = '';
-                return;
-            }
-            listEl.innerHTML = Array.from(files).map((file, i) => `
-                <div class="file-list-item">
-                    <span>${esc(file.name)} (${formatSize(file.size)})</span>
-                    <button class="btn-icon" onclick="removeFile(${i})" type="button">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
+            if (!listEl) return;
+            if (!files || files.length === 0) { listEl.innerHTML = ''; return; }
+            listEl.innerHTML = `<div class="dx-files-summary">${files.length} ${esc(t('npFilesSelected'))}</div>` + Array.from(files).map((file, i) => `
+                <div class="dx-file-row">
+                    <span class="dx-fname">${esc(file.name)}</span>
+                    <span class="dx-fsize">${formatSize(file.size)}</span>
+                    <button type="button" class="dx-file-rm" onclick="removeFile(${i})" aria-label="${esc(t('npRemoveFile'))}: ${esc(file.name)}">${dxIcon('x', 16)}</button>
                 </div>
             `).join('');
         }
@@ -1322,8 +1356,12 @@
                 openSetPassword();
                 return;
             }
+            window.__dxOpener = document.activeElement;
+            const shell = document.querySelector('.dx-shell');
+            if (shell) shell.inert = true;
             document.getElementById('newProjectModal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            setTimeout(() => { const f = document.getElementById('projectTitle'); if (f) f.focus(); }, 0);
         };
 
         window.closeNewProject = () => {
@@ -1332,52 +1370,86 @@
             document.getElementById('newProjectForm').reset();
             document.getElementById('fileList').innerHTML = '';
             document.getElementById('createStatus').className = 'status-msg';
+            const sb = document.getElementById('createSubmitBtn');
+            if (sb) sb.disabled = false;
+            const shell = document.querySelector('.dx-shell');
+            if (shell) shell.inert = false;
+            const hadPending = !!window.__dxPendingProjectId;
+            window.__dxPendingProjectId = null;
+            window.__dxUploaded = null;
+            if (hadPending) loadData(true);
+            const opener = window.__dxOpener;
+            window.__dxOpener = null;
+            if (opener && opener.focus && document.contains(opener)) opener.focus();
             if (DX_EMBED) window.parent.postMessage({ type: 'dx-new-patient-closed', created: !!window.__dxCreated }, location.origin);
         };
 
         window.createProject = async (e) => {
             e.preventDefault();
-            
-            const title = document.getElementById('projectTitle').value;
-            const description = document.getElementById('projectDescription').value;
-            const files = document.getElementById('fileInput').files;
+            const submitBtn = document.getElementById('createSubmitBtn');
+            if (submitBtn && submitBtn.disabled) return;
+
+            const title = document.getElementById('projectTitle').value.trim();
+            const description = document.getElementById('projectDescription').value.trim();
+            const dueDate = document.getElementById('projectDueDate').value || '';
+            const files = Array.from(document.getElementById('fileInput').files);
             const statusEl = document.getElementById('createStatus');
 
+            if (!title || !description) {
+                statusEl.textContent = '❌ ' + t('npRequired');
+                statusEl.className = 'status-msg active error';
+                return;
+            }
+            if (submitBtn) submitBtn.disabled = true;
+
             try {
-                const docRef = await addDoc(collection(db, 'projects'), {
-                    title,
-                    clientEmail: currentUser.email,
-                    description,
-                    status: 'pending',
-                    assignedDesignerEmail: null,
-                    htmlApproved: false,
-                    clientRemarks: null,
-                    createdAt: Date.now(),
-                    ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {})
-                });
-                if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
+                let projectId = window.__dxPendingProjectId;
+                if (!projectId) {
+                    const docRef = await addDoc(collection(db, 'projects'), {
+                        title,
+                        clientEmail: currentUser.email,
+                        description,
+                        status: 'pending',
+                        assignedDesignerEmail: null,
+                        htmlApproved: false,
+                        clientRemarks: null,
+                        createdAt: Date.now(),
+                        ...(dueDate ? { dueDate } : {}),
+                        ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {})
+                    });
+                    projectId = docRef.id;
+                    window.__dxPendingProjectId = projectId;
+                    window.__dxUploaded = new Set();
+                    window.__dxCreated = true;
+                    if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
+                }
 
                 if (files.length > 0) {
                     statusEl.textContent = t('patientCreatedUploading');
                     statusEl.className = 'status-msg active warning';
-                    
+
                     for (const file of files) {
-                        const storageRef = ref(storage, `projects/${docRef.id}/${file.name}`);
+                        if (window.__dxUploaded && window.__dxUploaded.has(file.name)) continue;
+                        const storageRef = ref(storage, `projects/${projectId}/${file.name}`);
                         await uploadBytesResumable(storageRef, file);
+                        if (window.__dxUploaded) window.__dxUploaded.add(file.name);
                     }
                 }
 
-                window.__dxCreated = true;
+                window.__dxPendingProjectId = null;
+                window.__dxUploaded = null;
                 statusEl.textContent = '✅ ' + t('patientCreatedSuccess');
                 statusEl.className = 'status-msg active success';
-                
+
                 setTimeout(() => {
                     closeNewProject();
                     loadData(true);
                 }, 1500);
             } catch (error) {
-                statusEl.textContent = '❌ ' + t('errorPrefix') + error.message;
+                const partial = !!window.__dxPendingProjectId;
+                statusEl.textContent = partial ? '⚠️ ' + t('npPartialFail') + ' (' + (error.message || '') + ')' : '❌ ' + t('errorPrefix') + error.message;
                 statusEl.className = 'status-msg active error';
+                if (submitBtn) submitBtn.disabled = false;
             }
         };
 
@@ -1918,6 +1990,53 @@
         .dx-page .dx-content { padding-bottom: 170px; }
         html.dx-embed, html.dx-embed body.dx-page { background: transparent !important; }
         html.dx-embed .dx-shell, html.dx-embed .whatsapp-float, html.dx-embed .email-float { display: none !important; }
+        /* ===== New patient modal (dialog) ===== */
+        .dx-modal.active { z-index: 2000; padding: 25px; background: rgba(15, 23, 42, 0.48); backdrop-filter: blur(2px); }
+        .dx-dialog { display: flex; flex-direction: column; max-width: 880px; max-height: calc(100vh - 50px); max-height: calc(100dvh - 50px); padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); animation: none; font-family: Heebo, Arial, sans-serif; color: #0f172a; }
+        .dx-dialog-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+        .dx-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 26px 26px 0; }
+        .dx-dlg-eyebrow { display: block; width: fit-content; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: #b95039; direction: ltr; unicode-bidi: isolate; }
+        .dx-dialog-head h2 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 600; color: #0f172a; }
+        .dx-dialog-head p { margin: 4px 0 0; font-size: 14px; color: #64748b; }
+        .dx-dlg-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; color: #475569; cursor: pointer; }
+        .dx-dlg-close:hover { background: #f8fafc; }
+        .dx-dialog-body { min-height: 0; padding: 20px 26px; overflow-y: auto; }
+        .dx-dialog-body section + section { margin-top: 22px; }
+        .dx-dialog-body h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #0f172a; }
+        .dx-dialog-body h3 .dx-i { color: #b95039; }
+        .dx-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+        .dx-field label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
+        .dx-field input, .dx-field textarea { width: 100%; box-sizing: border-box; min-height: 39px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a; font: 400 14px Heebo, Arial, sans-serif; }
+        .dx-field textarea { min-height: 96px; resize: vertical; }
+        .dx-field input::placeholder, .dx-field textarea::placeholder { color: #64748b; }
+        .dx-field input:focus, .dx-field textarea:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039; }
+        .dx-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 100px; padding: 16px; box-sizing: border-box; text-align: center; border: 1.5px dashed #f8d4c8; border-radius: 12px; background: #fffaf7; color: #0f172a; cursor: pointer; }
+        .dx-drop:hover { border-color: #fb9478; }
+        .dx-drop:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+        .dx-drop .dx-i { color: #fb9478; }
+        .dx-drop strong { font-size: 14px; font-weight: 600; }
+        .dx-drop small { font-size: 12px; color: #64748b; }
+        .dx-drop-btn { margin-top: 6px; padding: 7px 14px; border: 1px solid #f8d4c8; border-radius: 8px; background: #fff3ed; color: #b95039; font-size: 13px; font-weight: 600; }
+        .dx-files { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .dx-files-summary { font-size: 12px; color: #64748b; }
+        .dx-file-row { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; padding-inline: 12px 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 13px; }
+        .dx-fname { flex: 1; min-width: 0; direction: ltr; unicode-bidi: isolate; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dx-fsize { direction: ltr; unicode-bidi: isolate; white-space: nowrap; font-size: 12px; color: #64748b; }
+        .dx-file-rm { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: #64748b; cursor: pointer; }
+        .dx-file-rm:hover { background: #fef2f2; color: #b91c1c; }
+        .dx-dialog-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px 22px; border-top: 1px solid #edf0f3; background: #ffffff; }
+        .dx-btn-ghost { min-height: 44px; padding: 0 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #0f172a; font: 600 14px Heebo, Arial, sans-serif; cursor: pointer; }
+        .dx-btn-ghost:hover { background: #f8fafc; }
+        .dx-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+        .dx-dlg-close:focus-visible, .dx-btn-ghost:focus-visible, .dx-file-rm:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+        @media (max-width: 700px) {
+            .dx-modal.active { padding: 0; align-items: stretch; }
+            .dx-dialog { max-height: 100dvh; height: 100%; border-radius: 0; }
+            .dx-dialog-head { padding: max(20px, env(safe-area-inset-top)) 20px 0; }
+            .dx-dialog-body { padding: 16px 20px; }
+            .dx-grid2 { grid-template-columns: 1fr; }
+            .dx-dialog-foot { padding: 14px 20px max(16px, env(safe-area-inset-bottom)); }
+        }
     </style>
 </body>
 </html>
