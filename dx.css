@@ -220,3 +220,31 @@ body.dx-page { background: #f7f7f8; color: #0f172a; font-family: Heebo, Arial, s
 .dx-fsel > span { white-space: nowrap; }
 .dx-page .dx-fsel select { height: 36px; max-width: 190px; padding: 0 6px; background-color: transparent !important; color: #0f172a !important; border: 0 !important; border-radius: 8px !important; font-size: 13px; font-weight: 400; outline: none; }
 @media (max-width: 800px) { .dx-fsel, .dx-page .dx-fsearch input { height: 44px; } .dx-page .dx-fsel select { height: 40px; } }
+
+/* ===== Admin: work line, client edit, small dialogs ===== */
+.dx-workline { display: block; max-width: 100%; margin-top: 2px; font-size: 11px; font-weight: 400; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; unicode-bidi: plaintext; }
+.dx-client-cell { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dx-tag--muted { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.dx-mini { width: 28px; height: 28px; }
+.dx-static { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 14px; color: #0f172a; }
+.dx-mt { margin-top: 14px; }
+.dx-note { margin: 14px 0 0; padding: 8px 12px; border-radius: 8px; background: #fff8f5; color: #b95039; font-size: 13px; }
+
+.dx-modal { display: none; position: fixed; inset: 0; z-index: 2000; align-items: center; justify-content: center; padding: 25px; box-sizing: border-box; background: rgba(15, 23, 42, 0.48); backdrop-filter: blur(2px); }
+.dx-modal.active { display: flex; }
+.dx-dialog { display: flex; flex-direction: column; width: 100%; max-height: calc(100dvh - 50px); overflow: hidden; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); font-family: Heebo, Arial, sans-serif; color: #0f172a; }
+.dx-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 24px 0; }
+.dx-dialog-head h2 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600; }
+.dx-dialog-head p { margin: 4px 0 0; font-size: 14px; color: #64748b; }
+.dx-dlg-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; color: #475569; cursor: pointer; }
+.dx-dlg-close:hover { background: #f8fafc; }
+.dx-dialog-body { min-height: 0; padding: 18px 24px; overflow-y: auto; }
+.dx-dialog-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px 20px; border-top: 1px solid #edf0f3; }
+.dx-field label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
+.dx-dialog .dx-field select { display: block; width: 100%; box-sizing: border-box; min-height: 39px; padding: 9px 12px; background-color: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; font: 400 14px Heebo, Arial, sans-serif; }
+.dx-dialog .dx-field select:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039 !important; }
+.dx-btn-ghost { min-height: 44px; padding: 0 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #0f172a; font: 600 14px Heebo, Arial, sans-serif; cursor: pointer; }
+.dx-btn-ghost:hover { background: #f8fafc; }
+.dx-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+.dx-dlg-close:focus-visible, .dx-btn-ghost:focus-visible, .dx-btn:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+@media (max-width: 700px) { .dx-modal { padding: 0; align-items: stretch; } .dx-dialog { max-height: 100dvh; height: 100%; border-radius: 0; } }
