@@ -156,6 +156,7 @@ window.enterPortal = async () => {
             createdAt: Date.now()
         });
         await updateDoc(doc(db, 'invites', token), { status: 'opened', openedAt: Date.now(), uid });
+        localStorage.setItem('lang', 'he');
         location.href = 'portal-dashboard.html';
     } catch (e) {
         console.error(e);
@@ -164,6 +165,7 @@ window.enterPortal = async () => {
     }
 };
 
+localStorage.setItem('lang', 'he');
 init();
 </script>
 </body>
