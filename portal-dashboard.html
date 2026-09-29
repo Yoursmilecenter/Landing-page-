@@ -274,7 +274,7 @@
         .dx-table tbody tr:last-child td { border-bottom: 0; }
         .dx-table tbody tr:hover td { background: #fffdfc; }
         .dx-patient { font-weight: 600; overflow-wrap: anywhere; }
-        .dx-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #475569; }
+        .dx-desc { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; color: #475569; }
         .dx-date { color: #64748b; white-space: nowrap; }
         .dx-files { font-weight: 600; font-variant-numeric: tabular-nums; }
         .dx-files small { display: block; font-size: 11px; font-weight: 400; color: #94a3b8; direction: ltr; text-align: start; }
@@ -328,7 +328,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, setDoc, doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import * as THREE from './vendor/three/three.module.min.js';
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
@@ -345,9 +345,9 @@
         document.addEventListener('keydown', (e) => {
             const m = document.getElementById('newProjectModal');
             if (!m || !m.classList.contains('active')) return;
-            if (e.key === 'Escape') { window.closeNewProject(); return; }
+            if (e.key === 'Escape') { if (dxDdClose()) return; window.closeNewProject(); return; }
             if (e.key === 'Tab') {
-                const f = Array.from(m.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')).filter(el => !el.disabled && el.offsetParent !== null);
+                const f = Array.from(m.querySelectorAll('button, [href], input, textarea, select:not(.dx-dd-native), [tabindex]:not([tabindex="-1"])')).filter(el => !el.disabled && el.offsetParent !== null);
                 if (!f.length) return;
                 const first = f[0], last = f[f.length - 1];
                 if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -665,6 +665,7 @@
 
         // ---- Client dashboard design helpers ----
         const DX_ICONS = {
+            chevron: '<path d="m6 9 6 6 6-6"/>',
             x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
             user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
             dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -807,8 +808,8 @@
                                                 const stlCount = stlFiles.length;
                                                 return `
                                                     <tr>
-                                                        <td class="dx-patient">${esc(project.title)}</td>
-                                                        <td><div class="dx-desc">${esc(project.description)}</div></td>
+                                                        <td class="dx-patient">${esc(project.title)}${project.projectNo ? `<span class="dx-workno">#${project.projectNo}</span>` : ''}</td>
+                                                        <td><div class="dx-desc" title="${esc(project.description)}">${esc(project.description)}</div></td>
                                                         <td>${dxStatusChip(project.status)}</td>
                                                         <td class="dx-date"><bdi dir="ltr">${esc(new Date(project.createdAt).toLocaleDateString())}</bdi></td>
                                                         <td class="dx-files" title="${htmlCount} HTML, ${stlCount} STL"><bdi>${project.files.length}</bdi></td>
@@ -938,8 +939,12 @@
                                     </div>
 
                                     <div id="npExistingBox" class="dx-field dx-mt">
-                                        <label for="npExistingPatient">${t('npPatientChoice')}</label>
-                                        <select id="npExistingPatient" onchange="dxNpExistingChanged()"><option value="">${esc(t('npExistingPlaceholder'))}</option></select>
+                                        <label id="npExistingLbl" for="npExistingBtn">${t('npPatientChoice')}</label>
+                                        <div class="dx-dd">
+                                            <select id="npExistingPatient" class="dx-dd-native" tabindex="-1" aria-hidden="true" onchange="dxNpExistingChanged()"><option value="">${esc(t('npExistingPlaceholder'))}</option></select>
+                                            <button type="button" class="dx-dd-btn" id="npExistingBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="npExistingLbl npExistingBtn"><span class="dx-dd-label is-placeholder"></span>${dxIcon('chevron', 16)}</button>
+                                            <ul class="dx-dd-list" role="listbox" aria-labelledby="npExistingLbl" hidden></ul>
+                                        </div>
                                         <div id="npInheritNote" class="dx-note" hidden></div>
                                     </div>
 
@@ -951,7 +956,11 @@
                                         <fieldset id="npAdminAssign" class="dx-assign" hidden>
                                             <legend>${t('npAdminAssignment')}</legend>
                                             <label class="dx-radio"><input type="radio" name="npAssign" value="registered" checked onchange="dxNpAssignChanged()"><span>${t('npExistingDoctor')}</span></label>
-                                            <div class="dx-field"><select id="npRegisteredClient" aria-label="${esc(t('npExistingDoctor'))}"><option value="">${esc(t('npExistingDoctor'))}</option></select></div>
+                                            <div class="dx-field"><div class="dx-dd">
+                                                <select id="npRegisteredClient" class="dx-dd-native" tabindex="-1" aria-hidden="true"><option value="">${esc(t('npExistingDoctor'))}</option></select>
+                                                <button type="button" class="dx-dd-btn" id="npRegisteredBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="${esc(t('npExistingDoctor'))}"><span class="dx-dd-label is-placeholder"></span>${dxIcon('chevron', 16)}</button>
+                                                <ul class="dx-dd-list" role="listbox" aria-label="${esc(t('npExistingDoctor'))}" hidden></ul>
+                                            </div></div>
                                             <label class="dx-radio"><input type="radio" name="npAssign" value="unregistered" onchange="dxNpAssignChanged()"><span>${t('npUnregistered')}</span></label>
                                             <div class="dx-field"><input type="text" id="npUnregName" dir="auto" autocomplete="off" placeholder="${esc(t('npUnregName'))}" aria-label="${esc(t('npUnregName'))}"></div>
                                         </fieldset>
@@ -1396,6 +1405,138 @@
             }
         };
 
+        // ---- Custom dropdown (replaces the native select list in the New Project dialog) ----
+        let dxDdActive = null;
+
+        const dxDdList = (dd) => dd._list || (dd._list = dd.querySelector('.dx-dd-list'));
+
+        function dxDdRefresh(selectId) {
+            const sel = document.getElementById(selectId);
+            const dd = sel && sel.closest('.dx-dd');
+            if (!dd) return;
+            const btn = dd.querySelector('.dx-dd-btn');
+            const lab = dd.querySelector('.dx-dd-label');
+            const list = dxDdList(dd);
+            const cur = sel.options[sel.selectedIndex];
+            lab.textContent = cur ? cur.textContent : '';
+            lab.classList.toggle('is-placeholder', !sel.value);
+            btn.disabled = sel.disabled;
+            list.innerHTML = Array.from(sel.options).map((o, i) =>
+                `<li role="option" id="${selectId}-opt-${i}" class="dx-dd-opt${o.selected ? ' is-selected' : ''}${o.value === '' ? ' is-placeholder' : ''}" data-value="${esc(o.value)}" aria-selected="${o.selected ? 'true' : 'false'}">${esc(o.textContent)}</li>`).join('');
+        }
+
+        function dxDdSetActive(index) {
+            if (!dxDdActive) return;
+            const list = dxDdActive.list;
+            const opts = Array.from(list.querySelectorAll('.dx-dd-opt'));
+            if (!opts.length) return;
+            index = Math.max(0, Math.min(opts.length - 1, index));
+            opts.forEach((o, i) => o.classList.toggle('is-active', i === index));
+            dxDdActive.dd.querySelector('.dx-dd-btn').setAttribute('aria-activedescendant', opts[index].id);
+            const o = opts[index];
+            if (o.offsetTop < list.scrollTop) list.scrollTop = o.offsetTop - 6;
+            else if (o.offsetTop + o.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = o.offsetTop + o.offsetHeight - list.clientHeight + 6;
+            dxDdActive.index = index;
+        }
+
+        function dxDdClose() {
+            if (!dxDdActive) return false;
+            const { dd, list } = dxDdActive;
+            list.hidden = true;
+            dd.appendChild(list);
+            const btn = dd.querySelector('.dx-dd-btn');
+            btn.setAttribute('aria-expanded', 'false');
+            btn.removeAttribute('aria-activedescendant');
+            dd.classList.remove('is-open');
+            dxDdActive = null;
+            return true;
+        }
+
+        function dxDdOpen(dd) {
+            dxDdClose();
+            const btn = dd.querySelector('.dx-dd-btn');
+            const list = dxDdList(dd);
+            if (btn.disabled) return;
+            // Render the list at the modal layer so the dialog's overflow can't clip it
+            (dd.closest('.modal') || document.body).appendChild(list);
+            list.hidden = false;
+            const r = btn.getBoundingClientRect();
+            const below = window.innerHeight - r.bottom - 12;
+            const above = r.top - 12;
+            const up = below < 180 && above > below;
+            list.style.left = r.left + 'px';
+            list.style.width = r.width + 'px';
+            list.style.maxHeight = Math.max(120, Math.min(260, up ? above : below)) + 'px';
+            if (up) { list.style.top = ''; list.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+            else { list.style.bottom = ''; list.style.top = (r.bottom + 4) + 'px'; }
+            // Self-correct against any offset of the containing block
+            const lr = list.getBoundingClientRect();
+            if (Math.abs(r.left - lr.left) > 0.5) list.style.left = (r.left + (r.left - lr.left)) + 'px';
+            if (!up && Math.abs((r.bottom + 4) - lr.top) > 0.5) list.style.top = (r.bottom + 4 + ((r.bottom + 4) - lr.top)) + 'px';
+            btn.setAttribute('aria-expanded', 'true');
+            dd.classList.add('is-open');
+            const bodyEl = dd.closest('.dx-dialog-body');
+            dxDdActive = { dd, list, index: 0, bodyTop: bodyEl ? bodyEl.scrollTop : 0 };
+            dxDdSetActive(Math.max(0, dd.querySelector('select').selectedIndex));
+        }
+
+        function dxDdPick(dd, value) {
+            const sel = dd.querySelector('select');
+            dxDdClose();
+            sel.value = value;
+            sel.dispatchEvent(new Event('change'));
+            dxDdRefresh(sel.id);
+            dd.querySelector('.dx-dd-btn').focus();
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.dx-dd-btn');
+            if (btn) {
+                const dd = btn.closest('.dx-dd');
+                if (dxDdActive && dxDdActive.dd === dd) dxDdClose(); else dxDdOpen(dd);
+                return;
+            }
+            const opt = e.target.closest && e.target.closest('.dx-dd-opt');
+            if (opt && dxDdActive) { dxDdPick(dxDdActive.dd, opt.dataset.value); return; }
+            dxDdClose();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const btn = e.target.closest && e.target.closest('.dx-dd-btn');
+            if (!btn) return;
+            const dd = btn.closest('.dx-dd');
+            const isOpen = !!(dxDdActive && dxDdActive.dd === dd);
+            const opts = isOpen ? Array.from(dxDdActive.list.querySelectorAll('.dx-dd-opt')) : [];
+            if (e.key === 'Escape') {
+                if (isOpen) { e.preventDefault(); e.stopPropagation(); dxDdClose(); }
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+                e.preventDefault();
+                if (!isOpen) { dxDdOpen(dd); return; }
+                const i = dxDdActive.index;
+                dxDdSetActive(e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : e.key === 'Home' ? 0 : opts.length - 1);
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (!isOpen) dxDdOpen(dd);
+                else if (opts[dxDdActive.index]) dxDdPick(dd, opts[dxDdActive.index].dataset.value);
+            } else if (e.key === 'Tab') {
+                if (isOpen) dxDdClose();
+            } else if (isOpen && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const ch = e.key.toLowerCase();
+                const start = dxDdActive.index + 1;
+                const order = opts.slice(start).concat(opts.slice(0, start));
+                const hit = order.find(o => o.textContent.trim().toLowerCase().startsWith(ch));
+                if (hit) dxDdSetActive(opts.indexOf(hit));
+            }
+        }, true);
+
+        document.addEventListener('scroll', (e) => {
+            if (!dxDdActive) return;
+            if (e.target && e.target.closest && e.target.closest('.dx-dd-list')) return;
+            const bodyEl = dxDdActive.dd.closest('.dx-dialog-body');
+            if (bodyEl && bodyEl.scrollTop !== dxDdActive.bodyTop) dxDdClose();
+        }, true);
+        window.addEventListener('resize', () => dxDdClose());
+
         // ---- New Project: choose an existing patient or add a new one, then create the project ----
         let dxNpMode = 'existing';
         let dxNpPatients = [];
@@ -1428,12 +1569,14 @@
             sel.innerHTML = `<option value="">${esc(t('npExistingPlaceholder'))}</option>` + dxNpPatients.map(g =>
                 `<option value="${esc(g.key)}">${esc(g.name + (dxIsAdmin() ? ' · ' + dxNpClientLabel(g) : '') + ' (' + g.count + ')')}</option>`).join('');
             document.getElementById('npModeExisting').disabled = dxNpPatients.length === 0;
+            dxDdRefresh('npExistingPatient');
         }
 
         function dxNpFillClients() {
             const sel = document.getElementById('npRegisteredClient');
             if (!sel) return;
             sel.innerHTML = `<option value="">${esc(t('npExistingDoctor'))}</option>` + dxNpClients.map(c => `<option value="${esc(c.email)}">${esc(c.label)}</option>`).join('');
+            dxDdRefresh('npRegisteredClient');
         }
 
         async function dxNpLoadAdminLists() {
@@ -1461,7 +1604,6 @@
             document.getElementById('npModeNew').checked = !ex;
             document.getElementById('npExistingBox').hidden = !ex;
             document.getElementById('npNewBox').hidden = ex;
-            document.getElementById('npExistingPatient').required = ex;
             document.getElementById('projectTitle').required = !ex;
             document.getElementById('npAdminAssign').hidden = ex || !dxIsAdmin();
             document.getElementById('npSubmitText').textContent = ex ? t('npSubmitExisting') : t('npSubmitNew');
@@ -1474,7 +1616,7 @@
             const reg = document.getElementById('npRegisteredClient');
             const un = document.getElementById('npUnregName');
             reg.disabled = !(admin && kind === 'registered');
-            reg.required = admin && kind === 'registered';
+            dxDdRefresh('npRegisteredClient');
             un.disabled = !(admin && kind === 'unregistered');
             un.required = admin && kind === 'unregistered';
         };
@@ -1506,7 +1648,7 @@
             document.getElementById('newProjectModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
-                const f = document.getElementById(dxNpMode === 'existing' ? 'npExistingPatient' : 'projectTitle');
+                const f = document.getElementById(dxNpMode === 'existing' ? 'npExistingBtn' : 'projectTitle');
                 if (f) f.focus();
             }, 0);
             if (dxIsAdmin()) {
@@ -1521,6 +1663,9 @@
             document.getElementById('newProjectModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('newProjectForm').reset();
+            dxDdClose();
+            dxDdRefresh('npExistingPatient');
+            dxDdRefresh('npRegisteredClient');
             window.__dxSelected = [];
             renderFileList([]);
             document.getElementById('createStatus').className = 'status-msg';
@@ -1586,7 +1731,12 @@
                     // One document = patient (new or existing) + this project, written atomically
                     const newRef = doc(collection(db, 'projects'));
                     projectId = newRef.id;
-                    await setDoc(newRef, {
+                    const counterRef = doc(db, 'counters', 'projects');
+                    await runTransaction(db, async (tx) => {
+                        const cs = await tx.get(counterRef);
+                        const projectNo = cs.exists() ? cs.data().next : 1;
+                        tx.set(counterRef, { next: projectNo + 1 });
+                        tx.set(newRef, {
                         title,
                         clientEmail,
                         description,
@@ -1598,7 +1748,9 @@
                         patientId: patientId || projectId,
                         ...(dueDate ? { dueDate } : {}),
                         ...(provisional ? { provisionalClient: true, provisionalClientName: provisional } : {}),
-                        ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {})
+                        ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {}),
+                        projectNo
+                        });
                     });
                     window.__dxPendingProjectId = projectId;
                     window.__dxUploaded = new Set();
@@ -1753,7 +1905,7 @@
             content.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                     <div>
-                        <h2 style="margin: 0;">${esc(project.title)}</h2>
+                        <h2 style="margin: 0;">${esc(project.title)}${project.projectNo ? ` <small style="color:#b95039;font-weight:600;">#${project.projectNo}</small>` : ''}</h2>
                         <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 13px;">${esc(project.description)}</p>
                     </div>
                     <span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span>
@@ -2232,6 +2384,26 @@
         .dx-assign legend { padding: 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
         .dx-radio { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
         .dx-radio input { accent-color: #b95039; }
+        /* Custom dropdown (New Project dialog) */
+        .dx-dd { position: relative; }
+        .dx-dd-native { position: absolute; inset-inline-start: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+        .dx-dd-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; box-sizing: border-box; min-height: 39px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a; font: 400 14px Heebo, Arial, sans-serif; text-align: start; cursor: pointer; }
+        .dx-dd-btn:focus-visible, .dx-dd.is-open .dx-dd-btn { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039; }
+        .dx-dd-btn:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+        .dx-dd-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dx-dd-label.is-placeholder { color: #64748b; }
+        .dx-dd-btn .dx-i { flex: none; color: #64748b; transition: transform 0.15s; }
+        .dx-dd.is-open .dx-dd-btn .dx-i { transform: rotate(180deg); }
+        .dx-dd-list { position: fixed; z-index: 3000; box-sizing: border-box; margin: 0; padding: 6px; list-style: none; overflow-y: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.14); font-family: Heebo, Arial, sans-serif; }
+        .dx-dd-list[hidden] { display: none; }
+        .dx-dd-opt { padding: 9px 12px; border-radius: 8px; font-size: 14px; color: #0f172a; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dx-dd-opt:hover, .dx-dd-opt.is-active { background: #fff3ed; color: #b95039; }
+        .dx-dd-opt.is-selected { background: #fff3ed; color: #b95039; font-weight: 600; }
+        .dx-dd-opt.is-placeholder { color: #64748b; }
+        .dx-dd-opt.is-placeholder:hover, .dx-dd-opt.is-placeholder.is-active { color: #b95039; }
+        .dx-workno { display: block; font-size: 11px; font-weight: 400; color: #94a3b8; direction: ltr; unicode-bidi: isolate; text-align: start; }
+        [dir="rtl"] .dx-workno { text-align: right; }
+        @media (prefers-reduced-motion: reduce) { .dx-dd-btn .dx-i { transition: none; } }
         .dx-dlg-close:focus-visible, .dx-btn-ghost:focus-visible, .dx-file-rm:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
         @media (max-width: 700px) {
             .dx-modal.active { padding: 0; align-items: stretch; }

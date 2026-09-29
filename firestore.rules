@@ -60,6 +60,20 @@ service cloud.firestore {
                          .hasOnly(['status', 'openedAt', 'uid', 'used', 'usedAt', 'redeemedAt']);
     }
 
+    // Sequential project numbers: one counter document, incremented by exactly 1 per new project
+    match /counters/{counterId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() ||
+                      (isSignedIn() && counterId == 'projects' &&
+                       request.resource.data.keys().hasOnly(['next']) &&
+                       request.resource.data.next == 2);
+      allow update: if isAdmin() ||
+                      (isSignedIn() &&
+                       request.resource.data.keys().hasOnly(['next']) &&
+                       request.resource.data.next == resource.data.next + 1);
+      allow delete: if false;
+    }
+
     match /auditLogs/{logId} {
       allow read: if isAdmin();
       allow create: if isSignedIn();

@@ -248,3 +248,24 @@ body.dx-page { background: #f7f7f8; color: #0f172a; font-family: Heebo, Arial, s
 .dx-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 .dx-dlg-close:focus-visible, .dx-btn-ghost:focus-visible, .dx-btn:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
 @media (max-width: 700px) { .dx-modal { padding: 0; align-items: stretch; } .dx-dialog { max-height: 100dvh; height: 100%; border-radius: 0; } }
+
+/* ===== Admin v7: project column, details, banner, filter chip ===== */
+.dx-projcell { padding-block: 6px; }
+.dx-projbtn { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 4px 6px; margin-inline: -6px; border: 0; border-radius: 8px; background: none; color: #0f172a; font: inherit; text-align: start; cursor: pointer; }
+.dx-projbtn:hover { background: #fff3ed; }
+.dx-projbtn:focus-visible { outline: 3px solid #b95039; outline-offset: 1px; }
+.dx-projno { flex: none; font-weight: 600; color: #b95039; direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.dx-projdesc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #475569; unicode-bidi: plaintext; }
+.dx-dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; margin: 0; font-size: 14px; }
+.dx-dl dt { color: #64748b; font-weight: 600; }
+.dx-dl dd { margin: 0; color: #0f172a; min-width: 0; overflow-wrap: anywhere; }
+.dx-dl-h { margin: 18px 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
+.dx-fulltext { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dx-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; border: 1px solid #f8d4c8; border-radius: 10px; background: #fff8f5; color: #b95039; font-size: 13px; font-weight: 600; }
+.dx-filter-chip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 6px 0 12px; border: 1px solid #f8d4c8; border-radius: 8px; background: #fff3ed; color: #b95039; font-size: 13px; font-weight: 600; }
+.dx-table--doctors { min-width: 900px; }
+.dx-table--plist { min-width: 760px; }
+@media (max-width: 1450px) { .dx-table--patients { min-width: 1320px; } }
+.dx-file-rm { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: none; color: #64748b; cursor: pointer; }
+.dx-file-rm:hover { background: #ffffff; color: #b91c1c; }
+.dx-file-rm:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
