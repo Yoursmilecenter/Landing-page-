@@ -949,6 +949,7 @@
                 const si = document.getElementById('searchInput');
                 if (si) { si.focus(); const n = si.value.length; try { si.setSelectionRange(n, n); } catch (e) {} }
             }
+            if (location.hash === '#new' && !window.__dxNewOpened) { window.__dxNewOpened = true; setTimeout(() => { if (window.openNewProjectModal) window.openNewProjectModal(); }, 0); }
 
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
