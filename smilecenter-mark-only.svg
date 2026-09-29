@@ -1,9 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="90" viewBox="0 0 320 90" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="155 160 700 710" role="img" aria-labelledby="title desc">
   <title id="title">Smile Center Pro</title>
-  <desc id="desc">Scan-to-design tooth mark, Smile Center Pro, Digital design center.</desc>
-  <!-- Vector contour traced from the approved coral avatar. The coral color matches the chosen brand palette; its original avatar image had a stronger orange background. -->
-  <svg x="0" y="7" width="74" height="74" viewBox="155 160 700 710" aria-hidden="true">
-    <g fill="#fb9478">
+  <desc id="desc">Scan-to-design tooth mark</desc>
+<g fill="#fb9478">
       <path d="M 692.0 187.5 L 726.0 191.5 L 752.0 200.5 L 775.0 214.5 L 798.5 237.0 L 816.5 264.0 L 830.5 298.0 L 838.5 338.0 L 839.5 377.0 L 836.5 404.0 L 825.5 450.0 L 792.5 555.0 L 775.5 616.0 L 765.5 663.0 L 757.5 722.0 L 745.5 767.0 L 730.5 799.0 L 720.5 813.0 L 711.0 822.5 L 701.0 829.5 L 692.0 833.5 L 674.0 836.5 L 659.0 833.5 L 651.0 828.5 L 641.5 818.0 L 634.5 804.0 L 628.5 784.0 L 624.5 763.0 L 617.5 702.0 L 608.5 649.0 L 598.5 614.0 L 585.5 586.0 L 576.5 572.0 L 566.0 561.5 L 556.0 554.5 L 533.0 545.5 L 512.5 543.0 L 512.5 242.0 L 534.0 239.5 L 549.0 234.5 L 601.0 208.5 L 632.0 196.5 L 657.0 190.5 L 692.0 187.5 Z"/>
       <path d="M 371.0 813.5 L 390.5 826.0 L 385.5 833.0 L 375.0 841.5 L 366.0 845.5 L 358.0 847.5 L 341.0 847.5 L 342.5 824.0 L 358.0 823.5 L 364.0 820.5 L 371.0 813.5 Z"/>
       <path d="M 243.0 204.5 L 247.5 207.0 L 258.5 222.0 L 247.0 231.5 L 229.0 251.5 L 214.0 240.5 L 211.5 236.0 L 220.5 225.0 L 243.0 204.5 Z"/>
@@ -22,10 +20,4 @@
       <path d="M 476.0 221.5 L 491.0 227.5 L 511.0 230.5 L 511.5 253.0 L 501.0 253.5 L 490.0 251.5 L 467.0 243.5 L 466.5 242.0 L 476.0 221.5 Z"/>
       <path d="M 508.0 531.5 L 511.5 532.0 L 511.5 555.0 L 496.0 556.5 L 483.0 560.5 L 473.5 540.0 L 487.0 534.5 L 508.0 531.5 Z"/>
     </g>
-  </svg>
-  <g font-family="Inter, Arial, sans-serif">
-    <text x="86" y="39" font-size="19" font-weight="700" fill="#0f172a" direction="ltr">Smile Center</text>
-    <text x="207" y="39" font-size="19" font-weight="700" fill="#b95039" direction="ltr">Pro</text>
-    <text x="86" y="57" font-size="12" font-weight="400" letter-spacing="0.12" fill="#64748b">Digital design center.</text>
-  </g>
 </svg>
