@@ -66,6 +66,15 @@ window.portalTranslations = {
         
         // Client Dashboard  
         myProjects: 'My Projects',
+        doctorPortal: 'Doctor portal',
+        doctorAccount: 'Doctor account',
+        myProjectsSubtitle: 'Manage patient design requests and files',
+        patientProjects: 'Patient projects',
+        noProjectsFound: 'No projects found',
+        uploadFile: 'Upload file',
+        downloadStl: 'Download STL',
+        mainNavigation: 'Main navigation',
+        moreOptions: 'More options',
         viewProjects: 'View and manage your dental design projects',
         totalPatients: 'Total Patients',
         awaitingApproval: 'Awaiting Approval',
@@ -239,6 +248,15 @@ window.portalTranslations = {
         
         // Client Dashboard
         myProjects: 'הפרויקטים שלי',
+        doctorPortal: 'אזור רופאים',
+        doctorAccount: 'חשבון רופא',
+        myProjectsSubtitle: 'ניהול בקשות העיצוב והקבצים של המטופלים',
+        patientProjects: 'פרויקטים של מטופלים',
+        noProjectsFound: 'לא נמצאו פרויקטים',
+        uploadFile: 'העלאת קובץ',
+        downloadStl: 'הורדת STL',
+        mainNavigation: 'ניווט ראשי',
+        moreOptions: 'אפשרויות נוספות',
         viewProjects: 'צפה ונהל את פרויקטי העיצוב השיניים שלך',
         totalPatients: 'סה"כ מטופלים',
         awaitingApproval: 'ממתין לאישור',
