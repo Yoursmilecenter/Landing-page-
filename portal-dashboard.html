@@ -656,7 +656,7 @@
                 <div style="${box}">
                     <div>
                         <div style="font-size: 17px; font-weight: 700;">🎁 המתנה שלך: עיצוב חיוך עד ${n} שיניים, חינם</div>
-                        <div style="font-size: 13px; opacity: .95;">תמומש אוטומטית בתיק הבא שתפתח. לחץ "מטופל חדש" והעלה את התיק.</div>
+                        <div style="font-size: 13px; opacity: .95;">תמומש אוטומטית בתיק הבא שתפתח. לחץ "פרויקט חדש" והעלה את התיק.</div>
                     </div>
                 </div>`;
             }
@@ -727,7 +727,7 @@
                         </div>
                         <nav class="dx-nav" aria-label="${esc(t('mainNavigation'))}">
                             <a href="portal-dashboard.html" aria-current="page">${dxIcon('dashboard', 17)}<span>${t('myProjects')}</span></a>
-                            <button type="button" onclick="openNewProjectModal()">${dxIcon('plus', 17)}<span>${t('newPatient')}</span></button>
+                            <button type="button" onclick="openNewProjectModal()">${dxIcon('plus', 17)}<span>${t('npEntry')}</span></button>
                         </nav>
                         <div class="dx-side-account">
                             <div class="dx-av" aria-hidden="true">${esc(dxInitial)}</div>
@@ -762,7 +762,7 @@
                                     <h1>${t('myProjects')}</h1>
                                     <p>${t('myProjectsSubtitle')}</p>
                                 </div>
-                                <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('newPatient')}</button>
+                                <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('npEntry')}</button>
                             </div>
 
                             <div class="dx-search">
@@ -831,7 +831,7 @@
                                         ${dxIcon('files', 40)}
                                         <h2>${searchQuery ? t('noProjectsFound') : t('noPatientsYet')}</h2>
                                         ${searchQuery ? '' : `<p>${t('patientsAppearHere')}</p>`}
-                                        <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('newPatient')}</button>
+                                        <button type="button" class="dx-btn" onclick="openNewProjectModal()">${dxIcon('plus', 16)} ${t('npEntry')}</button>
                                     </div>` : ''}
                             </section>
                         </main>
@@ -923,28 +923,52 @@
                             <header class="dx-dialog-head">
                                 <div>
                                     <span class="dx-dlg-eyebrow">Smile Center Pro</span>
-                                    <h2 id="npTitle">${t('npTitle')}</h2>
-                                    <p>${t('npSubtitle')}</p>
+                                    <h2 id="npTitle">${t('npModalTitle')}</h2>
+                                    <p>${t('npModalSubtitle')}</p>
                                 </div>
                                 <button type="button" class="dx-dlg-close" onclick="closeNewProject()" aria-label="${esc(t('npClose'))}">${dxIcon('x', 18)}</button>
                             </header>
 
                             <div class="dx-dialog-body">
                                 <section aria-labelledby="npSecPatient">
-                                    <h3 id="npSecPatient">${dxIcon('user', 16)}${t('npSecPatient')}</h3>
-                                    <div class="dx-grid2">
+                                    <h3 id="npSecPatient">${dxIcon('user', 16)}${t('npPatientChoice')}</h3>
+                                    <div class="dx-seg" role="radiogroup" aria-labelledby="npSecPatient">
+                                        <label class="dx-seg-opt"><input type="radio" name="npMode" value="existing" id="npModeExisting" checked onchange="window.__dxNpTouched = true; dxNpSetMode('existing')"><span>${t('npExistingPatient')}</span></label>
+                                        <label class="dx-seg-opt"><input type="radio" name="npMode" value="new" id="npModeNew" onchange="window.__dxNpTouched = true; dxNpSetMode('new')"><span>${t('npNewPatientOption')}</span></label>
+                                    </div>
+
+                                    <div id="npExistingBox" class="dx-field dx-mt">
+                                        <label for="npExistingPatient">${t('npPatientChoice')}</label>
+                                        <select id="npExistingPatient" onchange="dxNpExistingChanged()"><option value="">${esc(t('npExistingPlaceholder'))}</option></select>
+                                        <div id="npInheritNote" class="dx-note" hidden></div>
+                                    </div>
+
+                                    <div id="npNewBox" class="dx-mt" hidden>
                                         <div class="dx-field">
-                                            <label for="projectTitle">${t('npName')}</label>
-                                            <input type="text" id="projectTitle" dir="auto" autocomplete="off" required>
+                                            <label for="projectTitle">${t('npNewPatientName')}</label>
+                                            <input type="text" id="projectTitle" dir="auto" autocomplete="off">
                                         </div>
+                                        <fieldset id="npAdminAssign" class="dx-assign" hidden>
+                                            <legend>${t('npAdminAssignment')}</legend>
+                                            <label class="dx-radio"><input type="radio" name="npAssign" value="registered" checked onchange="dxNpAssignChanged()"><span>${t('npExistingDoctor')}</span></label>
+                                            <div class="dx-field"><select id="npRegisteredClient" aria-label="${esc(t('npExistingDoctor'))}"><option value="">${esc(t('npExistingDoctor'))}</option></select></div>
+                                            <label class="dx-radio"><input type="radio" name="npAssign" value="unregistered" onchange="dxNpAssignChanged()"><span>${t('npUnregistered')}</span></label>
+                                            <div class="dx-field"><input type="text" id="npUnregName" dir="auto" autocomplete="off" placeholder="${esc(t('npUnregName'))}" aria-label="${esc(t('npUnregName'))}"></div>
+                                        </fieldset>
+                                    </div>
+                                </section>
+
+                                <section aria-labelledby="npSecProject">
+                                    <h3 id="npSecProject">${dxIcon('files', 16)}${t('npSecProject')}</h3>
+                                    <div class="dx-field">
+                                        <label for="projectDescription">${t('npProjectDesc')}</label>
+                                        <textarea id="projectDescription" dir="auto" required></textarea>
+                                    </div>
+                                    <div class="dx-grid2 dx-mt">
                                         <div class="dx-field">
                                             <label for="projectDueDate">${t('npDue')}</label>
                                             <input type="date" id="projectDueDate">
                                         </div>
-                                    </div>
-                                    <div class="dx-field">
-                                        <label for="projectDescription">${t('npDesc')}</label>
-                                        <textarea id="projectDescription" dir="auto" required></textarea>
                                     </div>
                                 </section>
 
@@ -965,7 +989,7 @@
 
                             <footer class="dx-dialog-foot">
                                 <button type="button" class="dx-btn-ghost" onclick="closeNewProject()">${t('npCancel')}</button>
-                                <button type="submit" class="dx-btn" id="createSubmitBtn">${dxIcon('plus', 16)} ${t('npSubmit')}</button>
+                                <button type="submit" class="dx-btn" id="createSubmitBtn">${dxIcon('plus', 16)} <span id="npSubmitText">${t('npSubmitExisting')}</span></button>
                             </footer>
                         </form>
                     </div>
@@ -1372,7 +1396,97 @@
             }
         };
 
-        window.openNewProjectModal = () => {
+        // ---- New Project: choose an existing patient or add a new one, then create the project ----
+        let dxNpMode = 'existing';
+        let dxNpPatients = [];
+        let dxNpClients = [];
+        const dxIsAdmin = () => !!(giftUser && giftUser.role === 'admin');
+
+        // A patient is a group of projects sharing patientId (legacy projects without it are their own patient)
+        function dxGroupPatients(projects) {
+            const map = new Map();
+            projects.forEach(p => {
+                const pid = p.patientId || p.id;
+                const key = (p.clientEmail || '') + '|' + pid;
+                let g = map.get(key);
+                if (!g) {
+                    g = { key, patientId: pid, name: p.title || '', clientEmail: p.clientEmail || '', provisional: !!p.provisionalClient, provisionalName: p.provisionalClientName || '', count: 0 };
+                    map.set(key, g);
+                }
+                g.count++;
+            });
+            return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function dxNpClientLabel(g) {
+            return g.provisional ? (g.provisionalName + ' (' + t('npUnregisteredTag') + ')') : g.clientEmail;
+        }
+
+        function dxNpFillPatients() {
+            const sel = document.getElementById('npExistingPatient');
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${esc(t('npExistingPlaceholder'))}</option>` + dxNpPatients.map(g =>
+                `<option value="${esc(g.key)}">${esc(g.name + (dxIsAdmin() ? ' · ' + dxNpClientLabel(g) : '') + ' (' + g.count + ')')}</option>`).join('');
+            document.getElementById('npModeExisting').disabled = dxNpPatients.length === 0;
+        }
+
+        function dxNpFillClients() {
+            const sel = document.getElementById('npRegisteredClient');
+            if (!sel) return;
+            sel.innerHTML = `<option value="">${esc(t('npExistingDoctor'))}</option>` + dxNpClients.map(c => `<option value="${esc(c.email)}">${esc(c.label)}</option>`).join('');
+        }
+
+        async function dxNpLoadAdminLists() {
+            try {
+                const [ps, us] = await Promise.all([
+                    getDocs(collection(db, 'projects')),
+                    getDocs(query(collection(db, 'users'), where('role', '==', 'client')))
+                ]);
+                dxNpPatients = dxGroupPatients(ps.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.clientDeleted));
+                const seen = new Set();
+                dxNpClients = us.docs.map(d => d.data()).map(c => {
+                    const email = c.email || (c.phone ? c.phone + '@smilecenter.pro' : (c.username ? c.username + '@smilecenter.pro' : ''));
+                    const name = c.clientName || c.fullName || c.username || '';
+                    return { email, label: (name ? name + ' · ' : '') + email };
+                }).filter(c => c.email && !seen.has(c.email) && seen.add(c.email)).sort((a, b) => a.label.localeCompare(b.label));
+            } catch (e) {
+                console.error('Error loading patients/clients:', e);
+            }
+        }
+
+        window.dxNpSetMode = (mode) => {
+            dxNpMode = mode;
+            const ex = mode === 'existing';
+            document.getElementById('npModeExisting').checked = ex;
+            document.getElementById('npModeNew').checked = !ex;
+            document.getElementById('npExistingBox').hidden = !ex;
+            document.getElementById('npNewBox').hidden = ex;
+            document.getElementById('npExistingPatient').required = ex;
+            document.getElementById('projectTitle').required = !ex;
+            document.getElementById('npAdminAssign').hidden = ex || !dxIsAdmin();
+            document.getElementById('npSubmitText').textContent = ex ? t('npSubmitExisting') : t('npSubmitNew');
+            dxNpAssignChanged();
+        };
+
+        window.dxNpAssignChanged = () => {
+            const admin = dxIsAdmin() && dxNpMode === 'new';
+            const kind = (document.querySelector('input[name="npAssign"]:checked') || {}).value || 'registered';
+            const reg = document.getElementById('npRegisteredClient');
+            const un = document.getElementById('npUnregName');
+            reg.disabled = !(admin && kind === 'registered');
+            reg.required = admin && kind === 'registered';
+            un.disabled = !(admin && kind === 'unregistered');
+            un.required = admin && kind === 'unregistered';
+        };
+
+        window.dxNpExistingChanged = () => {
+            const note = document.getElementById('npInheritNote');
+            const g = dxNpPatients.find(p => p.key === document.getElementById('npExistingPatient').value);
+            if (dxIsAdmin() && g) { note.hidden = false; note.textContent = t('npAssignedTo') + ': ' + dxNpClientLabel(g); }
+            else { note.hidden = true; note.textContent = ''; }
+        };
+
+        window.openNewProjectModal = async () => {
             if (auth.currentUser && auth.currentUser.isAnonymous) {
                 showErrorNotification('קבע סיסמה', 'כדי להמשיך, קבע סיסמה לחשבון האישי שלך');
                 openSetPassword();
@@ -1383,9 +1497,24 @@
             if (shell) shell.inert = true;
             window.__dxSelected = [];
             renderFileList([]);
+            window.__dxNpTouched = false;
+            dxNpPatients = dxIsAdmin() ? [] : dxGroupPatients(userProjects);
+            dxNpClients = [];
+            dxNpFillPatients();
+            dxNpFillClients();
+            dxNpSetMode(dxNpPatients.length ? 'existing' : 'new');
             document.getElementById('newProjectModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-            setTimeout(() => { const f = document.getElementById('projectTitle'); if (f) f.focus(); }, 0);
+            setTimeout(() => {
+                const f = document.getElementById(dxNpMode === 'existing' ? 'npExistingPatient' : 'projectTitle');
+                if (f) f.focus();
+            }, 0);
+            if (dxIsAdmin()) {
+                await dxNpLoadAdminLists();
+                dxNpFillPatients();
+                dxNpFillClients();
+                if (!window.__dxNpTouched) dxNpSetMode(dxNpPatients.length ? 'existing' : 'new');
+            }
         };
 
         window.closeNewProject = () => {
@@ -1414,35 +1543,63 @@
             const submitBtn = document.getElementById('createSubmitBtn');
             if (submitBtn && submitBtn.disabled) return;
 
-            const title = document.getElementById('projectTitle').value.trim();
+            const statusEl = document.getElementById('createStatus');
+            const fail = (key) => { statusEl.textContent = '❌ ' + t(key); statusEl.className = 'status-msg active error'; };
             const description = document.getElementById('projectDescription').value.trim();
             const dueDate = document.getElementById('projectDueDate').value || '';
             const files = Array.from(document.getElementById('fileInput').files);
-            const statusEl = document.getElementById('createStatus');
+            const admin = dxIsAdmin();
 
-            if (!title || !description) {
-                statusEl.textContent = '❌ ' + t('npRequired');
-                statusEl.className = 'status-msg active error';
-                return;
+            // Resolve patient + owner (client) for this project
+            let title = '', clientEmail = '', patientId = null, provisional = null;
+            if (dxNpMode === 'existing') {
+                const g = dxNpPatients.find(p => p.key === document.getElementById('npExistingPatient').value);
+                if (!g) return fail('npSelectPatient');
+                title = g.name;
+                patientId = g.patientId;
+                clientEmail = admin ? g.clientEmail : currentUser.email;
+                if (admin && g.provisional) provisional = g.provisionalName;
+            } else {
+                title = document.getElementById('projectTitle').value.trim();
+                if (!title) return fail('npNameRequired');
+                if (admin) {
+                    const kind = (document.querySelector('input[name="npAssign"]:checked') || {}).value || 'registered';
+                    if (kind === 'registered') {
+                        clientEmail = document.getElementById('npRegisteredClient').value;
+                        if (!clientEmail) return fail('npSelectClient');
+                    } else {
+                        const nm = document.getElementById('npUnregName').value.trim();
+                        if (!nm) return fail('npUnregRequired');
+                        provisional = nm;
+                        clientEmail = 'unregistered:' + nm.toLowerCase();
+                    }
+                } else {
+                    clientEmail = currentUser.email;
+                }
             }
+            if (!description) return fail('npDescRequired');
             if (submitBtn) submitBtn.disabled = true;
 
             try {
                 let projectId = window.__dxPendingProjectId;
                 if (!projectId) {
-                    const docRef = await addDoc(collection(db, 'projects'), {
+                    // One document = patient (new or existing) + this project, written atomically
+                    const newRef = doc(collection(db, 'projects'));
+                    projectId = newRef.id;
+                    await setDoc(newRef, {
                         title,
-                        clientEmail: currentUser.email,
+                        clientEmail,
                         description,
                         status: 'pending',
                         assignedDesignerEmail: null,
                         htmlApproved: false,
                         clientRemarks: null,
                         createdAt: Date.now(),
+                        patientId: patientId || projectId,
                         ...(dueDate ? { dueDate } : {}),
+                        ...(provisional ? { provisionalClient: true, provisionalClientName: provisional } : {}),
                         ...(giftUnused() ? { giftTeeth: giftTeethOf(giftUser) } : {})
                     });
-                    projectId = docRef.id;
                     window.__dxPendingProjectId = projectId;
                     window.__dxUploaded = new Set();
                     window.__dxCreated = true;
@@ -2056,6 +2213,25 @@
         .dx-btn-ghost { min-height: 44px; padding: 0 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #0f172a; font: 600 14px Heebo, Arial, sans-serif; cursor: pointer; }
         .dx-btn-ghost:hover { background: #f8fafc; }
         .dx-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+        /* New Project: patient picker */
+        .dx-dialog [hidden] { display: none !important; }
+        .dx-mt { margin-top: 14px; }
+        .dx-seg { display: inline-flex; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #ffffff; }
+        .dx-seg-opt { position: relative; }
+        .dx-seg-opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+        .dx-seg-opt span { display: block; padding: 9px 18px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; }
+        .dx-seg-opt + .dx-seg-opt span { border-inline-start: 1px solid #e2e8f0; }
+        .dx-seg-opt input:checked + span { background: #fff3ed; color: #b95039; }
+        .dx-seg-opt input:focus-visible + span { outline: 3px solid #b95039; outline-offset: -3px; }
+        .dx-seg-opt input:disabled + span { opacity: 0.45; cursor: not-allowed; }
+        .dx-dialog .dx-field select { display: block; width: 100%; box-sizing: border-box; min-height: 39px; padding: 9px 12px; background-color: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; font: 400 14px Heebo, Arial, sans-serif; }
+        .dx-dialog .dx-field select:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039 !important; }
+        .dx-dialog .dx-field select:disabled, .dx-dialog .dx-field input:disabled { background-color: #f8fafc !important; color: #94a3b8 !important; }
+        .dx-note { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: #fff8f5; color: #b95039; font-size: 13px; }
+        .dx-assign { margin: 14px 0 0; padding: 12px 14px 14px; border: 1px solid #e2e8f0; border-radius: 10px; min-width: 0; }
+        .dx-assign legend { padding: 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
+        .dx-radio { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
+        .dx-radio input { accent-color: #b95039; }
         .dx-dlg-close:focus-visible, .dx-btn-ghost:focus-visible, .dx-file-rm:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
         @media (max-width: 700px) {
             .dx-modal.active { padding: 0; align-items: stretch; }
