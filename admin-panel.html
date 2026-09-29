@@ -492,6 +492,8 @@
             
             searchTimeout = setTimeout(() => {
                 filteredProjects = allProjects.filter(p => {
+                    const sq = adminSearch.trim().toLowerCase();
+                    if (sq && !(String(p.title || '').toLowerCase().includes(sq) || String(p.clientEmail || '').toLowerCase().includes(sq))) return false;
                     if (currentFilters.status !== 'all' && p.status !== currentFilters.status) return false;
                     if (currentFilters.designer !== 'all') {
                         if (currentFilters.designer === 'null' && p.assignedDesignerEmail) return false;
@@ -563,6 +565,7 @@
 
         // ---- Admin design helpers ----
         const DX_ICONS = {
+            search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
             dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
             plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
             users: '<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
@@ -590,6 +593,7 @@
                 mainNavigation: 'Main navigation', navMyProjects: 'My Projects', navNewPatient: 'New Patient', navAdmin: 'Admin', navPatients: 'Patients',
                 actClientLog: 'Client log', actManageSamples: 'Manage Samples', actGiftInvite: 'Gift Invite', actRenameClient: 'Rename Client',
                 actInviteClient: 'Invite client', actAddClient: 'Add client', actSignOut: 'Sign out',
+                fStatus: 'Status', fDesigners: 'Designers', fClients: 'Clients', fPriorities: 'Priorities', optAll: 'All', searchPlaceholder: 'Search patient or client', noResults: 'No patients match your search or filters', resetSearch: 'Reset search and filters',
                 adminAccount: 'Admin account', adminBadge: 'ADMIN', heading: 'Admin panel', subtitle: 'Manage all patients and designs',
                 mTotal: 'Total', mPending: 'Pending', mInProgress: 'In progress', mCompleted: 'Completed', mVip: 'VIP',
                 fAllStatus: 'All statuses', fAllDesigners: 'All designers', fAllClients: 'All clients', fAllPriorities: 'All priorities', perPage: 'per page',
@@ -601,6 +605,7 @@
                 mainNavigation: 'ניווט ראשי', navMyProjects: 'הפרויקטים שלי', navNewPatient: 'מטופל חדש', navAdmin: 'אדמין', navPatients: 'מטופלים',
                 actClientLog: 'יומן לקוחות', actManageSamples: 'ניהול דוגמאות', actGiftInvite: 'הזמנת מתנה', actRenameClient: 'שינוי שם לקוח',
                 actInviteClient: 'הזמן לקוח', actAddClient: 'הוסף לקוח', actSignOut: 'התנתק',
+                fStatus: 'סטטוס', fDesigners: 'מעצבים', fClients: 'לקוחות', fPriorities: 'עדיפויות', optAll: 'הכל', searchPlaceholder: 'חיפוש מטופל או לקוח', noResults: 'לא נמצאו מטופלים התואמים לחיפוש או לסינון', resetSearch: 'איפוס חיפוש וסינון',
                 adminAccount: 'חשבון אדמין', adminBadge: 'אדמין', heading: 'פאנל מנהל', subtitle: 'ניהול כל המטופלים והעיצובים',
                 mTotal: 'סך הכל', mPending: 'ממתין', mInProgress: 'בביצוע', mCompleted: 'הושלם', mVip: 'VIP',
                 fAllStatus: 'כל הסטטוסים', fAllDesigners: 'כל המעצבים', fAllClients: 'כל הלקוחות', fAllPriorities: 'כל העדיפויות', perPage: 'בעמוד',
@@ -629,6 +634,14 @@
             return `<span class="dx-chip ${k ? k[2] : 'dx-chip--progress'}"><span class="dx-dot" aria-hidden="true"></span>${esc(label)}</span>`;
         }
 
+        let adminSearch = '';
+        let adminSearchFocused = false;
+        window.handleAdminSearch = (value) => { adminSearchFocused = true; adminSearch = value; applyFilters(); };
+        window.resetAdminFilters = () => {
+            adminSearch = '';
+            currentFilters.status = 'all'; currentFilters.designer = 'all'; currentFilters.client = 'all'; currentFilters.priority = 'all';
+            applyFilters();
+        };
         window.toggleAcctMenu = (e) => { e.stopPropagation(); const m = document.getElementById('acctMenu'); if (m) m.classList.toggle('active'); };
         document.addEventListener('click', () => { const m = document.getElementById('acctMenu'); if (m) m.classList.remove('active'); });
 
@@ -733,23 +746,35 @@
                             </div>
 
                             <div class="dx-filters">
-                                <select class="dx-select" aria-label="${esc(dxa('colStatus'))}" onchange="updateFilter('status', this.value)">
-                                    ${[['all', dxa('fAllStatus')], ['pending', t('pending')], ['in-progress', t('inProgress')], ['awaiting-client-approval', 'Awaiting Approval'], ['approved', 'Approved'], ['changes-requested', 'Changes Requested'], ['stl-ready', 'STL Ready'], ['completed', t('completed')], ['canceled', 'Canceled']].map(([v, l]) => `<option value="${v}" ${currentFilters.status === v ? 'selected' : ''}>${l}</option>`).join('')}
-                                </select>
-                                <select class="dx-select" aria-label="${esc(dxa('colDesigner'))}" onchange="updateFilter('designer', this.value)">
-                                    <option value="all" ${currentFilters.designer === 'all' ? 'selected' : ''}>${dxa('fAllDesigners')}</option>
-                                    <option value="null" ${currentFilters.designer === 'null' ? 'selected' : ''}>${t('unassigned')}</option>
-                                    ${designers.map(d => `<option value="${esc(d.email)}" ${currentFilters.designer === d.email ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
-                                </select>
-                                <select class="dx-select" aria-label="${esc(dxa('colClient'))}" onchange="updateFilter('client', this.value)">
-                                    <option value="all" ${currentFilters.client === 'all' ? 'selected' : ''}>${dxa('fAllClients')}</option>
-                                    ${clients.map(c => `<option value="${esc(c)}" ${currentFilters.client === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-                                </select>
-                                <select class="dx-select" aria-label="${esc(dxa('colPriority'))}" onchange="updateFilter('priority', this.value)">
-                                    <option value="all" ${currentFilters.priority === 'all' ? 'selected' : ''}>${dxa('fAllPriorities')}</option>
-                                    <option value="vip" ${currentFilters.priority === 'vip' ? 'selected' : ''}>${t('vipOnly')}</option>
-                                    <option value="normal" ${currentFilters.priority === 'normal' ? 'selected' : ''}>${t('normalOnly')}</option>
-                                </select>
+                                <div class="dx-fsearch">
+                                    ${dxIcon('search', 16)}
+                                    <input type="search" id="adminSearchInput" dir="auto" placeholder="${esc(dxa('searchPlaceholder'))}" aria-label="${esc(dxa('searchPlaceholder'))}" oninput="handleAdminSearch(this.value)" autocomplete="off" value="${esc(adminSearch)}">
+                                </div>
+                                <label class="dx-fsel"><span>${dxa('fStatus')}</span>
+                                    <select aria-label="${esc(dxa('fStatus'))}" onchange="updateFilter('status', this.value)">
+                                        ${[['all', dxa('optAll')], ['pending', t('pending')], ['in-progress', t('inProgress')], ['awaiting-client-approval', 'Awaiting Approval'], ['approved', 'Approved'], ['changes-requested', 'Changes Requested'], ['stl-ready', 'STL Ready'], ['completed', t('completed')], ['canceled', 'Canceled']].map(([v, l]) => `<option value="${v}" ${currentFilters.status === v ? 'selected' : ''}>${l}</option>`).join('')}
+                                    </select>
+                                </label>
+                                <label class="dx-fsel"><span>${dxa('fDesigners')}</span>
+                                    <select aria-label="${esc(dxa('fDesigners'))}" onchange="updateFilter('designer', this.value)">
+                                        <option value="all" ${currentFilters.designer === 'all' ? 'selected' : ''}>${dxa('optAll')}</option>
+                                        <option value="null" ${currentFilters.designer === 'null' ? 'selected' : ''}>${t('unassigned')}</option>
+                                        ${designers.map(d => `<option value="${esc(d.email)}" ${currentFilters.designer === d.email ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
+                                    </select>
+                                </label>
+                                <label class="dx-fsel"><span>${dxa('fClients')}</span>
+                                    <select aria-label="${esc(dxa('fClients'))}" onchange="updateFilter('client', this.value)">
+                                        <option value="all" ${currentFilters.client === 'all' ? 'selected' : ''}>${dxa('optAll')}</option>
+                                        ${clients.map(c => `<option value="${esc(c)}" ${currentFilters.client === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+                                    </select>
+                                </label>
+                                <label class="dx-fsel"><span>${dxa('fPriorities')}</span>
+                                    <select aria-label="${esc(dxa('fPriorities'))}" onchange="updateFilter('priority', this.value)">
+                                        <option value="all" ${currentFilters.priority === 'all' ? 'selected' : ''}>${dxa('optAll')}</option>
+                                        <option value="vip" ${currentFilters.priority === 'vip' ? 'selected' : ''}>${t('vipOnly')}</option>
+                                        <option value="normal" ${currentFilters.priority === 'normal' ? 'selected' : ''}>${t('normalOnly')}</option>
+                                    </select>
+                                </label>
                                 <select class="dx-select" aria-label="${esc(dxa('colDate'))}" onchange="updateFilter('sortBy', this.value)">
                                     ${[['date-desc', t('dateNewest')], ['date-asc', t('dateOldest')], ['name-asc', t('nameAZ')], ['name-desc', t('nameZA')], ['client-asc', t('clientAZ')]].map(([v, l]) => `<option value="${v}" ${currentFilters.sortBy === v ? 'selected' : ''}>${l}</option>`).join('')}
                                 </select>
@@ -817,7 +842,8 @@
                                 ${pageProjects.length === 0 ? `
                                     <div class="dx-empty">
                                         ${dxIcon('files', 40)}
-                                        <h2>${t('noPatients')}</h2>
+                                        <h2>${allProjects.length === 0 ? t('noPatients') : dxa('noResults')}</h2>
+                                        ${allProjects.length === 0 ? '' : `<button type="button" class="dx-btn" onclick="resetAdminFilters()">${dxa('resetSearch')}</button>`}
                                     </div>` : ''}
                                 <div class="dx-pager">
                                     <button type="button" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>${t('previous')}</button>
@@ -977,6 +1003,11 @@
                     </div>
                 </div>
             `;
+
+            if (adminSearchFocused) {
+                const si = document.getElementById('adminSearchInput');
+                if (si) { si.focus(); const n = si.value.length; try { si.setSelectionRange(n, n); } catch (e) {} }
+            }
 
 
             setupFileUpload();
