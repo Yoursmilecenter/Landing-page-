@@ -999,7 +999,7 @@
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
             
-            fileInput.addEventListener('change', (e) => renderFileList(e.target.files));
+            fileInput.addEventListener('change', (e) => addSelectedFiles(e.target.files));
             
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -1053,25 +1053,47 @@
 
         function renderFileList(files) {
             const listEl = document.getElementById('fileList');
+            const area = document.getElementById('uploadArea');
+            const arr = Array.from(files || []);
+            if (area) {
+                area.classList.toggle('is-compact', arr.length > 0);
+                const b = area.querySelector('.dx-drop-btn');
+                if (b) b.textContent = arr.length > 0 ? t('npAddMore') : t('npBrowse');
+            }
             if (!listEl) return;
-            if (!files || files.length === 0) { listEl.innerHTML = ''; return; }
-            listEl.innerHTML = `<div class="dx-files-summary">${files.length} ${esc(t('npFilesSelected'))}</div>` + Array.from(files).map((file, i) => `
-                <div class="dx-file-row">
-                    <span class="dx-fname">${esc(file.name)}</span>
+            if (arr.length === 0) { listEl.innerHTML = ''; return; }
+            listEl.innerHTML = arr.map((file, i) => `
+                <span class="dx-file-chip">
+                    <span class="dx-fname" title="${esc(file.name)}">${esc(file.name)}</span>
                     <span class="dx-fsize">${formatSize(file.size)}</span>
-                    <button type="button" class="dx-file-rm" onclick="removeFile(${i})" aria-label="${esc(t('npRemoveFile'))}: ${esc(file.name)}">${dxIcon('x', 16)}</button>
-                </div>
-            `).join('');
+                    <button type="button" class="dx-file-rm" onclick="removeFile(${i})" aria-label="${esc(t('npRemoveFile'))}: ${esc(file.name)}">${dxIcon('x', 14)}</button>
+                </span>`).join('') + `<div class="dx-files-summary">${arr.length} ${esc(t('npFilesSelected'))}</div>`;
+            try { listEl.scrollIntoView({ block: 'nearest', behavior: 'auto' }); } catch (e) {}
+        }
+
+        // Selected files persist across picks/drops: new files are added, same-name files are replaced
+        function dxSyncFileInput() {
+            const input = document.getElementById('fileInput');
+            const cur = window.__dxSelected || [];
+            const dt = new DataTransfer();
+            cur.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            renderFileList(cur);
+        }
+
+        function addSelectedFiles(list) {
+            const cur = window.__dxSelected || (window.__dxSelected = []);
+            Array.from(list || []).forEach(f => {
+                const i = cur.findIndex(x => x.name === f.name);
+                if (i >= 0) cur[i] = f; else cur.push(f);
+            });
+            dxSyncFileInput();
         }
 
         window.removeFile = (index) => {
-            const dt = new DataTransfer();
-            const input = document.getElementById('fileInput');
-            const files = Array.from(input.files);
-            files.splice(index, 1);
-            files.forEach(f => dt.items.add(f));
-            input.files = dt.files;
-            input.dispatchEvent(new Event('change'));
+            const cur = window.__dxSelected || [];
+            cur.splice(index, 1);
+            dxSyncFileInput();
         };
 
         window.copyLink = (url) => {
@@ -1359,6 +1381,8 @@
             window.__dxOpener = document.activeElement;
             const shell = document.querySelector('.dx-shell');
             if (shell) shell.inert = true;
+            window.__dxSelected = [];
+            renderFileList([]);
             document.getElementById('newProjectModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             setTimeout(() => { const f = document.getElementById('projectTitle'); if (f) f.focus(); }, 0);
@@ -1368,7 +1392,8 @@
             document.getElementById('newProjectModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('newProjectForm').reset();
-            document.getElementById('fileList').innerHTML = '';
+            window.__dxSelected = [];
+            renderFileList([]);
             document.getElementById('createStatus').className = 'status-msg';
             const sb = document.getElementById('createSubmitBtn');
             if (sb) sb.disabled = false;
@@ -2007,7 +2032,7 @@
         .dx-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
         .dx-field label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #0f172a; }
         .dx-field input, .dx-field textarea { width: 100%; box-sizing: border-box; min-height: 39px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a; font: 400 14px Heebo, Arial, sans-serif; }
-        .dx-field textarea { min-height: 96px; resize: vertical; }
+        .dx-field textarea { min-height: 80px; resize: vertical; }
         .dx-field input::placeholder, .dx-field textarea::placeholder { color: #64748b; }
         .dx-field input:focus, .dx-field textarea:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039; }
         .dx-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 100px; padding: 16px; box-sizing: border-box; text-align: center; border: 1.5px dashed #f8d4c8; border-radius: 12px; background: #fffaf7; color: #0f172a; cursor: pointer; }
@@ -2017,13 +2042,16 @@
         .dx-drop strong { font-size: 14px; font-weight: 600; }
         .dx-drop small { font-size: 12px; color: #64748b; }
         .dx-drop-btn { margin-top: 6px; padding: 7px 14px; border: 1px solid #f8d4c8; border-radius: 8px; background: #fff3ed; color: #b95039; font-size: 13px; font-weight: 600; }
-        .dx-files { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-        .dx-files-summary { font-size: 12px; color: #64748b; }
-        .dx-file-row { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; padding-inline: 12px 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 13px; }
-        .dx-fname { flex: 1; min-width: 0; direction: ltr; unicode-bidi: isolate; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dx-files { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .dx-files-summary { flex-basis: 100%; font-size: 12px; color: #64748b; }
+        .dx-drop.is-compact { flex-direction: row; flex-wrap: wrap; gap: 8px 12px; min-height: 0; padding: 10px 14px; }
+        .dx-drop.is-compact small { display: none; }
+        .dx-drop.is-compact .dx-drop-btn { margin-top: 0; }
+        .dx-file-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 3px 4px; padding-inline: 12px 4px; border: 1px solid #f8d4c8; border-radius: 999px; background: #fff3ed; font-size: 13px; }
+        .dx-fname { max-width: 240px; min-width: 0; direction: ltr; unicode-bidi: isolate; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .dx-fsize { direction: ltr; unicode-bidi: isolate; white-space: nowrap; font-size: 12px; color: #64748b; }
-        .dx-file-rm { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: #64748b; cursor: pointer; }
-        .dx-file-rm:hover { background: #fef2f2; color: #b91c1c; }
+        .dx-file-rm { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 8px; background: none; color: #64748b; cursor: pointer; }
+        .dx-file-rm:hover { background: #ffffff; color: #b91c1c; }
         .dx-dialog-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px 22px; border-top: 1px solid #edf0f3; background: #ffffff; }
         .dx-btn-ghost { min-height: 44px; padding: 0 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #0f172a; font: 600 14px Heebo, Arial, sans-serif; cursor: pointer; }
         .dx-btn-ghost:hover { background: #f8fafc; }
