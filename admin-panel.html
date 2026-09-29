@@ -632,6 +632,27 @@
         window.toggleAcctMenu = (e) => { e.stopPropagation(); const m = document.getElementById('acctMenu'); if (m) m.classList.toggle('active'); };
         document.addEventListener('click', () => { const m = document.getElementById('acctMenu'); if (m) m.classList.remove('active'); });
 
+        // New Patient: shown as an overlay on top of the admin panel (never navigates away)
+        window.openNewPatientOverlay = () => {
+            if (document.getElementById('newPatientOverlay')) return;
+            const ov = document.createElement('div');
+            ov.id = 'newPatientOverlay';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:5000;background:transparent;';
+            const fr = document.createElement('iframe');
+            fr.src = 'portal-dashboard.html?embed=1#new';
+            fr.title = 'New Patient';
+            fr.style.cssText = 'width:100%;height:100%;border:0;background:transparent;';
+            fr.setAttribute('allowtransparency', 'true');
+            ov.appendChild(fr);
+            document.body.appendChild(ov);
+        };
+        window.closeNewPatientOverlay = () => { const ov = document.getElementById('newPatientOverlay'); if (ov) ov.remove(); };
+        window.addEventListener('message', (e) => {
+            if (e.origin !== location.origin || !e.data || e.data.type !== 'dx-new-patient-closed') return;
+            window.closeNewPatientOverlay();
+            if (e.data.created) loadData(true);
+        });
+
         function render() {
             const stats = {
                 total: allProjects.length,
@@ -658,7 +679,7 @@
                         </div>
                         <nav class="dx-nav" aria-label="${esc(dxa('mainNavigation'))}">
                             <a href="portal-dashboard.html">${dxIcon('dashboard', 17)}<span>${dxa('navMyProjects')}</span></a>
-                            <a href="portal-dashboard.html#new">${dxIcon('plus', 17)}<span>${dxa('navNewPatient')}</span></a>
+                            <button type="button" onclick="openNewPatientOverlay()">${dxIcon('plus', 17)}<span>${dxa('navNewPatient')}</span></button>
                             <div class="dx-nav-label">${dxa('navAdmin')}</div>
                             <a href="admin-panel.html" aria-current="page">${dxIcon('users', 17)}<span>${dxa('navPatients')}</span></a>
                         </nav>
