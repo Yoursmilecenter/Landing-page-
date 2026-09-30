@@ -703,25 +703,24 @@ select option {
     right: 20px;
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #fb9478;
+    background: #fb9478;
+    color: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(251, 148, 120, 0.3);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
     z-index: 1000;
     transition: all 0.3s ease;
     text-decoration: none;
-    border: 1px solid rgba(251, 148, 120, 0.2);
+    border: none;
 }
 
 .whatsapp-float:hover,
 .email-float:hover {
-    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    background: #f38163;
     transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(251, 148, 120, 0.5);
-    border-color: rgba(251, 148, 120, 0.4);
+    box-shadow: 0 6px 20px rgba(251, 148, 120, 0.4);
 }
 
 .whatsapp-float svg,
