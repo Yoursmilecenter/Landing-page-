@@ -117,6 +117,59 @@
         }
         .login-page .btn-primary:hover { background: #f38163; }
         .login-page .btn-primary:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+        .login-page .btn-primary:disabled { opacity: .6; cursor: default; }
+
+        /* Invite loader */
+        .invite-loader {
+            position: fixed; inset: 0; z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+            background: linear-gradient(160deg, #ffffff 0%, #fff3ed 100%);
+            transition: opacity .25s ease;
+        }
+        .invite-loader[hidden] { display: none; }
+        .invite-loader.fade-out { opacity: 0; pointer-events: none; }
+        .invite-loader .loader-mark {
+            width: 64px; height: 64px; border-radius: 16px; background: #ffffff;
+            box-shadow: 0 12px 36px rgba(15,23,42,0.10);
+            display: flex; align-items: center; justify-content: center;
+            animation: loaderPulse 1.4s ease-in-out infinite;
+        }
+        .invite-loader .loader-mark svg { width: 34px; height: 34px; }
+        @keyframes loaderPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: .85; } }
+        .invite-loader .loader-word { font: 600 15px/1.3 Heebo, Arial, sans-serif; color: #64748b; }
+        @media (prefers-reduced-motion: reduce) {
+            .invite-loader .loader-mark { animation: none; }
+            .invite-loader { transition: none; }
+        }
+
+        /* Invite hero + two-column shell */
+        .page-shell { width: min(100%, 420px); }
+        .invite-hero { display: none; }
+        body.invite-mode .page-shell { width: min(100%, 960px); }
+        body.invite-mode .invite-hero {
+            display: flex; flex-direction: column; justify-content: center; gap: 14px;
+            padding: 40px; border-radius: 16px 16px 0 0;
+            background: linear-gradient(160deg, #fff3ed 0%, #ffe4d8 100%);
+            border: 1px solid #e2e8f0; border-bottom: 0;
+        }
+        body.invite-mode .invite-hero .hero-mark { width: 40px; height: 40px; }
+        body.invite-mode .invite-hero .hero-mark svg { width: 40px; height: 40px; }
+        body.invite-mode .invite-hero .hero-headline { margin: 0; font: 600 24px/1.3 Heebo, Arial, sans-serif; color: #18202e; }
+        body.invite-mode .invite-hero .hero-promise { margin: 0; font: 400 14px/1.5 Heebo, Arial, sans-serif; color: #64748b; }
+        body.invite-mode .login-container { border-radius: 0 0 16px 16px; border-top: 0; }
+        @media (min-width: 860px) {
+            body.invite-mode .page-shell { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+            body.invite-mode .invite-hero { border-radius: 16px 0 0 16px; border-bottom: 1px solid #e2e8f0; border-right: 0; }
+            html[dir="rtl"] body.invite-mode .invite-hero { border-radius: 0 16px 16px 0; border-left: 0; border-right: 1px solid #e2e8f0; }
+            body.invite-mode .login-container { border-radius: 0 16px 16px 0; display: flex; flex-direction: column; justify-content: center; }
+            html[dir="rtl"] body.invite-mode .login-container { border-radius: 16px 0 0 16px; }
+        }
+        .existing-account { margin: 18px 0 0; text-align: center; font: 400 13px/1.4 Heebo, Arial, sans-serif; color: #64748b; }
+        .existing-account a { color: #b95039; font-weight: 600; text-decoration: none; }
+        .existing-account a:hover { text-decoration: underline; }
+        .invite-invalid { display: none; text-align: center; padding: 8px 0; }
+        .invite-invalid.active { display: block; }
+        .invite-invalid p { margin: 0 0 16px; font: 400 14px/1.5 Heebo, Arial, sans-serif; color: #64748b; }
 
         /* Status messages */
         .login-page .status-msg { display: none; margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.4; text-align: start; }
@@ -178,25 +231,9 @@
     </style>
 </head>
 <body class="login-page">
-    <div class="lang-toggle">
-        <button class="lang-dropdown" id="langDropdown" aria-label="Language" onclick="toggleLangMenu(event)">
-            <img src="https://flagcdn.com/w20/gb.png" alt="Flag">
-            <span>▼</span>
-        </button>
-        <div class="lang-menu" id="langMenu">
-            <div class="lang-option" onclick="switchLang('en')">
-                <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
-            </div>
-            <div class="lang-option" onclick="switchLang('he')">
-                <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
-            </div>
-        </div>
-    </div>
-
-    <main class="login-container">
-        <div class="brand-mark" dir="ltr">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="155 160 700 710" role="img" aria-label="Smile Center Pro">
-                <g fill="#fb9478">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="scMark" viewBox="155 160 700 710">
+            <g fill="#fb9478">
                       <path d="M 692.0 187.5 L 726.0 191.5 L 752.0 200.5 L 775.0 214.5 L 798.5 237.0 L 816.5 264.0 L 830.5 298.0 L 838.5 338.0 L 839.5 377.0 L 836.5 404.0 L 825.5 450.0 L 792.5 555.0 L 775.5 616.0 L 765.5 663.0 L 757.5 722.0 L 745.5 767.0 L 730.5 799.0 L 720.5 813.0 L 711.0 822.5 L 701.0 829.5 L 692.0 833.5 L 674.0 836.5 L 659.0 833.5 L 651.0 828.5 L 641.5 818.0 L 634.5 804.0 L 628.5 784.0 L 624.5 763.0 L 617.5 702.0 L 608.5 649.0 L 598.5 614.0 L 585.5 586.0 L 576.5 572.0 L 566.0 561.5 L 556.0 554.5 L 533.0 545.5 L 512.5 543.0 L 512.5 242.0 L 534.0 239.5 L 549.0 234.5 L 601.0 208.5 L 632.0 196.5 L 657.0 190.5 L 692.0 187.5 Z"/>
                       <path d="M 371.0 813.5 L 390.5 826.0 L 385.5 833.0 L 375.0 841.5 L 366.0 845.5 L 358.0 847.5 L 341.0 847.5 L 342.5 824.0 L 358.0 823.5 L 364.0 820.5 L 371.0 813.5 Z"/>
                       <path d="M 243.0 204.5 L 247.5 207.0 L 258.5 222.0 L 247.0 231.5 L 229.0 251.5 L 214.0 240.5 L 211.5 236.0 L 220.5 225.0 L 243.0 204.5 Z"/>
@@ -214,11 +251,49 @@
                       <path d="M 293.0 773.5 L 294.5 774.0 L 303.5 793.0 L 315.5 808.0 L 298.0 823.5 L 283.5 805.0 L 272.5 783.0 L 293.0 773.5 Z"/>
                       <path d="M 476.0 221.5 L 491.0 227.5 L 511.0 230.5 L 511.5 253.0 L 501.0 253.5 L 490.0 251.5 L 467.0 243.5 L 466.5 242.0 L 476.0 221.5 Z"/>
                       <path d="M 508.0 531.5 L 511.5 532.0 L 511.5 555.0 L 496.0 556.5 L 483.0 560.5 L 473.5 540.0 L 487.0 534.5 L 508.0 531.5 Z"/>
-                    </g>
+            </g>
+        </symbol>
+    </svg>
+
+    <div class="invite-loader" id="inviteLoader" hidden role="status" aria-live="polite">
+        <div class="loader-mark" dir="ltr">
+            <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" role="img" aria-label="Smile Center Pro"><use href="#scMark"/></svg>
+        </div>
+        <div class="loader-word" data-en="Preparing your workspace" data-he="מכינים את המרחב שלך">מכינים את המרחב שלך</div>
+    </div>
+
+    <div class="lang-toggle">
+        <button class="lang-dropdown" id="langDropdown" aria-label="Language" onclick="toggleLangMenu(event)">
+            <img src="https://flagcdn.com/w20/gb.png" alt="Flag">
+            <span>▼</span>
+        </button>
+        <div class="lang-menu" id="langMenu">
+            <div class="lang-option" onclick="switchLang('en')">
+                <img src="https://flagcdn.com/w20/gb.png" alt="GB"> EN
+            </div>
+            <div class="lang-option" onclick="switchLang('he')">
+                <img src="https://flagcdn.com/w20/il.png" alt="IL"> HE
+            </div>
+        </div>
+    </div>
+
+    <div class="page-shell" id="pageShell">
+    <section class="invite-hero" id="inviteHero" hidden>
+        <div class="hero-mark" dir="ltr">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="155 160 700 710" role="img" aria-label="Smile Center Pro">
+                <use href="#scMark"/>
             </svg>
+        </div>
+        <h2 class="hero-headline" id="heroHeadline" data-en="Welcome to Smile Center Pro." data-he="ברוכים הבאים!"></h2>
+        <p class="hero-promise" id="heroPromise" data-en="Send dental design work, follow every project, and get your files in one place." data-he="זה המקום שלכם לשלוח עבודות לעיצוב, לעקוב אחר פרויקטים ולקבל קבצים."></p>
+    </section>
+    <main class="login-container">
+        <div class="brand-mark" dir="ltr">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" role="img" aria-label="Smile Center Pro"><use href="#scMark"/></svg>
         </div>
 
         <h1 class="login-heading" id="formHeading" data-en="Sign in" data-he="כניסה">כניסה</h1>
+        <p class="form-intro" id="formIntro" hidden data-en="Set a password and make this workspace yours." data-he="בחרו סיסמה והתחילו לעבוד במרחב החדש שלכם."></p>
 
         <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLogin(event)" style="display: flex;">
@@ -249,9 +324,21 @@
                 <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="6" autocomplete="new-password" data-en="Re-enter password" data-he="הזן סיסמה שוב">
             </div>
             <div id="inviteStatus" class="status-msg" role="alert"></div>
-            <button type="submit" class="btn-primary" data-en="Complete Registration" data-he="השלם הרשמה">Complete Registration</button>
+            <button type="submit" class="btn-primary" id="inviteSubmitBtn" data-en="Complete Registration" data-he="השלם הרשמה">Complete Registration</button>
         </form>
+
+        <!-- Invalid / expired invite -->
+        <div class="invite-invalid" id="inviteInvalid">
+            <p id="inviteInvalidMsg" data-en="This invite link is invalid or has expired." data-he="קישור ההזמנה אינו תקין או שפג תוקפו."></p>
+            <a class="btn-primary" style="display:inline-flex;text-decoration:none;padding:0 24px;" href="https://wa.me/972559339666?text=Hi%2C%20my%20invite%20link%20isn%27t%20working" data-en="Request a new link" data-he="בקשו קישור חדש"></a>
+        </div>
+
+        <p class="existing-account" id="existingAccountLine" hidden>
+            <span data-en="Already have an account?" data-he="כבר יש לך חשבון?"></span>
+            <a href="portal-login.html" data-en="Log in" data-he="התחברות"></a>
+        </p>
     </main>
+    </div>
 
     <script src="translations.js"></script>
     <script>
@@ -313,16 +400,79 @@
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get('invite');
         const invitePhone = urlParams.get('phone');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const applyLangToEl = el => {
+            const lang = document.documentElement.lang === 'he' ? 'he' : 'en';
+            const text = el.getAttribute('data-' + lang);
+            if (text == null) return;
+            if (el.tagName === 'INPUT') el.placeholder = text; else el.textContent = text;
+        };
 
         if (inviteCode && invitePhone) {
-            // Show invite registration form
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('inviteForm').style.display = 'flex';
-            document.getElementById('invitePhone').value = invitePhone;
-            const h = document.getElementById('formHeading');
-            h.setAttribute('data-en', 'Create your account');
-            h.setAttribute('data-he', 'יצירת חשבון');
-            h.textContent = h.getAttribute('data-' + (document.documentElement.lang === 'he' ? 'he' : 'en'));
+            const loader = document.getElementById('inviteLoader');
+            loader.hidden = false;
+            const revealStart = Date.now();
+            const MIN_LOADER_MS = reduceMotion ? 0 : 550;
+            const MAX_WAIT_MS = 3000;
+
+            const finishLoader = () => {
+                const elapsed = Date.now() - revealStart;
+                const wait = Math.max(0, MIN_LOADER_MS - elapsed);
+                setTimeout(() => {
+                    if (reduceMotion) { loader.hidden = true; }
+                    else {
+                        loader.classList.add('fade-out');
+                        setTimeout(() => { loader.hidden = true; }, 260);
+                    }
+                }, wait);
+            };
+
+            const showInvalid = () => {
+                document.body.classList.add('invite-mode');
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('inviteForm').style.display = 'none';
+                document.getElementById('inviteHero').hidden = true;
+                document.getElementById('formIntro').hidden = true;
+                document.getElementById('existingAccountLine').hidden = true;
+                document.getElementById('inviteInvalid').classList.add('active');
+                const h = document.getElementById('formHeading');
+                h.setAttribute('data-en', "Link unavailable"); h.setAttribute('data-he', 'הקישור אינו זמין');
+                applyLangToEl(h);
+                applyLangToEl(document.getElementById('inviteInvalidMsg'));
+                document.querySelectorAll('#inviteInvalid a').forEach(applyLangToEl);
+                finishLoader();
+            };
+
+            const showInviteForm = () => {
+                document.body.classList.add('invite-mode');
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('inviteForm').style.display = 'flex';
+                document.getElementById('inviteHero').hidden = false;
+                document.getElementById('formIntro').hidden = false;
+                document.getElementById('existingAccountLine').hidden = false;
+                document.getElementById('invitePhone').value = invitePhone;
+                const h = document.getElementById('formHeading');
+                h.setAttribute('data-en', 'Create your account');
+                h.setAttribute('data-he', 'יצירת חשבון');
+                [h, document.getElementById('formIntro'), document.getElementById('heroHeadline'),
+                 document.getElementById('heroPromise'), document.getElementById('invitePhone'),
+                 ...document.querySelectorAll('#existingAccountLine [data-en]')].forEach(applyLangToEl);
+                finishLoader();
+            };
+
+            let settled = false;
+            const settle = fn => { if (settled) return; settled = true; fn(); };
+            const timeoutGuard = setTimeout(() => settle(showInvalid), MAX_WAIT_MS);
+
+            getDoc(doc(db, 'invites', inviteCode)).then(snap => {
+                clearTimeout(timeoutGuard);
+                if (!snap.exists() || snap.data().phone !== invitePhone || snap.data().used) {
+                    settle(showInvalid);
+                } else {
+                    settle(showInviteForm);
+                }
+            }).catch(() => { clearTimeout(timeoutGuard); settle(showInvalid); });
         }
 
         window.handleLogin = async (e) => {
@@ -396,6 +546,7 @@
             const password = document.getElementById('invitePassword').value;
             const passwordConfirm = document.getElementById('invitePasswordConfirm').value;
             const statusEl = document.getElementById('inviteStatus');
+            const submitBtn = document.getElementById('inviteSubmitBtn');
 
             if (password !== passwordConfirm) {
                 statusEl.textContent = '✗ Passwords do not match';
@@ -403,6 +554,7 @@
                 return;
             }
 
+            submitBtn.disabled = true;
             try {
                 statusEl.textContent = 'Verifying invite...';
                 statusEl.className = 'status-msg active warning';
@@ -468,6 +620,8 @@
                 }
                 statusEl.textContent = errorMsg;
                 statusEl.className = 'status-msg active error';
+            } finally {
+                if (!statusEl.textContent.includes('Redirecting')) submitBtn.disabled = false;
             }
         };
     </script>
