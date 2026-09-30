@@ -257,7 +257,7 @@
 
         /* Stat cards */
         .dx-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; margin-bottom: 24px; }
-        .dx-stat { box-sizing: border-box; min-height: 100px; padding: 14px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; }
+        .dx-stat { box-sizing: border-box; min-height: 72px; padding: 12px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
         .dx-stat-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
         .dx-stat-label .dx-i { color: #94a3b8; }
         .dx-stat-value { font-size: 27px; line-height: 1.1; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
@@ -728,7 +728,6 @@
                         </div>
                         <nav class="dx-nav" aria-label="${esc(t('mainNavigation'))}">
                             <a href="portal-dashboard.html" aria-current="page">${dxIcon('dashboard', 17)}<span>${t('myProjects')}</span></a>
-                            <button type="button" onclick="openNewProjectModal()">${dxIcon('plus', 17)}<span>${t('npEntry')}</span></button>
                         </nav>
                         <div class="dx-side-account">
                             <div class="dx-av" aria-hidden="true">${esc(dxInitial)}</div>
@@ -2304,24 +2303,33 @@
             right: 20px;
             width: 60px;
             height: 60px;
-            background: #1a1a2e;
+            background: #fb9478;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            color: #4FC3F7;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+            color: #ffffff;
             transition: all 0.3s ease;
             z-index: 1000;
         }
         
         .whatsapp-float:hover, .email-float:hover {
+            background: #f38163;
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+            box-shadow: 0 6px 20px rgba(251, 148, 120, 0.4);
         }
         .whatsapp-float { bottom: 90px; }
         [dir="rtl"] .whatsapp-float, [dir="rtl"] .email-float { right: auto; left: 20px; }
         .dx-page .dx-content { padding-bottom: 170px; }
+        @media (max-width: 800px) {
+            .whatsapp-float, .email-float { width: 48px; height: 48px; bottom: 16px; }
+            .whatsapp-float { bottom: 16px; right: 72px; }
+            .email-float { bottom: 16px; right: 16px; }
+            [dir="rtl"] .whatsapp-float { right: auto; left: 72px; }
+            [dir="rtl"] .email-float { right: auto; left: 16px; }
+            .dx-page .dx-content { padding-bottom: 90px; }
+        }
         html.dx-embed, html.dx-embed body.dx-page { background: transparent !important; }
         html.dx-embed .dx-shell, html.dx-embed .whatsapp-float, html.dx-embed .email-float { display: none !important; }
         /* ===== New patient modal (dialog) ===== */
