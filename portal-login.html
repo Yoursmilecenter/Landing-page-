@@ -150,7 +150,7 @@
         }
         body.invite-mode .card-header .brand-mark-mini { display: flex; align-items: center; gap: 10px; direction: ltr; width: auto; height: auto; }
         body.invite-mode .card-header .brand-mark-mini svg { display: block; width: 28px; height: 28px; flex: none; }
-        body.invite-mode .card-header .brand-wordmark { font: 600 15px/1 Heebo, Arial, sans-serif; color: #18202e; white-space: nowrap; }
+        body.invite-mode .card-header .brand-wordmark { display: none; }
         body.invite-mode #mainBrandMark { display: none; }
 
         /* Invite hero + form: one continuous card on mobile, two columns on desktop */
@@ -176,30 +176,34 @@
         }
         @media (min-width: 860px) {
             body.invite-mode .page-shell {
-                width: min(100%, 960px);
+                width: min(1120px, calc(100vw - 64px));
+                border-radius: 20px;
                 display: grid;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                 grid-template-areas: "header header" "hero form";
                 align-items: stretch;
             }
-            body.invite-mode .card-header { grid-area: header; padding: 16px 40px 0; }
+            body.invite-mode .card-header { grid-area: header; padding: 24px 48px 0; }
             body.invite-mode .card-header .brand-mark-mini svg { width: 32px; height: 32px; }
-            body.invite-mode .card-header .brand-wordmark { font-size: 17px; }
             body.invite-mode .invite-hero {
-                grid-area: hero; padding: 16px 40px 40px;
+                grid-area: hero; padding: 28px 48px 40px;
                 background: linear-gradient(160deg, #fff3ed 0%, #ffe4d8 100%);
                 border-inline-end: 1px solid #e2e8f0;
                 display: flex; flex-direction: column; justify-content: flex-start;
             }
-            body.invite-mode .invite-hero .hero-headline { font-size: 28px; }
-            body.invite-mode .invite-hero .hero-promise { font-size: 15px; }
+            body.invite-mode .invite-hero .hero-headline { font: 600 30px/1.35 Heebo, Arial, sans-serif; margin: 0; }
+            body.invite-mode .invite-hero .hero-promise { font: 400 15px/24px Heebo, Arial, sans-serif; color: #64748b; margin: 6px 0 0; }
             body.invite-mode .login-container {
-                grid-area: form; padding: 16px 40px 40px;
-                display: flex; flex-direction: column; justify-content: center;
+                grid-area: form; padding: 28px 48px 40px;
+                display: flex; flex-direction: column; justify-content: flex-start;
                 align-items: flex-start; text-align: start;
             }
-            body.invite-mode .login-container .login-heading,
-            body.invite-mode .login-container .form-intro { text-align: start; }
+            body.invite-mode .login-container .login-heading {
+                text-align: start; font: 500 22px/1.35 Heebo, Arial, sans-serif; color: #334155; margin: 4px 0 0;
+            }
+            body.invite-mode .login-container .form-intro {
+                text-align: start; font: 400 15px/24px Heebo, Arial, sans-serif; color: #64748b; margin: 6px 0 0;
+            }
         }
         .existing-account { margin: 18px 0 0; text-align: center; font: 400 13px/1.4 Heebo, Arial, sans-serif; color: #64748b; }
         .existing-account a { color: #b95039; font-weight: 600; text-decoration: none; }
