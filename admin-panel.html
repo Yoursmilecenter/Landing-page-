@@ -1183,8 +1183,8 @@
                                         <tbody>
                                             ${pageProjects.map(project => `
                                                 <tr>
-                                                    <td class="dx-projcell"><button type="button" class="dx-projbtn" onclick="openProjectDetails('${js(project.id)}')" title="${esc(project.description || '')}"><span class="dx-projno">${dxNo(project)}</span><span class="dx-projdesc" dir="auto">${esc(project.description || '')}</span></button></td>
-                                                    <td class="dx-patient">${esc(project.title)}${project.giftTeeth ? `<span class="dx-sub" style="color:#b95039;font-weight:600;">🎁 up to ${project.giftTeeth} teeth</span>` : ''}</td>
+                                                    <td class="dx-projcell"><button type="button" class="dx-projbtn" onclick="openProjectDetails('${js(project.id)}')" title="${esc(project.description || '')}"><span class="dx-projno">${esc(dxNo(project))}</span><span class="dx-projdesc" dir="auto">${esc(project.description || '')}</span></button></td>
+                                                    <td class="dx-patient">${esc(project.title)}${project.giftTeeth ? `<span class="dx-sub" style="color:#b95039;font-weight:600;">🎁 up to ${esc(project.giftTeeth)} teeth</span>` : ''}</td>
                                                     <td class="dx-contact"><div class="dx-client-cell">${project.provisionalClient ? `<bdi>${esc(project.provisionalClientName)}</bdi><span class="dx-tag dx-tag--muted">${dxa('notRegistered')}</span>` : `<span class="dx-ltr">${esc(project.clientEmail)}</span>`}<button type="button" class="dx-icon-btn dx-mini" aria-label="${esc(dxa('editClient'))}" title="${esc(dxa('editClient'))}" onclick="openClientEdit('${js(project.id)}')">${dxIcon('pencil', 13)}</button></div></td>
                                                     <td>
                                                         <select class="dx-cell-select" aria-label="${esc(dxa('colDesigner'))}" onchange="assignDesigner('${js(project.id)}', this.value)">
@@ -1315,7 +1315,7 @@
                                 <label class="form-label">Client *</label>
                                 <select id="renameClientEmail" class="form-input" onchange="loadRenameCurrentName()" required>
                                     <option value="">Select client…</option>
-                                    ${clients.filter(Boolean).map(c => `<option value="${c}">${c}</option>`).join('')}
+                                    ${clients.filter(Boolean).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="form-group">

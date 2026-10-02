@@ -297,12 +297,12 @@
                     card.className = 'sample-card';
                     card.innerHTML = `
                         <div class="sample-preview">
-                            <iframe src="${sample.url}" sandbox="allow-scripts allow-same-origin"></iframe>
+                            <iframe src="${esc(sample.url)}" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
                         </div>
                         <div class="sample-info">
                             <div class="sample-name">${esc(sample.name)}</div>
                             <div class="sample-date">${new Date(sample.uploadedAt).toLocaleDateString()}</div>
-                            <button class="delete-btn" onclick="deleteSample('${doc.id}', '${sample.path}')">Delete</button>
+                            <button class="delete-btn" onclick="deleteSample('${js(doc.id)}', '${js(sample.path)}')">Delete</button>
                         </div>
                     `;
                     grid.appendChild(card);

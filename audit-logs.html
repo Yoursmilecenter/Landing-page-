@@ -102,6 +102,11 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Log fields are written by signed-in users (details can carry patient titles), so never trust them as HTML
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        // CSV cell: quote, double inner quotes, and defuse spreadsheet formulas (=, +, -, @)
+        const csvCell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+
         let currentUser = null;
         let allLogs = [];
         let filteredLogs = [];
@@ -180,9 +185,9 @@
                     new Date(log.timestamp).toISOString(),
                     log.eventType,
                     log.userEmail,
-                    `"${log.details || ''}"`,
+                    log.details || '',
                     log.ipAddress || 'N/A'
-                ].join(','))
+                ].map(csvCell).join(','))
             ].join('\n');
             
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -225,7 +230,7 @@
                                 <i class="fas fa-arrow-left"></i> Back to Admin
                             </button>
                             <span class="admin-badge" style="background: rgba(239, 68, 68, 0.2); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">ADMIN</span>
-                            <span style="color: var(--color-text-secondary); font-size: 14px;">${currentUser.email}</span>
+                            <span style="color: var(--color-text-secondary); font-size: 14px;">${esc(currentUser.email)}</span>
                             <button class="logout-btn" onclick="logout()">Logout</button>
                         </div>
                     </div>
@@ -270,7 +275,7 @@
                         
                         <select onchange="updateFilter('user', this.value)">
                             <option value="all">All Users</option>
-                            ${uniqueUsers.map(u => `<option value="${u}">${u}</option>`).join('')}
+                            ${uniqueUsers.map(u => `<option value="${esc(u)}">${esc(u)}</option>`).join('')}
                         </select>
                         
                         <input type="date" onchange="updateFilter('dateFrom', this.value)" placeholder="From Date">
@@ -308,16 +313,16 @@
                                         ${new Date(log.timestamp).toLocaleString()}
                                     </td>
                                     <td>
-                                        <span class="event-badge ${getEventBadgeClass(log.eventType)}">
-                                            ${log.eventType.replace('-', ' ').toUpperCase()}
+                                        <span class="event-badge ${esc(getEventBadgeClass(log.eventType))}">
+                                            ${esc(String(log.eventType || '').replace('-', ' ').toUpperCase())}
                                         </span>
                                     </td>
-                                    <td style="font-size: 12px;">${log.userEmail}</td>
+                                    <td style="font-size: 12px;">${esc(log.userEmail)}</td>
                                     <td style="font-size: 12px; color: var(--color-text-light);">
-                                        ${log.details || 'N/A'}
+                                        ${esc(log.details || 'N/A')}
                                     </td>
                                     <td style="font-size: 12px; color: var(--color-text-secondary);">
-                                        ${log.ipAddress || 'N/A'}
+                                        ${esc(log.ipAddress || 'N/A')}
                                     </td>
                                 </tr>
                             `).join('') : `
