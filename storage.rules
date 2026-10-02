@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function role() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return request.auth != null && role() == 'admin';
+    }
+
+    function project(pid) {
+      return firestore.get(/databases/(default)/documents/projects/$(pid)).data;
+    }
+
+    // Admin: all. Designer: assigned projects. Client: own projects.
+    function canAccess(pid) {
+      return request.auth != null && (
+        role() == 'admin' ||
+        (role() == 'designer' && project(pid).assignedDesignerEmail == request.auth.token.email) ||
+        (role() == 'client' && project(pid).clientEmail == request.auth.token.email)
+      );
+    }
+
+    match /projects/{pid}/{allPaths=**} {
+      allow read: if canAccess(pid);
+      allow create, update: if canAccess(pid) && request.resource.size < 200 * 1024 * 1024;
+      allow delete: if isAdmin();
+    }
+
+    // Public landing-page samples: anyone reads, only admins manage
+    match /landing-samples/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

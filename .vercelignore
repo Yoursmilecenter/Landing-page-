@@ -6,3 +6,4 @@ firebase.json
 .idea
 .vercel
 .git
+storage.rules

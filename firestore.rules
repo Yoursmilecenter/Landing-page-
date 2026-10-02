@@ -39,7 +39,7 @@ service cloud.firestore {
     function giftUpdateOk() {
       let aff = request.resource.data.diff(resource.data).affectedKeys();
       return !aff.hasAny(['prize', 'giftUsed', 'inviteCode'])
-        || (aff.hasOnly(['giftUsed']) && request.resource.data.giftUsed == true)
+        || (aff.hasOnly(['giftUsed', 'giftUsedAt']) && request.resource.data.giftUsed == true)
         || (request.resource.data.get('inviteCode', null) != null
             && request.resource.data.get('prize', null) ==
                get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.get('prize', null));
