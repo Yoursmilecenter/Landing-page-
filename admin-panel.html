@@ -256,14 +256,32 @@
         let lastLoadTime = 0;
         const CACHE_DURATION = 30000; // 30 seconds
         
-        const admins = [
-            { email: 'admin@smile.com', name: 'Admin' },
-        ];
-
+        // Designers are loaded from users with role 'designer'; this list is only a fallback if none are found.
         const designers = [
             { email: 'designer1@smile.com', name: 'Designer 1' },
             { email: 'designer2@smile.com', name: 'Designer 2' },
         ];
+
+        async function loadDesigners() {
+            try {
+                const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'designer')));
+                const list = snap.docs.map(d => d.data())
+                    .filter(d => !['pending', 'rejected'].includes(d.status))
+                    .map(d => ({ email: String(d.email || '').trim().toLowerCase(), name: String(d.fullName || d.name || d.username || d.email || '').trim() }))
+                    .filter(d => d.email)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                if (list.length) designers.splice(0, designers.length, ...list);
+            } catch (e) { console.error('Loading designers failed:', e); }
+        }
+
+        // Access comes from the signed-in user's profile role (users/{uid}), the same source the database rules use.
+        async function myActiveRole(uid) {
+            try {
+                const snap = await getDoc(doc(db, 'users', uid));
+                const d = snap.exists() ? snap.data() : {};
+                return ['pending', 'rejected'].includes(d.status) ? null : (d.role || null);
+            } catch (e) { console.error('Role check failed:', e); return null; }
+        }
 
         let currentFilters = {
             status: 'all',
@@ -378,10 +396,11 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                if (!admins.some(a => a.email === currentUser.email)) {
+                if (await myActiveRole(user.uid) !== 'admin') {
                     window.location.href = 'index.html';
                     return;
                 }
+                await loadDesigners();
                 await loadData();
                 initSessionTimeout();
             } else {
@@ -1665,7 +1684,8 @@
         window.handleInviteClient = async (e) => {
             e.preventDefault();
             
-            const phone = document.getElementById('invitePhone').value.trim();
+            let phone = document.getElementById('invitePhone').value.replace(/\D/g, '');
+            if (phone.startsWith('972') && phone.length === 12) phone = '0' + phone.slice(3);
             const statusEl = document.getElementById('inviteStatus');
 
             try {
@@ -1798,7 +1818,7 @@
                 el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + rows.map(u => `
                     <tr style="border-bottom:1px solid rgba(0,0,0,.08);">
                         <td style="padding:8px;">${esc(u.fullName || u.username || '—')}</td>
-                        <td style="padding:8px;direction:ltr;">${esc(u.email || u.phone || u.loginEmail || '')}</td>
+                        <td style="padding:8px;direction:ltr;">${esc(u.email || u.loginEmail || '')}${u.phone ? `<br><span style="color:#64748b;">${esc(u.phone)}</span>` : ''}<br><span style="color:#64748b;">@${esc(u.username || '')}</span></td>
                         <td style="padding:8px;white-space:nowrap;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</td>
                         <td style="padding:8px;white-space:nowrap;">
                             <button type="button" class="btn-primary btn-small" onclick="approveUser('${js(u.id)}')">✓ Approve</button>
@@ -1905,7 +1925,8 @@
             e.preventDefault();
             const name = document.getElementById('giftName').value.trim();
             const isDoctor = document.getElementById('giftIsDoctor').checked;
-            const phone = document.getElementById('giftPhone').value.replace(/\D/g, '');
+            let phone = document.getElementById('giftPhone').value.replace(/\D/g, '');
+            if (phone.startsWith('972') && phone.length === 12) phone = '0' + phone.slice(3);
             const statusEl = document.getElementById('giftStatus');
             try {
                 const token = randToken();

@@ -1,0 +1,30 @@
+# Runs the Firestore rules tests and the Cloud Functions end-to-end tests
+# (local emulators, no production access) on every push and pull request.
+name: tests
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+jobs:
+  rules-and-functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            tests/package-lock.json
+            functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install test tools
+        working-directory: tests
+        run: npm ci
+      - name: Rules + functions tests
+        working-directory: tests
+        run: npm test

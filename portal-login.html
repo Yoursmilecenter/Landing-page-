@@ -610,9 +610,11 @@
 
             let loginEmail = email;
 
-            // If only numbers (phone), convert to phone@smilecenter.pro
-            if (/^\d+$/.test(email)) {
-                loginEmail = email + '@smilecenter.pro';
+            // Phone number (any format: 050-123 4567, +972 50...) -> digits@smilecenter.pro
+            if (/^[\d\s()+-]+$/.test(email) && email.replace(/\D/g, '').length >= 6) {
+                let digits = email.replace(/\D/g, '');
+                if (digits.startsWith('972') && digits.length === 12) digits = '0' + digits.slice(3);
+                loginEmail = digits + '@smilecenter.pro';
             }
             // If no @ symbol, treat as username and convert to email format
             else if (!email.includes('@')) {

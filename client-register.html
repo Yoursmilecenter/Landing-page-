@@ -1,97 +1,222 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags -->
     <meta name="robots" content="noindex, nofollow">
-    
-    <title>Register - Smile Center</title>
+    <link rel="preload" href="fonts/heebo-hebrew-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/heebo-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <title>Request access - Smile Center Pro</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        @font-face { font-family: 'Heebo'; src: url('fonts/heebo-hebrew-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+        @font-face { font-family: 'Heebo'; src: url('fonts/heebo-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+        body.register-page {
+            margin: 0; min-height: 100dvh; display: grid; place-items: center;
+            padding: 32px 20px; box-sizing: border-box;
+            background: #f7f7f8; color: #0f172a; font-family: Heebo, Arial, sans-serif;
+        }
+        .register-page .card {
+            width: min(100%, 440px); box-sizing: border-box; padding: 40px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
+        }
+        .register-page .brand-mark { display: block; direction: ltr; width: 32px; height: 32px; margin: 0 auto 12px; }
+        .register-page .brand-mark svg { display: block; width: 32px; height: 32px; }
+        .register-page h1 { margin: 0 0 6px; text-align: center; font: 600 26px/1.25 Heebo, Arial, sans-serif; text-wrap: balance; }
+        .register-page .intro { margin: 0 0 24px; text-align: center; font: 400 14px/1.55 Heebo, Arial, sans-serif; color: #64748b; text-wrap: balance; }
+        .register-page form { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; background: none; border: 0; box-shadow: none; max-width: none; }
+        .register-page .form-group { margin: 0; }
+        .register-page .form-label { display: block; margin: 0 0 6px; font: 600 13px/1.3 Heebo, Arial, sans-serif; color: #0f172a; text-align: start; }
+        .register-page .form-label .opt { font-weight: 400; color: #64748b; }
+        .register-page .hint { margin: 6px 0 0; font: 400 12px/1.4 Heebo, Arial, sans-serif; color: #64748b; text-align: start; }
+        .register-page .form-input {
+            display: block; width: 100%; box-sizing: border-box; height: 46px; padding: 0 14px;
+            font: 400 14px Heebo, Arial, sans-serif; color: #0f172a; background: #fff;
+            border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: none;
+        }
+        .register-page .form-input::placeholder { color: #94a3b8; }
+        .register-page .form-input:focus { outline: 3px solid rgba(251, 148, 120, 0.28); border-color: #b95039; }
+        .register-page .ltr { direction: ltr; }
+        .register-page .btn-primary {
+            display: flex; align-items: center; justify-content: center; width: 100%; height: 48px; margin-top: 4px; padding: 0;
+            font: 600 14px Heebo, Arial, sans-serif; color: #0f172a; background: #fb9478;
+            border: none; border-radius: 8px; cursor: pointer; box-shadow: none; transition: background .15s;
+        }
+        .register-page .btn-primary:hover { background: #f38163; }
+        .register-page .btn-primary:focus-visible { outline: 3px solid #b95039; outline-offset: 2px; }
+        .register-page .btn-primary:disabled { opacity: .6; cursor: default; }
+        .register-page .status-msg { display: none; margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; text-align: start; }
+        .register-page .status-msg.active { display: block; }
+        .register-page .status-msg.error { background: #fef2f2; color: #b91c1c; }
+        .register-page .status-msg.success { background: #f0fdf4; color: #166534; }
+        .register-page .status-msg.warning { background: #fff3ed; color: #b95039; }
+        .register-page .done { display: none; text-align: center; }
+        .register-page .done.active { display: block; }
+        .register-page .done .tick { width: 52px; height: 52px; margin: 4px auto 14px; border-radius: 50%; background: #f0fdf4; color: #166534; display: grid; place-items: center; font-size: 26px; }
+        .register-page .done p { margin: 0 0 20px; font: 400 14px/1.55 Heebo, Arial, sans-serif; color: #475569; }
+        .register-page .foot { margin: 18px 0 0; text-align: center; font: 400 13px/1.4 Heebo, Arial, sans-serif; color: #64748b; }
+        .register-page .foot a { color: #b95039; font-weight: 600; text-decoration: none; }
+        .register-page .foot a:hover { text-decoration: underline; }
+        .lang-pill { position: absolute; top: 20px; inset-inline-end: 20px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #e2e8f0; border-radius: 999px; background: #fff; font: 600 12px/1 Heebo, Arial, sans-serif; color: #64748b; }
+        .lang-pill button { background: none; border: 0; padding: 2px; cursor: pointer; font: 600 12px Heebo, Arial, sans-serif; color: #64748b; }
+        .lang-pill button.active { color: #b95039; }
+        .lang-pill button:focus-visible { outline: 2px solid #b95039; outline-offset: 2px; border-radius: 4px; }
+        .lang-pill .sep { color: #d9dee5; }
+        @media (max-width: 600px) { .register-page .card { padding: 28px 22px; } }
+        @media (prefers-reduced-motion: reduce) { .register-page .btn-primary { transition: none; } }
+    </style>
 </head>
-<body>
-    <div class="login-container">
-        
-        <form id="registerForm" onsubmit="handleRegister(event)">
-            <div class="form-group">
-                <input type="text" id="username" class="form-input" placeholder="Username" required minlength="3" maxlength="30" pattern="(?=.*[A-Za-z._\-])[A-Za-z0-9._\-]{3,30}" title="3-30 letters, digits, dot, dash or underscore (not only digits)" autocomplete="username">
-            </div>
-            <div class="form-group">
-                <input type="email" id="email" class="form-input" placeholder="Email" required>
-            </div>
-            <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password (min 10 characters)" required minlength="10" autocomplete="new-password">
-            </div>
-            <div id="registerStatus" class="status-msg"></div>
-            <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Register</button>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="portal-login.html" style="color: var(--color-primary); text-decoration: none;">Already have an account? Login</a>
-            </div>
-        </form>
+<body class="register-page">
+    <div class="lang-pill" role="group" aria-label="Language">
+        <button type="button" id="langEn" onclick="switchLang('en')">EN</button>
+        <span class="sep">|</span>
+        <button type="button" id="langHe" onclick="switchLang('he')">HE</button>
     </div>
+
+    <main class="card">
+        <div class="brand-mark" dir="ltr"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="155 160 700 710" role="img" aria-label="Smile Center Pro">
+                <g fill="#fb9478">
+                      <path d="M 692.0 187.5 L 726.0 191.5 L 752.0 200.5 L 775.0 214.5 L 798.5 237.0 L 816.5 264.0 L 830.5 298.0 L 838.5 338.0 L 839.5 377.0 L 836.5 404.0 L 825.5 450.0 L 792.5 555.0 L 775.5 616.0 L 765.5 663.0 L 757.5 722.0 L 745.5 767.0 L 730.5 799.0 L 720.5 813.0 L 711.0 822.5 L 701.0 829.5 L 692.0 833.5 L 674.0 836.5 L 659.0 833.5 L 651.0 828.5 L 641.5 818.0 L 634.5 804.0 L 628.5 784.0 L 624.5 763.0 L 617.5 702.0 L 608.5 649.0 L 598.5 614.0 L 585.5 586.0 L 576.5 572.0 L 566.0 561.5 L 556.0 554.5 L 533.0 545.5 L 512.5 543.0 L 512.5 242.0 L 534.0 239.5 L 549.0 234.5 L 601.0 208.5 L 632.0 196.5 L 657.0 190.5 L 692.0 187.5 Z"/>
+                      <path d="M 371.0 813.5 L 390.5 826.0 L 385.5 833.0 L 375.0 841.5 L 366.0 845.5 L 358.0 847.5 L 341.0 847.5 L 342.5 824.0 L 358.0 823.5 L 364.0 820.5 L 371.0 813.5 Z"/>
+                      <path d="M 243.0 204.5 L 247.5 207.0 L 258.5 222.0 L 247.0 231.5 L 229.0 251.5 L 214.0 240.5 L 211.5 236.0 L 220.5 225.0 L 243.0 204.5 Z"/>
+                      <path d="M 257.0 608.5 L 259.5 612.0 L 268.5 653.0 L 246.0 657.5 L 244.5 656.0 L 235.5 615.0 L 237.0 613.5 L 257.0 608.5 Z"/>
+                      <path d="M 273.0 693.5 L 274.5 694.0 L 277.5 717.0 L 282.5 736.0 L 281.0 737.5 L 260.0 742.5 L 253.5 716.0 L 251.5 697.0 L 273.0 693.5 Z"/>
+                      <path d="M 190.0 275.5 L 211.5 285.0 L 205.5 299.0 L 199.0 325.5 L 176.5 321.0 L 182.5 294.0 L 190.0 275.5 Z"/>
+                      <path d="M 208.0 444.5 L 210.5 446.0 L 215.5 467.0 L 222.5 487.0 L 200.0 494.5 L 187.5 451.0 L 208.0 444.5 Z"/>
+                      <path d="M 234.0 525.5 L 247.5 569.0 L 225.0 575.5 L 211.5 533.0 L 234.0 525.5 Z"/>
+                      <path d="M 404.0 650.5 L 426.5 656.0 L 419.0 698.5 L 396.5 696.0 L 399.5 669.0 L 404.0 650.5 Z"/>
+                      <path d="M 317.0 176.5 L 331.5 177.0 L 332.5 199.0 L 314.0 200.5 L 291.0 205.5 L 284.5 184.0 L 298.0 179.5 L 317.0 176.5 Z"/>
+                      <path d="M 391.0 736.5 L 414.5 739.0 L 408.5 779.0 L 406.0 784.5 L 384.5 779.0 L 391.0 736.5 Z"/>
+                      <path d="M 397.0 186.5 L 418.0 193.5 L 439.5 204.0 L 430.0 224.5 L 389.5 208.0 L 397.0 186.5 Z"/>
+                      <path d="M 437.0 566.5 L 452.0 578.5 L 454.5 583.0 L 448.5 592.0 L 437.5 617.0 L 434.0 617.5 L 416.0 610.5 L 415.5 608.0 L 424.5 587.0 L 437.0 566.5 Z"/>
+                      <path d="M 173.0 363.5 L 196.5 364.0 L 197.5 390.0 L 200.5 405.0 L 199.0 406.5 L 177.5 410.0 L 173.5 386.0 L 173.0 363.5 Z"/>
+                      <path d="M 293.0 773.5 L 294.5 774.0 L 303.5 793.0 L 315.5 808.0 L 298.0 823.5 L 283.5 805.0 L 272.5 783.0 L 293.0 773.5 Z"/>
+                      <path d="M 476.0 221.5 L 491.0 227.5 L 511.0 230.5 L 511.5 253.0 L 501.0 253.5 L 490.0 251.5 L 467.0 243.5 L 466.5 242.0 L 476.0 221.5 Z"/>
+                      <path d="M 508.0 531.5 L 511.5 532.0 L 511.5 555.0 L 496.0 556.5 L 483.0 560.5 L 473.5 540.0 L 487.0 534.5 L 508.0 531.5 Z"/>
+                    </g>
+            </svg></div>
+
+        <section id="formView">
+            <h1 data-en="Request access" data-he="בקשת גישה">בקשת גישה</h1>
+            <p class="intro" data-en="Tell us who you are. Every request is reviewed by our team, and you can sign in once it is approved." data-he="ספרו לנו מי אתם. כל בקשה נבדקת על ידי הצוות, ואפשר להתחבר מרגע שהיא מאושרת.">ספרו לנו מי אתם. כל בקשה נבדקת על ידי הצוות, ואפשר להתחבר מרגע שהיא מאושרת.</p>
+
+            <form id="registerForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="fullName" data-en="Full name / clinic" data-he="שם מלא / מרפאה">שם מלא / מרפאה</label>
+                    <input type="text" id="fullName" class="form-input" dir="auto" required maxlength="120" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone"><span data-en="Phone for WhatsApp" data-he="טלפון לוואטסאפ">טלפון לוואטסאפ</span> <span class="opt" data-en="(optional)" data-he="(לא חובה)">(לא חובה)</span></label>
+                    <input type="tel" id="phone" class="form-input ltr" maxlength="20" autocomplete="tel" placeholder="050-123-4567">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email" data-en="Email" data-he="אימייל">אימייל</label>
+                    <input type="email" id="email" class="form-input ltr" required maxlength="200" autocomplete="email" placeholder="name@clinic.co.il">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="username" data-en="Choose a username" data-he="בחרו שם משתמש">בחרו שם משתמש</label>
+                    <input type="text" id="username" class="form-input ltr" required minlength="3" maxlength="30" autocomplete="username" spellcheck="false" placeholder="dr.cohen">
+                    <p class="hint" data-en="3–30 English letters, digits, dot, dash or underscore. You will sign in with it." data-he="3–30 אותיות באנגלית, ספרות, נקודה, מקף או קו תחתון. איתו תתחברו.">3–30 אותיות באנגלית, ספרות, נקודה, מקף או קו תחתון. איתו תתחברו.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password" data-en="Password" data-he="סיסמה">סיסמה</label>
+                    <input type="password" id="password" class="form-input ltr" required minlength="10" maxlength="128" autocomplete="new-password">
+                    <p class="hint" data-en="At least 10 characters." data-he="לפחות 10 תווים.">לפחות 10 תווים.</p>
+                </div>
+                <div id="registerStatus" class="status-msg" role="alert"></div>
+                <button type="submit" id="submitBtn" class="btn-primary" data-en="Send request" data-he="שליחת בקשה">שליחת בקשה</button>
+            </form>
+        </section>
+
+        <section id="doneView" class="done" aria-live="polite">
+            <div class="tick" aria-hidden="true">✓</div>
+            <h1 data-en="Request received" data-he="הבקשה התקבלה">הבקשה התקבלה</h1>
+            <p data-en="We'll review it and let you know as soon as your account is approved. After that, sign in with your username and password." data-he="נבדוק אותה ונעדכן ברגע שהחשבון יאושר. לאחר מכן התחברו עם שם המשתמש והסיסמה שבחרתם.">נבדוק אותה ונעדכן ברגע שהחשבון יאושר. לאחר מכן התחברו עם שם המשתמש והסיסמה שבחרתם.</p>
+            <a class="btn-primary" href="portal-login.html" style="text-decoration:none;" data-en="Go to sign in" data-he="למסך הכניסה">למסך הכניסה</a>
+        </section>
+
+        <p class="foot" id="footLine">
+            <span data-en="Already have an account?" data-he="כבר יש לכם חשבון?">כבר יש לכם חשבון?</span>
+            <a href="portal-login.html" data-en="Sign in" data-he="כניסה">כניסה</a>
+        </p>
+    </main>
+
+    <script>
+        window.switchLang = function (lang) {
+            const html = document.documentElement;
+            html.lang = lang;
+            html.dir = lang === 'he' ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const t = el.getAttribute('data-' + lang);
+                if (t != null) el.textContent = t;
+            });
+            document.getElementById('langEn').classList.toggle('active', lang === 'en');
+            document.getElementById('langHe').classList.toggle('active', lang === 'he');
+            try { localStorage.setItem('lang', lang); } catch (e) {}
+        };
+        let saved = 'he';
+        try { saved = localStorage.getItem('lang') || 'he'; } catch (e) {}
+        switchLang(saved);
+    </script>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
-        const firebaseConfig = {
+        const app = initializeApp({
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
             authDomain: "smile-center-7c6f5.firebaseapp.com",
             projectId: "smile-center-7c6f5",
             storageBucket: "smile-center-7c6f5.firebasestorage.app",
             messagingSenderId: "517098616907",
             appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
-        };
-
-        const app = initializeApp(firebaseConfig);
+        });
         // The account is created server-side and stays 'pending' until an admin approves it
         const requestAccess = httpsCallable(getFunctions(app, 'europe-west1'), 'requestAccess');
 
-        window.handleRegister = async (e) => {
+        const $ = id => document.getElementById(id);
+        const he = () => document.documentElement.lang === 'he';
+        const say = (cls, en, hebrew) => { const el = $('registerStatus'); el.textContent = he() ? hebrew : en; el.className = 'status-msg active ' + cls; };
+        const USERNAME = /^[A-Za-z0-9._-]{3,30}$/;
+
+        $('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const username = document.getElementById('username').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const statusEl = document.getElementById('registerStatus');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const fullName = $('fullName').value.trim();
+            const phone = $('phone').value.trim();
+            const email = $('email').value.trim();
+            const username = $('username').value.trim();
+            const password = $('password').value;
 
-            // Disable button to prevent double submission
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Processing...';
-            }
+            if (!fullName) { $('fullName').focus(); return say('error', 'Please enter your name or clinic.', 'נא למלא שם או שם מרפאה.'); }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('email').focus(); return say('error', 'Enter a valid email address.', 'נא להזין כתובת אימייל תקינה.'); }
+            if (!USERNAME.test(username) || /^\d+$/.test(username)) { $('username').focus(); return say('error', 'Username: 3–30 English letters, digits, dot, dash or underscore (not only digits).', 'שם משתמש: 3–30 אותיות באנגלית, ספרות, נקודה, מקף או קו תחתון (לא רק ספרות).'); }
+            if (password.length < 10) { $('password').focus(); return say('error', 'Password must be at least 10 characters.', 'הסיסמה חייבת להכיל לפחות 10 תווים.'); }
 
+            const btn = $('submitBtn');
+            btn.disabled = true;
+            say('warning', 'Sending…', 'שולחים…');
             try {
-                await requestAccess({ username, email, password });
-
-                statusEl.textContent = 'Registration submitted! Awaiting admin approval.';
-                statusEl.className = 'status-msg active success';
-                
-                setTimeout(() => {
-                    window.location.href = 'portal-login.html';
-                }, 2000);
-            } catch (error) {
-                console.error('Registration error:', error);
-                const msgs = {
-                    'account-exists': 'That username is taken. Choose another.',
-                    'bad-username': 'Username: 3-30 letters, digits, dot, dash or underscore (not only digits).',
-                    'bad-email': 'Enter a valid email address.',
-                    'weak-password': 'Password must be at least 10 characters.',
-                    'too-many-pending': 'Too many requests are waiting for approval. Please contact us on WhatsApp.',
-                };
-                const msg = msgs[error.message]
-                    || (error.code === 'functions/unavailable' ? 'Network error. Please check your connection' : 'Registration failed. Please try again.');
-                statusEl.textContent = msg;
-                statusEl.className = 'status-msg active error';
-                
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Register';
-                }
+                await requestAccess({ username, email, password, fullName, phone });
+                $('formView').hidden = true;
+                $('footLine').hidden = true;
+                $('doneView').classList.add('active');
+            } catch (err) {
+                console.error('Registration error:', err);
+                const m = {
+                    'account-exists': ['That username is taken. Choose another.', 'שם המשתמש תפוס. בחרו שם אחר.'],
+                    'bad-username': ['Username: 3–30 English letters, digits, dot, dash or underscore (not only digits).', 'שם משתמש: 3–30 אותיות באנגלית, ספרות, נקודה, מקף או קו תחתון (לא רק ספרות).'],
+                    'bad-email': ['Enter a valid email address.', 'נא להזין כתובת אימייל תקינה.'],
+                    'weak-password': ['Password must be at least 10 characters.', 'הסיסמה חייבת להכיל לפחות 10 תווים.'],
+                    'too-many-pending': ['We have many requests waiting. Please message us on WhatsApp.', 'יש כרגע הרבה בקשות בהמתנה. כתבו לנו בוואטסאפ.'],
+                }[err.message] || (err.code === 'functions/unavailable'
+                    ? ['Network problem. Check your connection and try again.', 'בעיית רשת. בדקו את החיבור ונסו שוב.']
+                    : ['Something went wrong. Please try again.', 'משהו השתבש. נסו שוב.']);
+                say('error', m[0], m[1]);
+                btn.disabled = false;
             }
-        };
+        });
     </script>
 
     <!-- WhatsApp Float Button -->

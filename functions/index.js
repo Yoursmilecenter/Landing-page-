@@ -20,6 +20,12 @@ const USERNAME = /^[a-zA-Z0-9._-]{3,30}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+// Phone logins are "<digits>@smilecenter.pro". Strip spaces/dashes/+ and turn +972 into a leading 0
+// so "050-123 4567", "+972 50 1234567" and "0501234567" all map to the same account.
+const normPhone = (p) => {
+  const d = String(p || '').replace(/\D/g, '');
+  return d.startsWith('972') && d.length === 12 ? '0' + d.slice(3) : d;
+};
 const teethOf = (prize) => { const m = /^teeth_(\d+)$/.exec(prize || ''); return m ? Number(m[1]) : 0; };
 const fail = (code, reason) => { throw new HttpsError(code, reason); };
 
@@ -45,6 +51,19 @@ async function requireAdmin(req) {
   const u = snap.exists ? snap.data() : null;
   if (!u || u.role !== 'admin' || ['pending', 'rejected'].includes(u.status)) fail('permission-denied', 'admin-only');
   return { uid, email: req.auth.token.email || null };
+}
+
+// Account and gift events land in the admin "Audit Logs" page. Logging never blocks the action itself.
+async function audit(req, eventType, userEmail, details) {
+  try {
+    await db.collection('auditLogs').add({
+      eventType, userEmail: userEmail || null, details: String(details || '').slice(0, 900),
+      ipAddress: req.rawRequest?.ip || null, timestamp: Date.now(),
+      userAgent: String(req.rawRequest?.headers?.['user-agent'] || '').slice(0, 300),
+    });
+  } catch (e) {
+    console.error('audit log failed', e);
+  }
 }
 
 function giftState(inv) {
@@ -87,7 +106,7 @@ export const redeemGift = onCall(async (req) => {
     if (!userSnap.exists) {
       tx.set(userRef, {
         uid, role: 'client', status: 'approved', loginType: 'gift',
-        username: inv.phone || '', phone: inv.phone || '', clientName: inv.clientName || '',
+        username: normPhone(inv.phone), phone: normPhone(inv.phone), clientName: inv.clientName || '',
         email: null, prize: inv.prize || null, needsPassword: true, inviteCode: code, createdAt: Date.now(),
       });
     } else if (userSnap.data().inviteCode !== code) {
@@ -95,6 +114,7 @@ export const redeemGift = onCall(async (req) => {
     }
     tx.update(invRef, { status: 'opened', openedAt: Date.now(), uid });
   });
+  await audit(req, 'gift-opened', null, `Gift link ${code.slice(0, 6)}… opened by guest ${uid.slice(0, 8)}`);
   return { ok: true };
 });
 
@@ -129,6 +149,7 @@ export const claimGift = onCall(async (req) => {
     }
     tx.update(invRef, { status: 'redeemed', used: true, redeemedAt: Date.now(), redeemedBy: uid });
   });
+  await audit(req, 'gift-redeemed', req.auth.token.email, `Gift ${code.slice(0, 6)}… redeemed${attached ? ' and added to an existing account' : ''}`);
   return { ok: true, attached };
 });
 
@@ -143,8 +164,8 @@ export const registerWithInvite = onCall(async (req) => {
   const inv = pre.exists ? pre.data() : null;
   if (!inv || inv.type === 'mystery') fail('not-found', 'invalid');
   if (inv.used) fail('failed-precondition', 'used');
-  const phone = String(inv.phone || '').trim();
-  if (!/^\+?\d{6,15}$/.test(phone)) fail('failed-precondition', 'invalid');
+  const phone = normPhone(inv.phone);
+  if (!/^\d{6,15}$/.test(phone)) fail('failed-precondition', 'invalid');
   const email = `${phone}@${DOMAIN}`;
   const user = await createAuthUser(email, password);
   try {
@@ -161,6 +182,7 @@ export const registerWithInvite = onCall(async (req) => {
     await auth.deleteUser(user.uid).catch(() => {});
     throw e;
   }
+  await audit(req, 'account-created', email, 'Client registered from a phone invite');
   return { email };
 });
 
@@ -169,6 +191,8 @@ export const requestAccess = onCall(async (req) => {
   const username = text(req.data?.username, 30);
   const email = text(req.data?.email, 200);
   const password = req.data?.password;
+  const fullName = text(req.data?.fullName, 120);
+  const contactPhone = normPhone(text(req.data?.phone, 30));
   if (!USERNAME.test(username) || /^\d+$/.test(username)) fail('invalid-argument', 'bad-username');
   if (!EMAIL.test(email)) fail('invalid-argument', 'bad-email');
   requirePassword(password);
@@ -179,11 +203,14 @@ export const requestAccess = onCall(async (req) => {
   try {
     await db.doc(`users/${user.uid}`).set({
       uid: user.uid, username, email, loginEmail, role: 'client', status: 'pending', createdAt: Date.now(),
+      ...(fullName ? { fullName } : {}),
+      ...(/^\d{6,15}$/.test(contactPhone) ? { phone: contactPhone } : {}),
     });
   } catch (e) {
     await auth.deleteUser(user.uid).catch(() => {});
     throw e;
   }
+  await audit(req, 'account-requested', loginEmail, `Sign-up request "${username}"${fullName ? ` (${fullName})` : ''}, contact ${email} - awaiting approval`);
   return { ok: true };
 });
 
@@ -198,10 +225,11 @@ export const adminCreateClient = onCall(async (req) => {
   let authEmail, username, email = null, phone = null;
   if (type === 'phone') {
     phone = text(req.data?.phone, 30);
-    const digits = phone.replace(/\+/g, '').replace(/\s/g, '');
+    const digits = normPhone(phone);
     if (!/^\d{6,15}$/.test(digits)) fail('invalid-argument', 'bad-phone');
     authEmail = `${digits}@${DOMAIN}`;
-    username = phone;
+    phone = digits;
+    username = digits;
   } else {
     email = text(req.data?.email, 200).toLowerCase();
     if (!EMAIL.test(email)) fail('invalid-argument', 'bad-email');
@@ -218,5 +246,6 @@ export const adminCreateClient = onCall(async (req) => {
     await auth.deleteUser(user.uid).catch(() => {});
     throw e;
   }
+  await audit(req, 'account-created', admin.email, `Admin created client ${authEmail}`);
   return { uid: user.uid };
 });
