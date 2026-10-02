@@ -502,8 +502,9 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getFirestore, collection, query, where, getDocs, updateDoc, doc, addDoc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -517,6 +518,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        // Invite checks and invite sign-up run server-side (Cloud Functions)
+        const fns = getFunctions(app, 'europe-west1');
+        const call = (name, data) => httpsCallable(fns, name)(data).then(r => r.data);
 
         // Check if this is an invite link
         const urlParams = new URLSearchParams(window.location.search);
@@ -536,7 +540,7 @@
             loader.hidden = false;
             const revealStart = Date.now();
             const MIN_LOADER_MS = reduceMotion ? 0 : 550;
-            const MAX_WAIT_MS = 3000;
+            const MAX_WAIT_MS = 10000; // server check can take a few seconds on a cold start
 
             const finishLoader = () => {
                 const elapsed = Date.now() - revealStart;
@@ -587,9 +591,9 @@
             const settle = fn => { if (settled) return; settled = true; fn(); };
             const timeoutGuard = setTimeout(() => settle(showInvalid), MAX_WAIT_MS);
 
-            getDoc(doc(db, 'invites', inviteCode)).then(snap => {
+            call('checkInvite', { code: inviteCode }).then(inv => {
                 clearTimeout(timeoutGuard);
-                if (!snap.exists() || snap.data().phone !== invitePhone || snap.data().used) {
+                if (inv.type !== 'phone' || inv.phone !== invitePhone) {
                     settle(showInvalid);
                 } else {
                     settle(showInviteForm);
@@ -697,49 +701,12 @@
 
             submitBtn.disabled = true;
             try {
-                statusEl.textContent = 'Verifying invite...';
+                statusEl.textContent = 'Creating your account...';
                 statusEl.className = 'status-msg active warning';
 
-                // Verify invite code
-                const inviteSnap = await getDoc(doc(db, 'invites', inviteCode));
-
-                if (!inviteSnap.exists() || inviteSnap.data().phone !== phone) {
-                    statusEl.textContent = '✗ Invalid or expired invite link';
-                    statusEl.className = 'status-msg active error';
-                    return;
-                }
-
-                const inviteDoc = inviteSnap;
-                const inviteData = inviteSnap.data();
-
-                if (inviteData.used) {
-                    statusEl.textContent = '✗ This invite has already been used';
-                    statusEl.className = 'status-msg active error';
-                    return;
-                }
-
-                // Create account with phone as email (using @smilecenter.pro for consistency)
-                const email = phone + '@smilecenter.pro';
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-                // Create user document in Firestore (using UID as document ID)
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    uid: userCredential.user.uid,
-                    username: phone,
-                    phone: phone,
-                    email: null,
-                    role: 'client',
-                    status: 'approved',
-                    loginType: 'phone',
-                    createdAt: Date.now(),
-                    inviteCode: inviteCode
-                });
-
-                // Mark invite as used
-                await updateDoc(doc(db, 'invites', inviteDoc.id), {
-                    used: true,
-                    usedAt: Date.now()
-                });
+                // The server checks the invite, creates the account and closes the invite in one step
+                const { email } = await call('registerWithInvite', { code: inviteCode, password });
+                await signInWithEmailAndPassword(auth, email, password);
 
                 statusEl.textContent = 'Registration complete! Redirecting...';
                 statusEl.className = 'status-msg active success';
@@ -750,16 +717,17 @@
 
             } catch (error) {
                 console.error('Registration error:', error);
-                let errorMsg = 'Registration failed';
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMsg = 'Phone number already registered';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMsg = 'Password too weak (min 6 characters)';
-                } else if (error.code === 'auth/network-request-failed') {
-                    errorMsg = 'Network error. Please check connection';
-                } else if (error.message) {
-                    errorMsg = error.message;
-                }
+                const he = document.documentElement.lang === 'he';
+                const msgs = {
+                    'account-exists': he ? 'המספר כבר רשום. התחברו עם הסיסמה הקיימת.' : 'Phone number already registered. Sign in instead.',
+                    'weak-password': he ? 'הסיסמה חייבת להכיל לפחות 10 תווים' : 'Password must be at least 10 characters',
+                    'used': he ? 'ההזמנה כבר נוצלה' : 'This invite has already been used',
+                    'invalid': he ? 'קישור ההזמנה אינו תקין' : 'Invalid or expired invite link',
+                };
+                let errorMsg = msgs[error.message]
+                    || (error.code === 'functions/unavailable' || error.code === 'auth/network-request-failed'
+                        ? (he ? 'בעיית רשת, נסו שוב' : 'Network error. Please check connection')
+                        : (he ? 'ההרשמה נכשלה' : 'Registration failed'));
                 statusEl.textContent = errorMsg;
                 statusEl.className = 'status-msg active error';
             } finally {

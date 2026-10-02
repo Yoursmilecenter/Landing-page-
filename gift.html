@@ -55,7 +55,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
 
 const app = initializeApp({
     apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -66,10 +66,10 @@ const app = initializeApp({
     appId: "1:517098616907:web:6e321d280049cd67c1b5ce"
 });
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Invite lookups and redemption run server-side (Cloud Functions); the browser never writes them.
+const fns = getFunctions(app, 'europe-west1');
+const call = (name, data) => httpsCallable(fns, name)(data).then(r => r.data);
 
-// prize key: "teeth_N" = free design of up to N teeth
-const teethOf = p => { const m = /^teeth_(\d+)$/.exec(p || ''); return m ? +m[1] : 5; };
 const drName = n => /^ד["״']?ר/.test(n) ? n : 'ד"ר ' + n;
 const SEG_COLORS = ['#fb9478', '#b95039', '#fdb69c', '#8a3a28'];
 
@@ -83,14 +83,13 @@ let invite = null;
 async function init() {
     if (!token) return fail('קישור לא תקין');
     try {
-        await signInAnonymously(auth);
-        const snap = await getDoc(doc(db, 'invites', token));
-        if (!snap.exists() || snap.data().type !== 'mystery') return fail('קישור לא תקין');
-        invite = snap.data();
-        if (invite.status === 'redeemed') return fail('ההזמנה הזו כבר מומשה');
-        if (invite.expiresAt && Date.now() > invite.expiresAt) return fail('פג תוקף ההזמנה, בקש הזמנה חדשה');
+        invite = await call('checkInvite', { code: token });
+        if (invite.type !== 'mystery') return fail('קישור לא תקין');
     } catch (e) {
         console.error(e);
+        if (e.message === 'redeemed') return fail('ההזמנה הזו כבר מומשה');
+        if (e.message === 'expired') return fail('פג תוקף ההזמנה, בקש הזמנה חדשה');
+        if (e.code === 'functions/not-found' || e.code === 'functions/invalid-argument') return fail('קישור לא תקין');
         return fail('משהו השתבש, נסה שוב');
     }
     const displayName = invite.clientName ? (invite.isDoctor === false ? invite.clientName : drName(invite.clientName)) : '';
@@ -126,7 +125,7 @@ let spun = false;
 window.spinWheel = () => {
     if (spun) return; spun = true;
     $('spinBtn').classList.add('hidden');
-    const n = teethOf(invite.prize);
+    const n = invite.teeth;
     const opts = [...Array(SEGS).keys()].filter(i => segValue(i) === n);
     const idx = opts[Math.floor(Math.random() * opts.length)];
     const center = idx * (360 / SEGS) + 180 / SEGS;
@@ -146,16 +145,10 @@ window.enterPortal = async () => {
     const btn = $('enterBtn');
     btn.disabled = true; btn.textContent = 'נכנס...';
     try {
-        const uid = auth.currentUser.uid;
-        await setDoc(doc(db, 'users', uid), {
-            uid, role: 'client', status: 'approved', loginType: 'gift',
-            username: invite.phone, phone: invite.phone,
-            clientName: invite.clientName || '',
-            email: null, prize: invite.prize,
-            needsPassword: true, inviteCode: token,
-            createdAt: Date.now()
-        });
-        await updateDoc(doc(db, 'invites', token), { status: 'opened', openedAt: Date.now(), uid });
+        // A guest session holds the gift until the visitor sets a password in the portal.
+        // Existing clients attach it later via "I already have an account" in the portal.
+        if (!auth.currentUser || !auth.currentUser.isAnonymous) await signInAnonymously(auth);
+        await call('redeemGift', { code: token });
         localStorage.setItem('lang', 'he');
         location.href = 'portal-dashboard.html';
     } catch (e) {
