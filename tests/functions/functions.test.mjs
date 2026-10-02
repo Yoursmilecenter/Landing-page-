@@ -46,6 +46,7 @@ const DAY = 86400000;
 const adminUser = await AA.createUser({ email: 'admin@smile.com', password: PW });
 await A.doc(`users/${adminUser.uid}`).set({ uid: adminUser.uid, role: 'admin' });
 await A.doc('invites/phone1').set({ phone: '0521234567', used: false, createdAt: Date.now() });
+await A.doc('invites/phoneFmt').set({ phone: '+972 53-123 4567', used: false, createdAt: Date.now() });
 await A.doc('invites/gift1').set({ type: 'mystery', phone: '0509999999', clientName: 'Cohen', isDoctor: true, prize: 'teeth_7', status: 'sealed', used: false, expiresAt: Date.now() + 7 * DAY });
 await A.doc('invites/gift2').set({ type: 'mystery', phone: '0508888888', clientName: 'Levi', prize: 'teeth_5', status: 'sealed', used: false, expiresAt: Date.now() + 7 * DAY });
 await A.doc('invites/gift3').set({ type: 'mystery', phone: '0507777777', prize: 'teeth_8', status: 'sealed', used: false, expiresAt: Date.now() + 7 * DAY });
@@ -53,10 +54,10 @@ await A.doc('invites/expired').set({ type: 'mystery', phone: '0501111111', prize
 
 console.log('\n== public sign-up (requestAccess)');
 await t('creates a pending account', async () => {
-  eq((await call('requestAccess', { username: 'drlevi', email: 'levi@clinic.co.il', password: PW })).ok, true, 'ok');
+  eq((await call('requestAccess', { username: 'drlevi', email: 'levi@clinic.co.il', password: PW, fullName: 'Dr Levi Clinic', phone: '+972 54-111 2233' })).ok, true, 'ok');
   const u = (await AA.getUserByEmail('drlevi@smilecenter.pro'));
   const d = (await A.doc(`users/${u.uid}`).get()).data();
-  eq(d.status, 'pending', 'status'); eq(d.role, 'client', 'role');
+  eq(d.status, 'pending', 'status'); eq(d.role, 'client', 'role'); eq(d.fullName, 'Dr Levi Clinic', 'fullName'); eq(d.phone, '0541112233', 'contact phone');
 });
 await t('pending account can sign in but sees no projects', async () => {
   await signInWithEmailAndPassword(auth, 'drlevi@smilecenter.pro', PW);
@@ -85,9 +86,10 @@ await t('admin creates an approved email client', async () => {
 });
 await t('admin creates a phone client', async () => {
   const { uid } = await call('adminCreateClient', { type: 'phone', phone: '+972 50 123 4567', fullName: 'Dr Phone', password: PW });
-  eq((await AA.getUser(uid)).email, '972501234567@smilecenter.pro', 'auth email');
+  eq((await AA.getUser(uid)).email, '0501234567@smilecenter.pro', 'auth email (+972 normalised to 0)');
+  eq((await A.doc(`users/${uid}`).get()).data().phone, '0501234567', 'stored phone');
   await signOut(auth);
-  await signInWithEmailAndPassword(auth, '972501234567@smilecenter.pro', PW); await signOut(auth);
+  await signInWithEmailAndPassword(auth, '0501234567@smilecenter.pro', PW); await signOut(auth);
 });
 
 console.log('\n== phone invite link (checkInvite + registerWithInvite)');
@@ -103,6 +105,9 @@ await t('registers, signs in, invite closed', async () => {
   const cred = await signInWithEmailAndPassword(auth, email, PW);
   eq((await getDoc(doc(db, 'users', cred.user.uid))).data().status, 'approved', 'status');
   eq((await A.doc('invites/phone1').get()).data().used, true, 'used'); await signOut(auth);
+});
+await t('formatted invite phone maps to 0-prefixed login', async () => {
+  eq((await call('registerWithInvite', { code: 'phoneFmt', password: PW })).email, '0531234567@smilecenter.pro', 'email');
 });
 await t('used invite cannot register twice', () => expectErr(call('registerWithInvite', { code: 'phone1', password: PW }), 'failed-precondition', 'used'));
 await t('checkInvite reports used', () => expectErr(call('checkInvite', { code: 'phone1' }), 'failed-precondition', 'used'));
@@ -156,6 +161,13 @@ await t('after spending the gift, a new one can be attached', async () => {
   eq((await getDoc(doc(db, 'users', auth.currentUser.uid))).data().prize, 'teeth_8', 'prize');
 });
 await signOut(auth);
+
+console.log('\n== audit trail');
+await t('server logged account and gift events', async () => {
+  const types = (await A.collection('auditLogs').get()).docs.map(d => d.data().eventType);
+  for (const ty of ['account-requested', 'account-created', 'gift-opened', 'gift-redeemed'])
+    if (!types.includes(ty)) throw new Error(`no ${ty} entry (have ${[...new Set(types)].join(',')})`);
+});
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

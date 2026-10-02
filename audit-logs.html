@@ -87,7 +87,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getFirestore, collection, getDocs, query, orderBy, where, limit } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, query, orderBy, where, limit, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -111,7 +111,14 @@
         let allLogs = [];
         let filteredLogs = [];
         
-        const admins = ['admin@smile.com'];
+        // Access comes from the signed-in user's profile role (users/{uid}), the same source the database rules use.
+        async function myActiveRole(uid) {
+            try {
+                const snap = await getDoc(doc(db, 'users', uid));
+                const d = snap.exists() ? snap.data() : {};
+                return ['pending', 'rejected'].includes(d.status) ? null : (d.role || null);
+            } catch (e) { console.error('Role check failed:', e); return null; }
+        }
 
         let currentFilters = {
             eventType: 'all',
@@ -124,7 +131,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                if (!admins.includes(currentUser.email)) {
+                if (await myActiveRole(user.uid) !== 'admin') {
                     window.location.href = 'index.html';
                     return;
                 }
@@ -271,6 +278,10 @@
                             <option value="html-rejection">HTML Rejection</option>
                             <option value="case-created">Case Created</option>
                             <option value="case-deleted">Case Deleted</option>
+                            <option value="account-requested">Sign-up Request</option>
+                            <option value="account-created">Account Created</option>
+                            <option value="gift-opened">Gift Opened</option>
+                            <option value="gift-redeemed">Gift Redeemed</option>
                         </select>
                         
                         <select onchange="updateFilter('user', this.value)">
