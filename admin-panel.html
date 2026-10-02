@@ -1893,8 +1893,8 @@
                     <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
                         <td style="padding:6px;">${esc(d.clientName || '')}</td>
                         <td style="padding:6px;direction:ltr;">${esc(d.phone)}</td>
-                        <td style="padding:6px;">${giftLabel(d.prize)}</td>
-                        <td style="padding:6px;">${expired(d) ? '⌛ expired' : (GIFT_STATUS[d.status] || d.status)}</td>
+                        <td style="padding:6px;">${esc(giftLabel(d.prize))}</td>
+                        <td style="padding:6px;">${expired(d) ? '⌛ expired' : esc(GIFT_STATUS[d.status] || d.status)}</td>
                     </tr>`).join('') + '</table>';
             } catch (err) {
                 el.textContent = 'Error: ' + err.message;
