@@ -69,7 +69,7 @@ try {
   const pub = session();
   const reqUser = `qa-req-${TS}`;
   let reqUid;
-  await t('requestAccess creates the account', async () => { eq((await pub.call('requestAccess', { username: reqUser, email: `qa-${TS}@example.com`, password: PW })).ok, true, 'ok'); });
+  await t('requestAccess creates the account', async () => { eq((await pub.call('requestAccess', { username: reqUser, email: `qa-${TS}@example.com`, password: PW, fullName: 'QA Clinic', phone: '050 000 0000' })).ok, true, 'ok'); });
   await t('pending user signs in but profile says pending', async () => {
     const c = await signInWithEmailAndPassword(pub.auth, `${reqUser}@smilecenter.pro`, PW); reqUid = c.user.uid;
     created.users.add(reqUid); created.docs.add(`users/${reqUid}`);
@@ -80,6 +80,13 @@ try {
   await t('admin sees it in pending list', async () => {
     const s = await getDocs(query(collection(adm.db, 'users'), where('status', '==', 'pending')));
     if (!s.docs.some(d => d.id === reqUid)) throw new Error('not listed');
+  });
+  await t('server logged the sign-up request (visible to admin)', async () => {
+    const s = await getDocs(query(collection(adm.db, 'auditLogs'), where('userEmail', '==', `${reqUser}@smilecenter.pro`)));
+    const hit = s.docs.find(d => d.data().eventType === 'account-requested');
+    s.docs.forEach(d => created.docs.add(`auditLogs/${d.id}`));
+    if (!hit) throw new Error('no account-requested entry');
+    if (!/QA Clinic/.test(hit.data().details)) throw new Error('details missing name');
   });
   await t('admin approves', () => updateDoc(doc(adm.db, 'users', reqUid), { status: 'approved', approvedAt: Date.now(), approvedBy: `qa-admin-${TS}@smilecenter.pro` }));
 
@@ -124,8 +131,9 @@ try {
 
   console.log('\n== 3. admin "Add client"');
   const addPhone = phoneFor('1');
-  await t('admin creates a phone client', async () => {
-    const { uid } = await adm.call('adminCreateClient', { type: 'phone', phone: addPhone, fullName: 'QA Phone Client', password: PW });
+  const addPhoneIntl = '+972 ' + addPhone.slice(1, 3) + '-' + addPhone.slice(3);   // typed the long way
+  await t('admin creates a phone client (typed as +972 ...)', async () => {
+    const { uid } = await adm.call('adminCreateClient', { type: 'phone', phone: addPhoneIntl, fullName: 'QA Phone Client', password: PW });
     created.users.add(uid); created.docs.add(`users/${uid}`);
   });
   await t('that client signs in with phone + password', async () => {
@@ -176,6 +184,19 @@ try {
   });
   await t('gift link is now closed', () => g.call('checkInvite', { code: giftCode }).then(() => { throw new Error('still open'); }, e => eq(e.message, 'redeemed', 'reason')));
   await t('client cannot grant itself another prize', () => denied(updateDoc(doc(g.db, 'users', gUid), { prize: 'teeth_99', giftUsed: false })));
+
+  console.log('\n== audit trail');
+  await t('server logged account and gift events for this run', async () => {
+    const emails = [`qa-admin-${TS}@smilecenter.pro`, `${invPhone}@smilecenter.pro`, `${giftPhone}@smilecenter.pro`, `${reqUser}@smilecenter.pro`];
+    const byEmail = await getDocs(query(collection(adm.db, 'auditLogs'), where('userEmail', 'in', emails)));
+    const opened = (await getDocs(query(collection(adm.db, 'auditLogs'), where('eventType', '==', 'gift-opened'))))
+      .docs.filter(d => String(d.data().details).includes(giftCode.slice(0, 6)));
+    const mine = [...byEmail.docs, ...opened];
+    mine.forEach(d => created.docs.add(`auditLogs/${d.id}`));          // remove this run's log lines afterwards
+    const types = new Set(mine.map(d => d.data().eventType));
+    for (const ty of ['account-requested', 'account-created', 'gift-opened', 'gift-redeemed'])
+      if (!types.has(ty)) throw new Error(`missing ${ty} (have ${[...types].join(', ')})`);
+  });
 } finally {
   console.log('\n== cleanup');
   for (const p of created.files) await owner('DELETE', `https://firebasestorage.googleapis.com/v0/b/${PROJECT}.firebasestorage.app/o/${encodeURIComponent(p)}`).catch(e => console.log('  file', p, e.message));
