@@ -1,0 +1,9 @@
+*.md
+firestore.rules
+firestore.indexes.json
+firebase.json
+.firebaserc
+.idea
+.vercel
+.git
+storage.rules

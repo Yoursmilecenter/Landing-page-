@@ -9,14 +9,9 @@ export function initAuditLogger(firestoreInstance) {
 }
 
 // Get user's IP address (best effort)
+// IP no longer collected client-side (privacy + no third-party call)
 async function getUserIP() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        return data.ip;
-    } catch {
-        return null;
-    }
+    return null;
 }
 
 // Log an audit event

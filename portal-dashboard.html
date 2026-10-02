@@ -850,7 +850,7 @@
                         <button class="close" onclick="closePreview()" aria-label="Close preview">&times;</button>
                         <h2 class="modal-title">HTML Preview</h2>
                         <p class="modal-subtitle" id="previewFileName"></p>
-                        <iframe id="previewFrame" class="preview-iframe"></iframe>
+                        <iframe id="previewFrame" class="preview-iframe" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
                         <div style="text-align: center; margin-top: 16px;">
                             <button class="btn-primary" onclick="closePreview()">Close Preview</button>
                         </div>
@@ -862,7 +862,7 @@
                         <button class="close" onclick="closeApproval()" aria-label="Close approval dialog">&times;</button>
                         <h2 class="modal-title">Review Design Preview</h2>
                         <p class="modal-subtitle" id="approvalFileName"></p>
-                        <iframe id="approvalFrame" class="preview-iframe"></iframe>
+                        <iframe id="approvalFrame" class="preview-iframe" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
                         <div class="approval-section">
                             <h3 style="margin-bottom: 16px;">Your Decision:</h3>
                             <div class="approval-options">
@@ -1921,7 +1921,7 @@
                             </button>
                         `).join('')}
                     </div>
-                    <iframe id="inlinePreviewFrame" src="${esc(htmlFiles[0].url)}" style="width: 100%; height: 280px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #fff;"></iframe>
+                    <iframe id="inlinePreviewFrame" sandbox="allow-scripts" referrerpolicy="no-referrer" src="${esc(htmlFiles[0].url)}" style="width: 100%; height: 280px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; background: #fff;"></iframe>
                     
                     ${isAwaitingApproval ? `
                         <div style="margin-top: 12px; padding: 12px; background: rgba(0, 153, 204, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
