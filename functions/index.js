@@ -1,0 +1,222 @@
+// Server-side account and invite handling for smilecenter.pro.
+// Every write that grants access (a role, an approved status, a gift prize,
+// marking an invite used) happens here with the Admin SDK, never in the browser.
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { setGlobalOptions } from 'firebase-functions/v2';
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+
+initializeApp();
+setGlobalOptions({ region: 'europe-west1', maxInstances: 5 });
+
+const db = getFirestore();
+const auth = getAuth();
+
+const DOMAIN = 'smilecenter.pro';
+const MIN_PASSWORD = 10;
+const MAX_PENDING = 100;
+const USERNAME = /^[a-zA-Z0-9._-]{3,30}$/;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const teethOf = (prize) => { const m = /^teeth_(\d+)$/.exec(prize || ''); return m ? Number(m[1]) : 0; };
+const fail = (code, reason) => { throw new HttpsError(code, reason); };
+
+function requirePassword(pw) {
+  if (typeof pw !== 'string' || pw.length < MIN_PASSWORD || pw.length > 128) fail('invalid-argument', 'weak-password');
+}
+
+async function createAuthUser(email, password, displayName) {
+  try {
+    return await auth.createUser({ email, password, ...(displayName ? { displayName } : {}) });
+  } catch (e) {
+    if (e.code === 'auth/email-already-exists') fail('already-exists', 'account-exists');
+    if (e.code === 'auth/invalid-email') fail('invalid-argument', 'bad-email');
+    if (e.code === 'auth/invalid-password') fail('invalid-argument', 'weak-password');
+    throw e;
+  }
+}
+
+async function requireAdmin(req) {
+  const uid = req.auth?.uid;
+  if (!uid) fail('unauthenticated', 'sign-in');
+  const snap = await db.doc(`users/${uid}`).get();
+  const u = snap.exists ? snap.data() : null;
+  if (!u || u.role !== 'admin' || ['pending', 'rejected'].includes(u.status)) fail('permission-denied', 'admin-only');
+  return { uid, email: req.auth.token.email || null };
+}
+
+function giftState(inv) {
+  if (!inv || inv.type !== 'mystery') return 'invalid';
+  if (inv.status === 'redeemed' || inv.used) return 'redeemed';
+  if (inv.expiresAt && Date.now() > inv.expiresAt) return 'expired';
+  return 'ok';
+}
+
+// Public: what an invite link shows before anyone signs in.
+export const checkInvite = onCall(async (req) => {
+  const code = text(req.data?.code, 100);
+  if (!code) fail('invalid-argument', 'invalid');
+  const snap = await db.doc(`invites/${code}`).get();
+  if (!snap.exists) fail('not-found', 'invalid');
+  const inv = snap.data();
+  if (inv.type === 'mystery') {
+    const state = giftState(inv);
+    if (state !== 'ok') fail('failed-precondition', state);
+    return { type: 'mystery', clientName: inv.clientName || '', isDoctor: inv.isDoctor !== false,
+             expiresAt: inv.expiresAt || null, teeth: teethOf(inv.prize) || 5 };
+  }
+  if (inv.used) fail('failed-precondition', 'used');
+  return { type: 'phone', phone: inv.phone || '' };
+});
+
+// Gift link, first visit: the (anonymous) visitor becomes an approved client carrying the invite's prize.
+export const redeemGift = onCall(async (req) => {
+  const uid = req.auth?.uid;
+  if (!uid) fail('unauthenticated', 'sign-in');
+  const code = text(req.data?.code, 100);
+  if (!code) fail('invalid-argument', 'invalid');
+  const invRef = db.doc(`invites/${code}`);
+  const userRef = db.doc(`users/${uid}`);
+  await db.runTransaction(async (tx) => {
+    const [invSnap, userSnap] = await Promise.all([tx.get(invRef), tx.get(userRef)]);
+    const inv = invSnap.exists ? invSnap.data() : null;
+    const state = giftState(inv);
+    if (state !== 'ok') fail(state === 'invalid' ? 'not-found' : 'failed-precondition', state);
+    if (!userSnap.exists) {
+      tx.set(userRef, {
+        uid, role: 'client', status: 'approved', loginType: 'gift',
+        username: inv.phone || '', phone: inv.phone || '', clientName: inv.clientName || '',
+        email: null, prize: inv.prize || null, needsPassword: true, inviteCode: code, createdAt: Date.now(),
+      });
+    } else if (userSnap.data().inviteCode !== code) {
+      fail('failed-precondition', 'already-member');
+    }
+    tx.update(invRef, { status: 'opened', openedAt: Date.now(), uid });
+  });
+  return { ok: true };
+});
+
+// Gift, final step: attach the prize to a real (password) account and close the invite.
+// Covers both "I just set a password on my gift account" and "add this gift to my existing account".
+export const claimGift = onCall(async (req) => {
+  const uid = req.auth?.uid;
+  if (!uid) fail('unauthenticated', 'sign-in');
+  if (req.auth.token.firebase?.sign_in_provider === 'anonymous') fail('failed-precondition', 'set-password-first');
+  const code = text(req.data?.code, 100);
+  if (!code) fail('invalid-argument', 'invalid');
+  const invRef = db.doc(`invites/${code}`);
+  const userRef = db.doc(`users/${uid}`);
+  let attached = false;
+  await db.runTransaction(async (tx) => {
+    const [invSnap, userSnap] = await Promise.all([tx.get(invRef), tx.get(userRef)]);
+    if (!userSnap.exists) fail('failed-precondition', 'no-profile');
+    const inv = invSnap.exists ? invSnap.data() : null;
+    if (!inv || inv.type !== 'mystery') fail('not-found', 'invalid');
+    const u = userSnap.data();
+    const ownGift = u.inviteCode === code;
+    if (inv.status === 'redeemed' || inv.used) {
+      if (ownGift) return;                       // already closed for this account
+      fail('failed-precondition', 'redeemed');
+    }
+    if (!ownGift) {
+      if (inv.expiresAt && Date.now() > inv.expiresAt) fail('failed-precondition', 'expired');
+      // One open gift per account: don't burn a second invite while the first is unspent.
+      if (teethOf(u.prize) && !u.giftUsed) fail('failed-precondition', 'already-has-gift');
+      tx.update(userRef, { prize: inv.prize || null, giftUsed: false, inviteCode: code });
+      attached = true;
+    }
+    tx.update(invRef, { status: 'redeemed', used: true, redeemedAt: Date.now(), redeemedBy: uid });
+  });
+  return { ok: true, attached };
+});
+
+// Phone invite link: create the client account the admin invited.
+export const registerWithInvite = onCall(async (req) => {
+  const code = text(req.data?.code, 100);
+  const password = req.data?.password;
+  if (!code) fail('invalid-argument', 'invalid');
+  requirePassword(password);
+  const invRef = db.doc(`invites/${code}`);
+  const pre = await invRef.get();
+  const inv = pre.exists ? pre.data() : null;
+  if (!inv || inv.type === 'mystery') fail('not-found', 'invalid');
+  if (inv.used) fail('failed-precondition', 'used');
+  const phone = String(inv.phone || '').trim();
+  if (!/^\+?\d{6,15}$/.test(phone)) fail('failed-precondition', 'invalid');
+  const email = `${phone}@${DOMAIN}`;
+  const user = await createAuthUser(email, password);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(invRef);
+      if (!snap.exists || snap.data().used) fail('failed-precondition', 'used');
+      tx.set(db.doc(`users/${user.uid}`), {
+        uid: user.uid, username: phone, phone, email: null, role: 'client', status: 'approved',
+        loginType: 'phone', createdAt: Date.now(), inviteCode: code,
+      });
+      tx.update(invRef, { used: true, usedAt: Date.now(), uid: user.uid });
+    });
+  } catch (e) {
+    await auth.deleteUser(user.uid).catch(() => {});
+    throw e;
+  }
+  return { email };
+});
+
+// Public sign-up form: account is created but stays 'pending' until an admin approves it.
+export const requestAccess = onCall(async (req) => {
+  const username = text(req.data?.username, 30);
+  const email = text(req.data?.email, 200);
+  const password = req.data?.password;
+  if (!USERNAME.test(username) || /^\d+$/.test(username)) fail('invalid-argument', 'bad-username');
+  if (!EMAIL.test(email)) fail('invalid-argument', 'bad-email');
+  requirePassword(password);
+  const pending = await db.collection('users').where('status', '==', 'pending').count().get();
+  if (pending.data().count >= MAX_PENDING) fail('resource-exhausted', 'too-many-pending');
+  const loginEmail = `${username.toLowerCase()}@${DOMAIN}`;
+  const user = await createAuthUser(loginEmail, password);
+  try {
+    await db.doc(`users/${user.uid}`).set({
+      uid: user.uid, username, email, loginEmail, role: 'client', status: 'pending', createdAt: Date.now(),
+    });
+  } catch (e) {
+    await auth.deleteUser(user.uid).catch(() => {});
+    throw e;
+  }
+  return { ok: true };
+});
+
+// Admin panel "Add client": create an approved client without signing the admin out.
+export const adminCreateClient = onCall(async (req) => {
+  const admin = await requireAdmin(req);
+  const type = req.data?.type === 'phone' ? 'phone' : 'email';
+  const fullName = text(req.data?.fullName, 120);
+  const password = req.data?.password;
+  if (!fullName) fail('invalid-argument', 'name-required');
+  requirePassword(password);
+  let authEmail, username, email = null, phone = null;
+  if (type === 'phone') {
+    phone = text(req.data?.phone, 30);
+    const digits = phone.replace(/\+/g, '').replace(/\s/g, '');
+    if (!/^\d{6,15}$/.test(digits)) fail('invalid-argument', 'bad-phone');
+    authEmail = `${digits}@${DOMAIN}`;
+    username = phone;
+  } else {
+    email = text(req.data?.email, 200).toLowerCase();
+    if (!EMAIL.test(email)) fail('invalid-argument', 'bad-email');
+    authEmail = email;
+    username = email;
+  }
+  const user = await createAuthUser(authEmail, password, fullName);
+  try {
+    await db.doc(`users/${user.uid}`).set({
+      uid: user.uid, username, email, phone, fullName, role: 'client', status: 'approved',
+      loginType: type, createdAt: Date.now(), createdBy: admin.email,
+    });
+  } catch (e) {
+    await auth.deleteUser(user.uid).catch(() => {});
+    throw e;
+  }
+  return { uid: user.uid };
+});

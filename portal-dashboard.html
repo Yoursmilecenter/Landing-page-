@@ -329,6 +329,7 @@
         import { getAuth, onAuthStateChanged, signOut, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
         import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, updateDoc, setDoc, doc, getDoc, runTransaction } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
         import * as THREE from './vendor/three/three.module.min.js';
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
@@ -367,6 +368,8 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        // Gift prizes are attached and invites closed server-side (Cloud Functions)
+        const claimGift = httpsCallable(getFunctions(app, 'europe-west1'), 'claimGift');
 
         let currentUser = null;
         let giftUser = null;
@@ -1237,7 +1240,7 @@
             const p2 = document.getElementById('gpw2').value;
             const st = document.getElementById('gpwStatus');
             const btn = document.getElementById('gpwBtn');
-            if (p1.length < 8) { st.textContent = 'מינימום 8 תווים'; return; }
+            if (p1.length < 10) { st.textContent = 'מינימום 10 תווים'; return; }
             if (p1 !== p2) { st.textContent = 'הסיסמאות לא תואמות'; return; }
             btn.disabled = true; st.textContent = '';
             try {
@@ -1246,7 +1249,9 @@
                 await linkWithCredential(user, EmailAuthProvider.credential(email, p1));
                 await updateDoc(doc(db, 'users', user.uid), { needsPassword: false, email: email, passwordSetAt: Date.now() });
                 if (giftUser.inviteCode) {
-                    try { await updateDoc(doc(db, 'invites', giftUser.inviteCode), { status: 'redeemed', used: true, redeemedAt: Date.now() }); } catch (e) { console.error(e); }
+                    // Fresh token so the server sees the password account, not the guest session
+                    await user.getIdToken(true);
+                    try { await claimGift({ code: giftUser.inviteCode }); } catch (e) { console.error(e); }
                 }
                 document.getElementById('setPwOverlay').innerHTML = '<div style="background:#fff;color:#1f2937;border-radius:16px;padding:32px;text-align:center;font-size:18px;">✅ החשבון שלך מוכן<br><small style="opacity:.7">המתנה נשמרה</small></div>';
                 setTimeout(() => location.reload(), 1500);
@@ -1290,14 +1295,19 @@
                     if (raw.includes('@')) throw e1;
                     cred = await signInWithEmailAndPassword(auth, raw + '@smile.local', pw);
                 }
-                const uref = doc(db, 'users', cred.user.uid);
-                const us = await getDoc(uref);
+                const us = await getDoc(doc(db, 'users', cred.user.uid));
                 const ud = us.exists() ? us.data() : {};
-                if (!giftTeethOf(ud) && giftTeethOf(gift)) {
-                    await updateDoc(uref, { prize: gift.prize, giftUsed: false, inviteCode: gift.inviteCode || null });
-                }
-                if (gift.inviteCode) {
-                    try { await updateDoc(doc(db, 'invites', gift.inviteCode), { status: 'redeemed', used: true, redeemedAt: Date.now() }); } catch (e2) { console.error(e2); }
+                if (gift.inviteCode && ud.role === 'client') {
+                    // Server attaches the prize (unless this account already holds an unspent gift) and closes the invite
+                    try { await claimGift({ code: gift.inviteCode }); }
+                    catch (e2) {
+                        console.error(e2);
+                        if (e2.message === 'already-has-gift') {
+                            st.style.color = '#b95039';
+                            st.textContent = 'לחשבון הזה כבר יש מתנה פתוחה. נצלו אותה קודם, ואז פתחו שוב את הקישור.';
+                            await new Promise(r => setTimeout(r, 3500));
+                        }
+                    }
                 }
                 if (ud.role === 'admin') { window.location.href = 'admin-panel.html'; return; }
                 if (ud.role === 'designer') { window.location.href = 'designer-portal.html'; return; }

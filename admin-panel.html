@@ -225,7 +225,8 @@
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject, getBlob } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc, deleteDoc, addDoc, setDoc, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -245,6 +246,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        // Account creation runs server-side so the admin stays signed in and the role/status can't be forged
+        const adminCreateClient = httpsCallable(getFunctions(app, 'europe-west1'), 'adminCreateClient');
 
         let currentUser = null;
         let allProjects = [];
@@ -1622,49 +1625,8 @@
                 statusEl.textContent = 'Creating client...';
                 statusEl.className = 'status-msg active warning';
 
-                const currentUserEmail = auth.currentUser.email;
-                let username;
-                let authEmail;
-                
-                if (type === 'phone') {
-                    const dummyEmail = `${phone.replace(/\+/g, '').replace(/\s/g, '')}@smilecenter.pro`;
-                    authEmail = dummyEmail;
-                    username = phone;
-                } else {
-                    authEmail = email;
-                    username = email;
-                }
-
-                // Create user with fetch to avoid logout
-                const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: authEmail,
-                        password: password,
-                        returnSecureToken: true
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error?.message || 'Failed to create user');
-                }
-
-                // Create user document in Firestore (using UID as document ID)
-                await setDoc(doc(db, 'users', data.localId), {
-                    uid: data.localId,
-                    username: username,
-                    email: email || null,
-                    phone: phone || null,
-                    fullName: fullName,
-                    role: 'client',
-                    status: 'approved',
-                    loginType: type,
-                    createdAt: Date.now(),
-                    createdBy: currentUserEmail
-                });
+                await adminCreateClient({ type, email, phone, fullName, password });
+                loadClientsData();
 
                 statusEl.textContent = '✓ Client created successfully!';
                 statusEl.className = 'status-msg active success';
@@ -1674,14 +1636,14 @@
                 }, 1500);
             } catch (error) {
                 console.error('Error:', error);
-                let errorMsg = 'Error creating client';
-                if (error.message?.includes('EMAIL_EXISTS')) {
-                    errorMsg = 'Email/Phone already in use';
-                } else if (error.message?.includes('WEAK_PASSWORD')) {
-                    errorMsg = 'Password too weak (min 6 characters)';
-                } else if (error.message?.includes('INVALID_EMAIL')) {
-                    errorMsg = 'Invalid format';
-                }
+                const errorMsg = ({
+                    'account-exists': 'Email/Phone already in use',
+                    'weak-password': 'Password must be at least 10 characters',
+                    'bad-email': 'Invalid email address',
+                    'bad-phone': 'Invalid phone number',
+                    'name-required': 'Full name is required',
+                    'admin-only': 'Only admins can create clients',
+                })[error.message] || 'Error creating client';
                 statusEl.textContent = '✗ ' + errorMsg;
                 statusEl.className = 'status-msg active error';
             }

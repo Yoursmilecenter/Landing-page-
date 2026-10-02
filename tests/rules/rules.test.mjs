@@ -1,4 +1,4 @@
-// Firestore rules tests. Run: cd tests/rules && npm i && npm test   (needs Java for the emulator)
+// Firestore rules tests. Run: cd tests && npm i && npm test   (needs Java for the emulators)
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -45,38 +45,30 @@ const rej = as('rej', 'rej@x.com');
 const newCase = (o = {}) => ({ title: 'New', clientEmail: 'cli@x.com', description: 'd', status: 'pending',
   assignedDesignerEmail: null, htmlApproved: false, clientRemarks: null, createdAt: 1, patientId: 'x', projectNo: 5, ...o });
 
-console.log('\n== self sign-up / approval');
-await t('new user registers as pending', () => assertSucceeds(setDoc(doc(as('n1', 'n1@x.com'), 'users/n1'), { uid: 'n1', role: 'client', status: 'pending' })));
-await t('new user cannot register as approved', () => assertFails(setDoc(doc(as('n2', 'n2@x.com'), 'users/n2'), { uid: 'n2', role: 'client', status: 'approved' })));
-await t('new user cannot register without a status', () => assertFails(setDoc(doc(as('n3', 'n3@x.com'), 'users/n3'), { uid: 'n3', role: 'client' })));
-await t('new user cannot register as admin', () => assertFails(setDoc(doc(as('n4', 'n4@x.com'), 'users/n4'), { uid: 'n4', role: 'admin', status: 'pending' })));
-await t('pending signup cannot carry a prize', () => assertFails(setDoc(doc(as('n5', 'n5@x.com'), 'users/n5'), { uid: 'n5', role: 'client', status: 'pending', prize: 'teeth_6' })));
-await t('cannot create someone else\'s profile', () => assertFails(setDoc(doc(as('n6'), 'users/zzz'), { uid: 'zzz', role: 'client', status: 'pending' })));
+console.log('\n== profiles: server-only creation, admin approval');
+await t('browser cannot create own profile (even pending)', () => assertFails(setDoc(doc(as('n1', 'n1@x.com'), 'users/n1'), { uid: 'n1', role: 'client', status: 'pending' })));
+await t('browser cannot create approved profile', () => assertFails(setDoc(doc(as('n2', 'n2@x.com'), 'users/n2'), { uid: 'n2', role: 'client', status: 'approved' })));
+await t('browser cannot create profile backed by an invite', () => assertFails(setDoc(doc(anon('g1'), 'users/g1'), { uid: 'g1', role: 'client', status: 'approved', inviteCode: 'giftA', prize: 'teeth_6' })));
+await t('admin creates a client profile', () => assertSucceeds(setDoc(doc(admin, 'users/made'), { uid: 'made', role: 'client', status: 'approved' })));
 await t('pending user cannot self-approve', () => assertFails(updateDoc(doc(pend, 'users/pend'), { status: 'approved' })));
 await t('rejected user cannot un-reject', () => assertFails(updateDoc(doc(rej, 'users/rej'), { status: 'approved' })));
-await t('approved user cannot change own role', () => assertFails(updateDoc(doc(cli, 'users/cli'), { role: 'admin' })));
-await t('approved user can edit harmless own fields', () => assertSucceeds(updateDoc(doc(cli, 'users/cli'), { fullName: 'Dr X' })));
+await t('user cannot change own role', () => assertFails(updateDoc(doc(cli, 'users/cli'), { role: 'admin' })));
+await t('user edits harmless own fields', () => assertSucceeds(updateDoc(doc(cli, 'users/cli'), { fullName: 'Dr X', needsPassword: false })));
+await t('user cannot grant self a prize', () => assertFails(updateDoc(doc(cli, 'users/cli'), { prize: 'teeth_99' })));
+await t('user cannot attach an invite code', () => assertFails(updateDoc(doc(cli, 'users/cli'), { inviteCode: 'giftA' })));
+await t('user cannot reset gift to unused', () => assertFails(updateDoc(doc(legacy, 'users/legacy'), { giftUsed: false })));
+await t('user marks own gift used', () => assertSucceeds(updateDoc(doc(legacy, 'users/legacy'), { giftUsed: true, giftUsedAt: 2 })));
 await t('admin lists pending users', () => assertSucceeds(getDocs(query(collection(admin, 'users'), where('status', '==', 'pending')))));
 await t('client cannot list users', () => assertFails(getDocs(query(collection(cli, 'users'), where('status', '==', 'pending')))));
 await t('admin approves a user', () => assertSucceeds(updateDoc(doc(admin, 'users/pend'), { status: 'approved', approvedBy: 'admin@smile.com' })));
 await env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(), 'users/pend'), { uid: 'pend', role: 'client', status: 'pending' }));
-await t('admin creates a client profile for someone else', () => assertSucceeds(setDoc(doc(admin, 'users/made'), { uid: 'made', role: 'client', status: 'approved' })));
 
-console.log('\n== invite / gift onboarding');
-await t('gift: anon user creates approved profile with matching prize', () => assertSucceeds(setDoc(doc(anon('g1'), 'users/g1'), { uid: 'g1', role: 'client', status: 'approved', inviteCode: 'giftA', prize: 'teeth_6', loginType: 'gift' })));
-await t('gift: wrong prize rejected', () => assertFails(setDoc(doc(anon('g2'), 'users/g2'), { uid: 'g2', role: 'client', status: 'approved', inviteCode: 'giftA', prize: 'teeth_9' })));
-await t('gift: missing prize rejected', () => assertFails(setDoc(doc(anon('g3'), 'users/g3'), { uid: 'g3', role: 'client', status: 'approved', inviteCode: 'giftA' })));
-await t('gift: anon user marks invite opened', () => assertSucceeds(updateDoc(doc(anon('g1'), 'invites/giftA'), { status: 'opened', openedAt: 1, uid: 'g1' })));
-await t('gift: cannot set invite status to markup', () => assertFails(updateDoc(doc(anon('g1'), 'invites/giftA'), { status: '<img src=x>' })));
-await t('phone invite: approved profile with no prize', () => assertSucceeds(setDoc(doc(as('ph', '052@smilecenter.pro'), 'users/ph'), { uid: 'ph', role: 'client', status: 'approved', inviteCode: 'phoneB' })));
-await t('phone invite: user marks it used', () => assertSucceeds(updateDoc(doc(as('ph', '052@smilecenter.pro'), 'invites/phoneB'), { used: true, usedAt: 1 })));
-await t('used invite cannot back a new profile', () => assertFails(setDoc(doc(as('u2'), 'users/u2'), { uid: 'u2', role: 'client', status: 'approved', inviteCode: 'usedC' })));
-await t('forged invite code rejected', () => assertFails(setDoc(doc(as('u3'), 'users/u3'), { uid: 'u3', role: 'client', status: 'approved', inviteCode: 'nope' })));
-await t('anyone can read an invite by id (link check)', () => assertSucceeds(getDoc(doc(nobody, 'invites/giftA'))));
-await t('non-admin cannot list invites', () => assertFails(getDocs(collection(cli, 'invites'))));
-await t('client claims gift prize matching its invite', () => assertSucceeds(updateDoc(doc(legacy, 'users/legacy'), { prize: 'teeth_6', giftUsed: false, inviteCode: 'giftA' })));
-await t('client cannot forge a prize', () => assertFails(updateDoc(doc(cli, 'users/cli'), { prize: 'teeth_99' })));
-await t('client marks its gift used', () => assertSucceeds(updateDoc(doc(legacy, 'users/legacy'), { giftUsed: true, giftUsedAt: 2 })));
+console.log('\n== invites: admin-only (links go through Cloud Functions)');
+await t('anonymous visitor cannot read an invite', () => assertFails(getDoc(doc(nobody, 'invites/giftA'))));
+await t('signed-in client cannot read an invite', () => assertFails(getDoc(doc(cli, 'invites/giftA'))));
+await t('client cannot mark an invite opened', () => assertFails(updateDoc(doc(anon('g1'), 'invites/giftA'), { status: 'opened' })));
+await t('client cannot mark an invite used', () => assertFails(updateDoc(doc(cli, 'invites/phoneB'), { used: true })));
+await t('admin creates and lists invites', async () => { await assertSucceeds(setDoc(doc(admin, 'invites/newOne'), { phone: '054', used: false })); await assertSucceeds(getDocs(collection(admin, 'invites'))); });
 
 console.log('\n== projects: access');
 await t('pending user cannot read projects', () => assertFails(getDoc(doc(pend, 'projects/p1'))));
