@@ -490,8 +490,8 @@
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
                     <div>
-                        <div style="font-weight: 600; margin-bottom: 4px;">${title}</div>
-                        <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">${esc(title)}</div>
+                        <div style="font-size: 14px; opacity: 0.9;">${esc(message)}</div>
                     </div>
                 </div>
             `;
@@ -1904,10 +1904,10 @@
             content.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                     <div>
-                        <h2 style="margin: 0;">${esc(project.title)}${project.projectNo ? ` <small style="color:#b95039;font-weight:600;">#${project.projectNo}</small>` : ''}</h2>
+                        <h2 style="margin: 0;">${esc(project.title)}${project.projectNo ? ` <small style="color:#b95039;font-weight:600;">#${esc(project.projectNo)}</small>` : ''}</h2>
                         <p style="color: var(--color-text-secondary); margin: 4px 0 0 0; font-size: 13px;">${esc(project.description)}</p>
                     </div>
-                    <span class="status-pill status-${project.status.replace(/-/g, '')}">${statusLabel(project.status)}</span>
+                    <span class="status-pill status-${esc(String(project.status || '').replace(/[^a-z0-9]/gi, ''))}">${esc(statusLabel(project.status))}</span>
                 </div>
                 
                 ${project.clientRemarks ? `<div style="background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;"><strong>Your Remarks:</strong> ${esc(project.clientRemarks)}</div>` : ''}
