@@ -2,6 +2,7 @@
 // Creates throwaway "qa-*" accounts, invites and a project, exercises every flow
 // through the same SDK calls the pages make, then deletes exactly the items it created (tracked by id), nothing else.
 // Owner access (setup/cleanup only) comes from the logged-in Firebase CLI on this machine.
+// Run: cd tests && npm run test:live
 import { createRequire } from 'node:module';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously,
@@ -15,8 +16,10 @@ const require = createRequire(import.meta.url);
 const FT = `${process.env.APPDATA}/npm/node_modules/firebase-tools/lib/`;
 const { requireAuth } = require(FT + 'requireAuth.js');
 const apiv2 = require(FT + 'apiv2.js');
-await requireAuth({ project: PROJECT });
-const ownerToken = async () => (await apiv2.getAccessToken()).access_token ?? (await apiv2.getAccessToken());
+const account = require(FT + 'auth.js').getGlobalDefaultAccount();
+if (!account) throw new Error('Run "firebase login" first');
+await requireAuth({ project: PROJECT, user: account.user, tokens: account.tokens });
+const ownerToken = () => apiv2.getAccessToken();
 
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const IDT = `https://identitytoolkit.googleapis.com/v1/projects/${PROJECT}`;
