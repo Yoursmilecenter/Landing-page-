@@ -148,7 +148,7 @@ window.enterPortal = async () => {
     try {
         const uid = auth.currentUser.uid;
         await setDoc(doc(db, 'users', uid), {
-            uid, role: 'client', loginType: 'gift',
+            uid, role: 'client', status: 'approved', loginType: 'gift',
             username: invite.phone, phone: invite.phone,
             clientName: invite.clientName || '',
             email: null, prize: invite.prize,

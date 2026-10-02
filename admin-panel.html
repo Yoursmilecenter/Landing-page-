@@ -442,6 +442,7 @@
                 await loadClientsData();
                 lastLoadTime = now;
                 applyFilters();
+                refreshPendingBadge();
             } catch (error) {
                 console.error('Error:', error);
                 if (error.code === 'permission-denied') {
@@ -647,7 +648,8 @@
         async function loadClientsData() {
             try {
                 const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'client')));
-                clientsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                clientsData = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .filter(c => !['pending', 'rejected'].includes(c.status || 'approved'));
             } catch (e) {
                 console.error('Error loading clients:', e);
                 clientsData = [];
@@ -1088,6 +1090,7 @@
                                 <button type="button" class="dx-obtn" onclick="window.location.href='audit-logs.html'">${dxIcon('log', 14)} ${dxa('actClientLog')}</button>
                                 <button type="button" class="dx-obtn" onclick="window.location.href='manage-samples.html'">${dxIcon('images', 14)} ${dxa('actManageSamples')}</button>
                                 <button type="button" class="dx-obtn dx-obtn--primary" onclick="openGiftModal()">${dxIcon('gift', 14)} ${dxa('actGiftInvite')}</button>
+                                <button type="button" class="dx-obtn" onclick="openApprovalsModal()">${dxIcon('users', 14)} ${currentLang === 'he' ? 'אישור הרשמות' : 'Approvals'}<span id="pendingBadge" style="display:none;margin-inline-start:6px;background:#b95039;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;"></span></button>
                                 <button type="button" class="dx-obtn" onclick="openRenameModal()">${dxIcon('pencil', 14)} ${dxa('actRenameClient')}</button>
                                 <button type="button" class="dx-obtn dx-obtn--primary" onclick="openInviteClientModal()">${dxIcon('link', 14)} ${dxa('actInviteClient')}</button>
                                 <button type="button" class="dx-obtn dx-obtn--primary" onclick="openAddClientModal()">${dxIcon('userplus', 14)} ${dxa('actAddClient')}</button>
@@ -1278,11 +1281,21 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Password *</label>
-                                <input type="password" id="clientPassword" class="form-input" placeholder="Enter password" required minlength="6">
+                                <input type="password" id="clientPassword" class="form-input" placeholder="Enter password" required minlength="10">
                             </div>
                             <div id="addClientStatus" class="status-msg"></div>
                             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Create Client</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Pending Registrations Modal -->
+                <div id="approvalsModal" class="modal">
+                    <div class="modal-content" style="max-width: 620px;">
+                        <button class="close" onclick="closeApprovalsModal()">&times;</button>
+                        <h2 class="modal-title">Pending registrations</h2>
+                        <p class="modal-subtitle">Accounts created from the public sign-up form. They cannot see any data until approved.</p>
+                        <div id="approvalsList" style="max-height: 320px; overflow: auto; font-size: 13px;">Loading…</div>
                     </div>
                 </div>
 
@@ -1647,6 +1660,7 @@
                     phone: phone || null,
                     fullName: fullName,
                     role: 'client',
+                    status: 'approved',
                     loginType: type,
                     createdAt: Date.now(),
                     createdBy: currentUserEmail
@@ -1782,6 +1796,87 @@
             } catch (err) {
                 statusEl.textContent = '✗ Error: ' + err.message;
                 statusEl.className = 'status-msg active error';
+            }
+        };
+
+        // ---- Pending registrations (public sign-up awaiting admin approval) ----
+        window.openApprovalsModal = () => {
+            document.getElementById('approvalsModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            loadPendingUsers();
+        };
+
+        window.closeApprovalsModal = () => {
+            document.getElementById('approvalsModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        async function fetchPendingUsers() {
+            const snap = await getDocs(query(collection(db, 'users'), where('status', '==', 'pending')));
+            return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+
+        async function refreshPendingBadge() {
+            const badge = document.getElementById('pendingBadge');
+            if (!badge) return;
+            try {
+                const rows = await fetchPendingUsers();
+                badge.textContent = rows.length;
+                badge.style.display = rows.length ? 'inline-block' : 'none';
+            } catch (e) {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function loadPendingUsers() {
+            const el = document.getElementById('approvalsList');
+            try {
+                const rows = await fetchPendingUsers();
+                if (!rows.length) { el.textContent = 'No pending registrations'; return; }
+                el.innerHTML = '<table style="width:100%;border-collapse:collapse;">' + rows.map(u => `
+                    <tr style="border-bottom:1px solid rgba(0,0,0,.08);">
+                        <td style="padding:8px;">${esc(u.fullName || u.username || '—')}</td>
+                        <td style="padding:8px;direction:ltr;">${esc(u.email || u.phone || u.loginEmail || '')}</td>
+                        <td style="padding:8px;white-space:nowrap;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</td>
+                        <td style="padding:8px;white-space:nowrap;">
+                            <button type="button" class="btn-primary btn-small" onclick="approveUser('${js(u.id)}')">✓ Approve</button>
+                            <button type="button" class="btn-secondary btn-small" onclick="rejectUser('${js(u.id)}')">✗ Reject</button>
+                        </td>
+                    </tr>`).join('') + '</table>';
+            } catch (err) {
+                el.textContent = 'Error loading registrations: ' + err.message;
+            }
+        }
+
+        window.approveUser = async (uid) => {
+            try {
+                await updateDoc(doc(db, 'users', uid), {
+                    status: 'approved', approvedAt: Date.now(), approvedBy: currentUser.email
+                });
+                await setDoc(doc(collection(db, 'auditLogs')), {
+                    eventType: 'status-change', userEmail: currentUser.email,
+                    details: `Approved registration for user ${uid}`,
+                    ipAddress: null, timestamp: Date.now(), userAgent: navigator.userAgent
+                });
+                loadPendingUsers(); refreshPendingBadge(); loadClientsData();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        };
+
+        window.rejectUser = async (uid) => {
+            try {
+                await updateDoc(doc(db, 'users', uid), {
+                    status: 'rejected', rejectedAt: Date.now(), rejectedBy: currentUser.email
+                });
+                await setDoc(doc(collection(db, 'auditLogs')), {
+                    eventType: 'status-change', userEmail: currentUser.email,
+                    details: `Rejected registration for user ${uid}`,
+                    ipAddress: null, timestamp: Date.now(), userAgent: navigator.userAgent
+                });
+                loadPendingUsers(); refreshPendingBadge();
+            } catch (err) {
+                alert('Error: ' + err.message);
             }
         };
 
