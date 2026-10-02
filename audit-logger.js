@@ -1,5 +1,5 @@
 // audit-logger.js - Centralized audit logging for Smile Center Portal
-import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 let db = null;
 
