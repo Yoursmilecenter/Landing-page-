@@ -417,6 +417,10 @@
             </div>
             <div id="loginStatus" class="status-msg" role="alert"></div>
             <button type="submit" class="btn-primary" data-en="Sign in" data-he="כניסה">כניסה</button>
+            <p class="existing-account" id="newAccountLine">
+                <span data-en="Need an account?" data-he="אין לכם חשבון?">אין לכם חשבון?</span>
+                <a href="client-register.html" data-en="Request access" data-he="בקשת גישה">בקשת גישה</a>
+            </p>
         </form>
 
         <!-- Invite Registration Form -->
@@ -427,11 +431,11 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="invitePassword" data-en="Create Your Password *" data-he="צור סיסמה *">Create Your Password *</label>
-                <input type="password" id="invitePassword" class="form-input" placeholder="Enter password" required minlength="6" autocomplete="new-password" data-en="Enter password" data-he="הזן סיסמה">
+                <input type="password" id="invitePassword" class="form-input" placeholder="Enter password" required minlength="10" autocomplete="new-password" data-en="Enter password" data-he="הזן סיסמה">
             </div>
             <div class="form-group">
                 <label class="form-label" for="invitePasswordConfirm" data-en="Confirm Password *" data-he="אמת סיסמה *">Confirm Password *</label>
-                <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="6" autocomplete="new-password" data-en="Re-enter password" data-he="הזן סיסמה שוב">
+                <input type="password" id="invitePasswordConfirm" class="form-input" placeholder="Re-enter password" required minlength="10" autocomplete="new-password" data-en="Re-enter password" data-he="הזן סיסמה שוב">
             </div>
             <div id="inviteStatus" class="status-msg" role="alert"></div>
             <button type="submit" class="btn-primary" id="inviteSubmitBtn" data-en="Complete Registration" data-he="השלם הרשמה">Complete Registration</button>
@@ -637,6 +641,25 @@
 
                 const userData = userDoc.data();
                 const role = userData.role;
+                const acctStatus = userData.status || 'approved';
+
+                // Accounts from self sign-up stay blocked until an admin approves them
+                if (acctStatus === 'pending') {
+                    statusEl.textContent = document.documentElement.lang === 'he'
+                        ? 'החשבון ממתין לאישור מנהל.'
+                        : 'Your account is awaiting admin approval.';
+                    statusEl.className = 'status-msg active warning';
+                    await auth.signOut();
+                    return;
+                }
+                if (acctStatus === 'rejected') {
+                    statusEl.textContent = document.documentElement.lang === 'he'
+                        ? 'בקשת ההרשמה נדחתה. פנו למנהל.'
+                        : 'Your registration was declined. Contact the administrator.';
+                    statusEl.className = 'status-msg active error';
+                    await auth.signOut();
+                    return;
+                }
 
                 // Redirect based on role from Firestore
                 if (role === 'admin') {
@@ -706,6 +729,7 @@
                     phone: phone,
                     email: null,
                     role: 'client',
+                    status: 'approved',
                     loginType: 'phone',
                     createdAt: Date.now(),
                     inviteCode: inviteCode

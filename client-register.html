@@ -21,7 +21,7 @@
                 <input type="email" id="email" class="form-input" placeholder="Email" required>
             </div>
             <div class="form-group">
-                <input type="password" id="password" class="form-input" placeholder="Password" required>
+                <input type="password" id="password" class="form-input" placeholder="Password (min 10 characters)" required minlength="10" autocomplete="new-password">
             </div>
             <div id="registerStatus" class="status-msg"></div>
             <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">Register</button>
@@ -34,7 +34,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -65,35 +65,21 @@
             }
 
             try {
-                // Check if username already exists
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('username', '==', username));
-                const snapshot = await getDocs(q);
-                
-                if (!snapshot.empty) {
-                    statusEl.textContent = 'Username already taken';
-                    statusEl.className = 'status-msg active error';
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Register';
-                    }
-                    return;
-                }
-
-                // Create Firebase Auth user with username@smilecenter.pro
+                // Firebase Auth enforces uniqueness on username@smilecenter.pro
                 const loginEmail = username + '@smilecenter.pro';
                 const userCredential = await createUserWithEmailAndPassword(auth, loginEmail, password);
-                
-                // Store user info in Firestore with pending status
-                await addDoc(collection(db, 'users'), {
+
+                // Profile doc keyed by UID, awaiting admin approval
+                await setDoc(doc(db, 'users', userCredential.user.uid), {
                     uid: userCredential.user.uid,
                     username: username,
                     email: email,
                     loginEmail: loginEmail,
                     role: 'client',
-                    status: 'pending-approval',
+                    status: 'pending',
                     createdAt: Date.now()
                 });
+                await auth.signOut();
 
                 statusEl.textContent = 'Registration submitted! Awaiting admin approval.';
                 statusEl.className = 'status-msg active success';
