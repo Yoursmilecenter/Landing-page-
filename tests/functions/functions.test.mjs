@@ -11,7 +11,7 @@ import { getFirestore as adminDb } from 'firebase-admin/firestore';
 import { getAuth as adminAuth } from 'firebase-admin/auth';
 
 const PROJECT = 'demo-smile';
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8085';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 adminApp({ projectId: PROJECT });
 const A = adminDb();
@@ -21,7 +21,7 @@ const app = initializeApp({ apiKey: 'demo-key', projectId: PROJECT, authDomain: 
 const auth = getAuth(app);
 connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
 const db = getFirestore(app);
-connectFirestoreEmulator(db, '127.0.0.1', 8080);
+connectFirestoreEmulator(db, '127.0.0.1', 8085);
 const fns = getFunctions(app, 'europe-west1');
 connectFunctionsEmulator(fns, '127.0.0.1', 5001);
 const call = (name, data) => httpsCallable(fns, name)(data).then(r => r.data);

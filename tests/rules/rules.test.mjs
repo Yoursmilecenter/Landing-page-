@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, updateDoc, addDoc, collection, getDocs, query, whe
 
 const env = await initializeTestEnvironment({
   projectId: 'smile-test',
-  firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8080 },
+  firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8085 },
 });
 
 let pass = 0, fail = 0;
