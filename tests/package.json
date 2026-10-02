@@ -8,7 +8,7 @@
     "test:functions": "npm --prefix ../functions install --no-audit --no-fund && cd .. && firebase emulators:exec --only auth,firestore,functions --project demo-smile \"node tests/functions/functions.test.mjs\"",
     "test:live": "node live/live.test.mjs"
   },
-  "devDependencies": {
+  "dependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",
     "firebase": "10.14.1",
     "firebase-admin": "^14.5.0",
