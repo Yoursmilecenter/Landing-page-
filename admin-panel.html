@@ -1394,7 +1394,7 @@
                         <form id="inviteClientForm" onsubmit="handleInviteClient(event)">
                             <div class="form-group">
                                 <label class="form-label">Client Phone Number *</label>
-                                <input type="tel" id="invitePhone" class="form-input" placeholder="Enter phone number (e.g., 0501234567)" required>
+                                <input type="tel" id="invitePhone" class="form-input" placeholder="Enter phone number (e.g., 0501234567)" required></div><div class="form-group"><label class="form-label">Link name (optional, a-z, e.g. dr-cohen)</label><input type="text" id="inviteSlug" class="form-input" dir="ltr" maxlength="24" placeholder="dr-cohen">
                             </div>
                             <div id="inviteLinkSection" style="display: none; margin-top: 20px;">
                                 <label class="form-label">Invite Link (Send via WhatsApp):</label>
@@ -1687,7 +1687,10 @@
 
             try {
                 // Generate unique invite code
-                const inviteCode = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+                const slug = (document.getElementById('inviteSlug').value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24).replace(/-+$/, '');
+                const ALPHA = 'abcdefghjkmnpqrstuvwxyz23456789';
+                const rnd = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => ALPHA[b % ALPHA.length]).join('');
+                const inviteCode = slug ? `${slug}-${rnd(6)}` : rnd(10);
                 
                 // Store invite in Firestore
                 await setDoc(doc(db, 'invites', inviteCode), {
@@ -1699,7 +1702,7 @@
                 });
 
                 // Generate invite link
-                const inviteLink = `https://www.smilecenter.pro/portal-login.html?invite=${inviteCode}&phone=${encodeURIComponent(phone)}`;
+                const inviteLink = `https://www.smilecenter.pro/join/${inviteCode}`;
                 
                 document.getElementById('inviteLink').value = inviteLink;
                 document.getElementById('inviteLinkSection').style.display = 'block';

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Join Smile Center</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         .redirect-container {
             display: flex;
@@ -51,7 +51,7 @@
         const code = urlParams.get('c') || urlParams.get('code') || urlParams.get('i');
         const phone = urlParams.get('p') || urlParams.get('phone');
         
-        let url = 'portal-login.html';
+        let url = '/portal-login.html';
         if (code || phone) {
             const params = new URLSearchParams();
             if (code) params.set('invite', code);
