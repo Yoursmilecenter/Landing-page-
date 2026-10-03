@@ -9,6 +9,9 @@
     "enabled": true,
     "autoAlias": true
   },
+  "rewrites": [
+    { "source": "/join/:code", "destination": "/join.html?c=:code" }
+  ],
   "builds": [
     {
       "src": "**",

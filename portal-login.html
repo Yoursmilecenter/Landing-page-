@@ -530,7 +530,7 @@
         // Check if this is an invite link
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get('invite');
-        const invitePhone = urlParams.get('phone');
+        let invitePhone = urlParams.get('phone');
         if (urlParams.get('expired') === '1') {
             const s = document.getElementById('loginStatus');
             if (s) {
@@ -549,7 +549,7 @@
             if (el.tagName === 'INPUT') el.placeholder = text; else el.textContent = text;
         };
 
-        if (inviteCode && invitePhone) {
+        if (inviteCode) {
             const loader = document.getElementById('inviteLoader');
             loader.hidden = false;
             const revealStart = Date.now();
@@ -607,6 +607,7 @@
 
             call('checkInvite', { code: inviteCode }).then(inv => {
                 clearTimeout(timeoutGuard);
+                if (inv.type === 'phone' && !invitePhone) invitePhone = inv.phone;
                 if (inv.type !== 'phone' || inv.phone !== invitePhone) {
                     settle(showInvalid);
                 } else {
