@@ -748,3 +748,8 @@ select option {
 /* Stack: email at bottom, WhatsApp above it */
 .whatsapp-float { bottom: 90px; }
 @media (max-width: 768px) { .whatsapp-float { bottom: 75px; } }
+
+/* Login / sign-up on phones: the floating button covered the submit button, so it sits under the form instead */
+@media (max-width: 600px) {
+    .whatsapp-float.auth-float { position: static; margin: 24px auto 32px; }
+}

@@ -26,8 +26,8 @@ export async function logAuditEvent(eventType, userEmail, details = null) {
         
         await addDoc(collection(db, 'auditLogs'), {
             eventType,
-            userEmail,
-            details,
+            userEmail: userEmail || null,
+            details: details == null ? null : String(details).slice(0, 900), // rules cap details < 1000
             ipAddress,
             timestamp: Date.now(),
             userAgent: navigator.userAgent

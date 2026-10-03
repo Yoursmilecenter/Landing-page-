@@ -242,6 +242,7 @@
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, getBlob } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
         import { getFirestore, collection, getDocs, query, where, orderBy, updateDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { initAuditLogger, logAuditEvent } from './audit-logger.js';
 
         // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -259,6 +260,9 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        initAuditLogger(db);
+        // Fire-and-forget: logging never blocks or breaks the action itself
+        const logAudit = (type, details) => { logAuditEvent(type, currentUser?.email || null, details); };
 
         let currentUser = null;
         let myProjects = [];
@@ -307,6 +311,9 @@
                 applyFilters();
                 return;
             }
+
+            // A forced reload (e.g. right after an upload) must re-list Storage, not reuse cached file lists.
+            if (force) projectsCache.clear();
 
             try {
                 const projectsRef = collection(db, 'projects');
@@ -389,9 +396,8 @@
                 }
                 if (currentFilters.search) {
                     const searchLower = currentFilters.search.toLowerCase();
-                    return p.title.toLowerCase().includes(searchLower) || 
-                           p.description.toLowerCase().includes(searchLower) ||
-                           p.clientEmail.toLowerCase().includes(searchLower);
+                    return [p.title, p.description, p.clientEmail]
+                        .some(v => String(v || '').toLowerCase().includes(searchLower));
                 }
                 return true;
             });
@@ -401,9 +407,9 @@
             } else if (currentFilters.sortBy === 'date-desc') {
                 filteredProjects.sort((a, b) => b.createdAt - a.createdAt);
             } else if (currentFilters.sortBy === 'name-asc') {
-                filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
+                filteredProjects.sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
             } else if (currentFilters.sortBy === 'name-desc') {
-                filteredProjects.sort((a, b) => b.title.localeCompare(a.title));
+                filteredProjects.sort((a, b) => String(b.title || '').localeCompare(String(a.title || '')));
             }
 
             currentPage = 1;
@@ -433,10 +439,6 @@
             return bytes.toFixed(1) + ' ' + units[u];
         }
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
-        };
-
         window.viewHtmlFile = (projectId) => {
             const project = myProjects.find(p => p.id === projectId);
             if (!project) return;
@@ -463,6 +465,7 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(blobUrl);
+                logAudit('file-download', `Designer downloaded "${filename}" (${path})`);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Download failed: ' + error.message);
@@ -479,7 +482,12 @@
                 urgent: myProjects.filter(p => p.isUrgent).length
             };
 
-            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const totalPages = Math.max(1, Math.ceil(filteredProjects.length / itemsPerPage));
+            if (currentPage > totalPages) currentPage = totalPages;
+            // Re-rendering rebuilds the controls, so mark the current choices as selected
+            const sel = (v, cur) => (String(v) === String(cur) ? 'selected' : '');
+            const searchEl = document.querySelector('.search-input');
+            const searchFocus = searchEl && document.activeElement === searchEl ? searchEl.selectionStart : null;
             const startIdx = (currentPage - 1) * itemsPerPage;
             const endIdx = startIdx + itemsPerPage;
             const pageProjects = filteredProjects.slice(startIdx, endIdx);
@@ -545,33 +553,34 @@
                         <input type="text" class="search-input" placeholder="🔍 ${t('searchPatients')}" 
                                oninput="handleSearch(this.value)" value="${esc(currentFilters.search)}">
                         <select onchange="updateFilter('status', this.value)" style="min-width: 150px;">
-                            <option value="all">${t('allStatus')}</option>
-                            <option value="pending">${t('pending')}</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="awaiting-client-approval">${t('awaitingApproval')}</option>
-                            <option value="approved">Approved</option>
-                            <option value="changes-requested">Changes Requested</option>
-                            <option value="completed">${t('completed')}</option>
+                            <option value="all" ${sel('all', currentFilters.status)}>${t('allStatus')}</option>
+                            <option value="pending" ${sel('pending', currentFilters.status)}>${t('pending')}</option>
+                            <option value="in-progress" ${sel('in-progress', currentFilters.status)}>${t('inProgress')}</option>
+                            <option value="awaiting-client-approval" ${sel('awaiting-client-approval', currentFilters.status)}>${t('awaitingApproval')}</option>
+                            <option value="approved" ${sel('approved', currentFilters.status)}>Approved</option>
+                            <option value="changes-requested" ${sel('changes-requested', currentFilters.status)}>Changes Requested</option>
+                            <option value="stl-ready" ${sel('stl-ready', currentFilters.status)}>STL Ready</option>
+                            <option value="completed" ${sel('completed', currentFilters.status)}>${t('completed')}</option>
                         </select>
                         <select onchange="updateFilter('priority', this.value)" style="min-width: 140px;">
-                            <option value="all">${t('allPriorities')}</option>
-                            <option value="urgent">⚡ Urgent Only</option>
-                            <option value="vip">${t('vipOnly')}</option>
-                            <option value="normal">${t('normalOnly')}</option>
+                            <option value="all" ${sel('all', currentFilters.priority)}>${t('allPriorities')}</option>
+                            <option value="urgent" ${sel('urgent', currentFilters.priority)}>⚡ Urgent Only</option>
+                            <option value="vip" ${sel('vip', currentFilters.priority)}>${t('vipOnly')}</option>
+                            <option value="normal" ${sel('normal', currentFilters.priority)}>${t('normalOnly')}</option>
                         </select>
                         <select onchange="updateFilter('sortBy', this.value)" style="min-width: 140px;">
-                            <option value="date-desc">${t('dateNewest')}</option>
-                            <option value="date-asc">${t('dateOldest')}</option>
-                            <option value="name-asc">${t('nameAZ')}</option>
-                            <option value="name-desc">${t('nameZA')}</option>
+                            <option value="date-desc" ${sel('date-desc', currentFilters.sortBy)}>${t('dateNewest')}</option>
+                            <option value="date-asc" ${sel('date-asc', currentFilters.sortBy)}>${t('dateOldest')}</option>
+                            <option value="name-asc" ${sel('name-asc', currentFilters.sortBy)}>${t('nameAZ')}</option>
+                            <option value="name-desc" ${sel('name-desc', currentFilters.sortBy)}>${t('nameZA')}</option>
                         </select>
                         <select onchange="itemsPerPage = parseInt(this.value); applyFilters();" style="min-width: 120px;">
-                            <option value="25">25 ${t('perPage')}</option>
-                            <option value="50" selected>50 ${t('perPage')}</option>
-                            <option value="100">100 ${t('perPage')}</option>
+                            <option value="25" ${sel(25, itemsPerPage)}>25 ${t('perPage')}</option>
+                            <option value="50" ${sel(50, itemsPerPage)}>50 ${t('perPage')}</option>
+                            <option value="100" ${sel(100, itemsPerPage)}>100 ${t('perPage')}</option>
                         </select>
                         <div style="margin-left: auto; font-size: 13px; color: var(--color-text-secondary);">
-                            ${t('showing')} ${startIdx + 1}-${Math.min(endIdx, filteredProjects.length)} ${t('of')} ${filteredProjects.length}
+                            ${t('showing')} ${filteredProjects.length ? startIdx + 1 : 0}-${Math.min(endIdx, filteredProjects.length)} ${t('of')} ${filteredProjects.length}
                         </div>
                     </div>
 
@@ -624,7 +633,7 @@
                                         </button>
                                     </td>
                                 </tr>
-                            `}).join('') : `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">${t('noPatients')}</td></tr>`}
+                            `}).join('') : `<tr><td colspan="6" style="text-align: center; padding: 30px; color: var(--color-text-secondary);">${t('noPatients')}</td></tr>`}
                         </tbody>
                     </table>
 
@@ -668,6 +677,12 @@
             `;
 
             setupUploadModal();
+
+            // Keep typing in the search box across the re-render
+            if (searchFocus !== null) {
+                const s = document.querySelector('.search-input');
+                if (s) { s.focus(); s.setSelectionRange(searchFocus, searchFocus); }
+            }
         }
 
         function setupUploadModal() {
@@ -786,12 +801,25 @@
                 const projectSnap = await getDoc(doc(db, 'projects', currentProjectForUpload));
                 const projectData = projectSnap.data();
 
+                // HTML: one current design per patient, "<patient>.html" (a new upload replaces it).
+                // STL: "<patient> - <original name>" so upper/lower jaws in one upload don't overwrite
+                // each other or the client's scan files.
+                const base = String(currentPatientTitle || 'design').replace(/[\\/#?\[\]*]/g, '-').trim() || 'design';
+                const uploaded = [];
                 for (const file of files) {
-                    const ext = file.name.substring(file.name.lastIndexOf('.'));
-                    const newFileName = `${currentPatientTitle}${ext}`;
+                    const isHtml = /\.html?$/i.test(file.name);
+                    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                    const orig = file.name.replace(/[\\/#?\[\]*]/g, '-');
+                    const newFileName = isHtml ? `${base}.html` : `${base} - ${orig}`;
+                    if (isHtml && uploaded.includes(newFileName)) continue; // only one design file per upload
                     const storageRef = ref(storage, `projects/${currentProjectForUpload}/${newFileName}`);
-                    await uploadBytesResumable(storageRef, file);
+                    await uploadBytesResumable(storageRef, file, {
+                        contentType: isHtml ? 'text/html' : (ext === '.stl' ? 'model/stl' : file.type || 'application/octet-stream'),
+                        customMetadata: { by: 'staff' } // storage rules: clients can't overwrite staff files
+                    });
+                    uploaded.push(newFileName);
                 }
+                logAudit('file-upload', `Designer uploaded ${uploaded.join(', ')} to project ${currentProjectForUpload}`);
 
                 const updateData = {};
                 if (currentUploadType === 'html' && hasHTML) {
@@ -809,6 +837,7 @@
 
                 if (Object.keys(updateData).length > 0) {
                     await updateDoc(doc(db, 'projects', currentProjectForUpload), updateData);
+                    if (updateData.status) logAudit('status-change', `Project ${currentProjectForUpload} "${currentPatientTitle}": ${projectData.status} -> ${updateData.status}`);
                 }
 
                 const warnedEarlySTL = currentUploadType === 'stl' && !projectData.htmlApproved;
@@ -856,7 +885,6 @@
                     <div style="display: flex; gap: 8px;">
                         ${file.name.match(/\.html?$/i) ? `<button class="btn-view" onclick="window.open('${js(file.url)}', '_blank')">Preview</button>` : ''}
                         <button class="btn-download" onclick="forceDownload('${js(file.path)}', '${js(file.name)}')">Download</button>
-                        <button type="button" class="btn-download" onclick="copyLink('${js(file.url)}')" style="background: #10b981; color: white;">Copy Link</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';

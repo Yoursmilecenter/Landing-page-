@@ -333,6 +333,7 @@
         import * as THREE from './vendor/three/three.module.min.js';
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
+        import { initAuditLogger, logAuditEvent } from './audit-logger.js';
 
         // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -368,6 +369,9 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        initAuditLogger(db);
+        // Fire-and-forget: logging never blocks or breaks the action itself (anonymous gift guests have no email)
+        const logAudit = (type, details) => { if (auth.currentUser && !auth.currentUser.isAnonymous) logAuditEvent(type, auth.currentUser.email, details); };
         // Gift prizes are attached and invites closed server-side (Cloud Functions)
         const claimGift = httpsCallable(getFunctions(app, 'europe-west1'), 'claimGift');
 
@@ -405,7 +409,7 @@
 
         // Session Timeout Management
         let sessionTimeout;
-        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const TIMEOUT_DURATION = 60 * 60 * 1000; // 60 minutes of inactivity
 
         function initSessionTimeout() {
             resetSessionTimeout();
@@ -518,6 +522,9 @@
                 render();
                 return;
             }
+
+            // A forced reload (e.g. right after an upload) must re-list Storage, not reuse cached file lists.
+            if (force) projectsCache.clear();
 
             try {
                 const projectsRef = collection(db, 'projects');
@@ -1131,12 +1138,6 @@
             dxSyncFileInput();
         };
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Link copied to clipboard!');
-            });
-        };
-
         let currentApprovalProjectId = null;
 
         window.viewHtmlForApproval = (projectId, url, filename) => {
@@ -1174,6 +1175,7 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
+                logAudit('html-approval', `Approved design for "${project.title}" (${currentApprovalProjectId})`);
                 statusEl.textContent = '✅ Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -1203,6 +1205,7 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
+                logAudit('html-rejection', `Requested changes on project ${currentApprovalProjectId}: ${remarks}`);
                 statusEl.textContent = '✅ Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -1764,6 +1767,7 @@
                     window.__dxPendingProjectId = projectId;
                     window.__dxUploaded = new Set();
                     window.__dxCreated = true;
+                    logAudit('case-created', `Created patient case "${title}" (${projectId}) for ${clientEmail}`);
                     if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
                 }
 
@@ -1777,6 +1781,7 @@
                         await uploadBytesResumable(storageRef, file);
                         if (window.__dxUploaded) window.__dxUploaded.add(file.name);
                     }
+                    logAudit('file-upload', `Uploaded ${files.length} file(s) to "${title}" (${projectId}): ${Array.from(files).map(f => f.name).join(', ')}`);
                 }
 
                 window.__dxPendingProjectId = null;
@@ -1877,6 +1882,7 @@
                     const storageRef = ref(storage, `projects/${currentUploadProjectId}/${file.name}`);
                     await uploadBytesResumable(storageRef, file);
                 }
+                logAudit('file-upload', `Uploaded ${files.length} file(s) to project ${currentUploadProjectId}: ${Array.from(files).map(f => f.name).join(', ')}`);
 
                 statusEl.textContent = '✅ ' + t('filesUploadedSuccess');
                 statusEl.className = 'status-msg active success';
@@ -2182,6 +2188,7 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(blobUrl);
+                logAudit('file-download', `Downloaded "${filename}" (${path})`);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Download failed: ' + error.message);
@@ -2197,7 +2204,7 @@
                     stlDownloadedFile: fileName,
                     status: 'completed'
                 });
-                console.log('STL download tracked');
+                logAudit('status-change', `Project ${projectId} completed (final STL "${fileName}" downloaded)`);
             } catch (error) {
                 console.error('Error tracking download:', error);
             }

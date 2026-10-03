@@ -508,6 +508,7 @@
         import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
         import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
         import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
+        import { initAuditLogger, logAuditEvent } from './audit-logger.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBOmZxS75qIodscsge-gHYuUlb2vCvl0ZM",
@@ -521,6 +522,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        initAuditLogger(db);
         // Invite checks and invite sign-up run server-side (Cloud Functions)
         const fns = getFunctions(app, 'europe-west1');
         const call = (name, data) => httpsCallable(fns, name)(data).then(r => r.data);
@@ -529,6 +531,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get('invite');
         const invitePhone = urlParams.get('phone');
+        if (urlParams.get('expired') === '1') {
+            const s = document.getElementById('loginStatus');
+            if (s) {
+                s.textContent = document.documentElement.lang === 'he'
+                    ? 'נותקת אחרי שעה ללא פעילות. התחבר/י שוב.'
+                    : 'You were signed out after an hour of inactivity. Please sign in again.';
+                s.className = 'status-msg active warning';
+            }
+        }
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         const applyLangToEl = el => {
@@ -670,6 +681,14 @@
                     return;
                 }
 
+                // Record the sign-in before leaving the page (bounded wait so a slow write never blocks login)
+                if (['admin', 'designer', 'client'].includes(role)) {
+                    await Promise.race([
+                        logAuditEvent('login', userCredential.user.email, `${role} signed in`),
+                        new Promise(r => setTimeout(r, 1500))
+                    ]);
+                }
+
                 // Redirect based on role from Firestore
                 if (role === 'admin') {
                     window.location.href = 'admin-panel.html';
@@ -684,7 +703,7 @@
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                statusEl.textContent = 'Invalid credentials';
+                statusEl.textContent = document.documentElement.lang === 'he' ? 'פרטי ההתחברות שגויים' : 'Invalid credentials';
                 statusEl.className = 'status-msg active error';
             }
         };
@@ -743,7 +762,7 @@
 
     <!-- WhatsApp Float Button -->
     <a href="https://wa.me/972559339666?text=Hello%20Smile%20Center!" 
-       class="whatsapp-float" 
+       class="whatsapp-float auth-float" 
        target="_blank" 
        aria-label="Chat on WhatsApp">
         <svg viewBox="0 0 32 32" width="32" height="32">

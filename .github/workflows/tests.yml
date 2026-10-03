@@ -1,4 +1,4 @@
-# Runs the Firestore rules tests and the Cloud Functions end-to-end tests
+# Runs the Firestore + Storage rules tests and the Cloud Functions end-to-end tests
 # (local emulators, no production access) on every push and pull request.
 name: tests
 on:
