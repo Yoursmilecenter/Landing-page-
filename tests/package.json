@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "npm run test:rules && npm run test:functions",
+    "test": "npm run test:rules && npm run test:storage && npm run test:functions",
     "test:rules": "cd rules && firebase emulators:exec --only firestore --project smile-test \"node rules.test.mjs\"",
+    "test:storage": "cd rules && firebase emulators:exec --only firestore,storage --project smile-test \"node storage.test.mjs\"",
     "test:functions": "npm --prefix ../functions install --no-audit --no-fund && cd .. && firebase emulators:exec --only auth,firestore,functions --project demo-smile \"node tests/functions/functions.test.mjs\"",
     "test:live": "node live/live.test.mjs"
   },

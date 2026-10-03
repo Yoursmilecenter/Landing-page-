@@ -33,10 +33,31 @@ function requirePassword(pw) {
   if (typeof pw !== 'string' || pw.length < MIN_PASSWORD || pw.length > 128) fail('invalid-argument', 'weak-password');
 }
 
-async function createAuthUser(email, password, displayName) {
+// Anyone can create a bare Firebase Auth login from the browser SDK (anonymous gift sign-in needs sign-up enabled),
+// e.g. to grab "0501234567@smilecenter.pro" before the admin creates that client. Such a login has no users/{uid}
+// profile, so the rules give it nothing. When a real account needs that address, the orphan is removed.
+// The age check keeps a sign-up that is mid-way (login created, profile not yet written) from being taken over.
+const ORPHAN_MIN_AGE_MS = Number(process.env.ORPHAN_MIN_AGE_MS ?? 2 * 60 * 1000);
+
+async function reclaimOrphanLogin(email) {
+  let u;
+  try { u = await auth.getUserByEmail(email); } catch { return false; }
+  const age = Date.now() - new Date(u.metadata.creationTime).getTime();
+  if (!(age >= ORPHAN_MIN_AGE_MS)) return false;
+  const profile = await db.doc(`users/${u.uid}`).get();
+  if (profile.exists) return false;
+  await auth.deleteUser(u.uid);
+  console.warn('removed orphan login without profile', { uid: u.uid, email, age });
+  return true;
+}
+
+async function createAuthUser(email, password, displayName, retried = false) {
   try {
     return await auth.createUser({ email, password, ...(displayName ? { displayName } : {}) });
   } catch (e) {
+    if (e.code === 'auth/email-already-exists' && !retried && await reclaimOrphanLogin(email)) {
+      return createAuthUser(email, password, displayName, true);
+    }
     if (e.code === 'auth/email-already-exists') fail('already-exists', 'account-exists');
     if (e.code === 'auth/invalid-email') fail('invalid-argument', 'bad-email');
     if (e.code === 'auth/invalid-password') fail('invalid-argument', 'weak-password');
@@ -64,6 +85,25 @@ async function audit(req, eventType, userEmail, details) {
   } catch (e) {
     console.error('audit log failed', e);
   }
+}
+
+// Per-IP fixed window, kept in rateLimits/{key} (no client access: the database rules don't match that collection).
+// Stops one visitor from filling the pending-approval queue (MAX_PENDING) and blocking real sign-ups.
+const SIGNUPS_PER_IP_PER_HOUR = Number(process.env.SIGNUPS_PER_IP_PER_HOUR ?? 5);
+
+async function rateLimit(req, action, max, windowMs) {
+  // Behind Google's front end the visitor is the first X-Forwarded-For entry (rawRequest.ip can be the proxy)
+  const fwd = String(req.rawRequest?.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
+  const ip = String(fwd || req.rawRequest?.ip || 'unknown').replace(/[^0-9a-fA-F:.]/g, '').slice(0, 64) || 'unknown';
+  const ref = db.doc(`rateLimits/${action}_${ip.replace(/[:.]/g, '-')}`);
+  const now = Date.now();
+  await db.runTransaction(async (tx) => {
+    const s = await tx.get(ref);
+    const d = s.exists ? s.data() : null;
+    if (!d || now - d.windowStart > windowMs) { tx.set(ref, { windowStart: now, count: 1, expiresAt: new Date(now + windowMs) }); return; }
+    if (d.count >= max) fail('resource-exhausted', 'too-many-requests');
+    tx.update(ref, { count: d.count + 1 });
+  });
 }
 
 function giftState(inv) {
@@ -196,6 +236,7 @@ export const requestAccess = onCall(async (req) => {
   if (!USERNAME.test(username) || /^\d+$/.test(username)) fail('invalid-argument', 'bad-username');
   if (!EMAIL.test(email)) fail('invalid-argument', 'bad-email');
   requirePassword(password);
+  await rateLimit(req, 'signup', SIGNUPS_PER_IP_PER_HOUR, 60 * 60 * 1000);
   const pending = await db.collection('users').where('status', '==', 'pending').count().get();
   if (pending.data().count >= MAX_PENDING) fail('resource-exhausted', 'too-many-pending');
   const loginEmail = `${username.toLowerCase()}@${DOMAIN}`;

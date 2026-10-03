@@ -40,6 +40,7 @@ const expectErr = async (p, code, reason) => {
 };
 const eq = (a, b, what) => { if (a !== b) throw new Error(`${what}: got ${JSON.stringify(a)}, want ${JSON.stringify(b)}`); };
 const PW = 'Correct-Horse-9';
+const expectAuthGone = async (uid) => { try { await AA.getUser(uid); } catch { return; } throw new Error(`auth user ${uid} still exists`); };
 const DAY = 86400000;
 
 // ---------- seed ----------
@@ -65,6 +66,13 @@ await t('pending account can sign in but sees no projects', async () => {
   eq(denied, true, 'projects denied'); await signOut(auth);
 });
 await t('duplicate username rejected', () => expectErr(call('requestAccess', { username: 'drlevi', email: 'x@y.co', password: PW }), 'already-exists', 'account-exists'));
+await t('squatted username (login without profile) is reclaimed', async () => {
+  const squat = await AA.createUser({ email: 'drsquat@smilecenter.pro', password: 'squatter-pass-1' });
+  eq((await call('requestAccess', { username: 'drsquat', email: 'sq@clinic.co.il', password: PW })).ok, true, 'ok');
+  await expectAuthGone(squat.uid);
+  const u = await AA.getUserByEmail('drsquat@smilecenter.pro');
+  eq((await A.doc(`users/${u.uid}`).get()).data().status, 'pending', 'new pending profile');
+});
 await t('phone-number username rejected (reserved for invites)', () => expectErr(call('requestAccess', { username: '0521234567', email: 'x@y.co', password: PW }), 'invalid-argument', 'bad-username'));
 await t('short password rejected', () => expectErr(call('requestAccess', { username: 'drcohen', email: 'c@y.co', password: 'short' }), 'invalid-argument', 'weak-password'));
 await t('bad email rejected', () => expectErr(call('requestAccess', { username: 'drcohen', email: 'nope', password: PW }), 'invalid-argument', 'bad-email'));
@@ -84,6 +92,16 @@ await t('admin creates an approved email client', async () => {
   const d = (await A.doc(`users/${uid}`).get()).data();
   eq(d.status, 'approved', 'status'); eq(d.email, 'dr.mizrahi@clinic.co.il', 'email'); eq(d.createdBy, 'admin@smile.com', 'createdBy');
 });
+await t('squatted phone login (no profile) is reclaimed by Add client', async () => {
+  // someone grabbed the address from the browser SDK before the admin created the client
+  const squat = await AA.createUser({ email: '0529998877@smilecenter.pro', password: 'squatter-pass-1' });
+  const { uid } = await call('adminCreateClient', { type: 'phone', phone: '052-999 8877', fullName: 'Dr Squat', password: PW });
+  if (uid === squat.uid) throw new Error('kept the squatter uid');
+  await expectAuthGone(squat.uid);
+  eq((await A.doc(`users/${uid}`).get()).data().status, 'approved', 'new profile');
+});
+await t('login that has a profile is never reclaimed', () => expectErr(
+  call('adminCreateClient', { type: 'email', email: 'plain@x.co', fullName: 'Dup', password: PW }), 'already-exists', 'account-exists'));
 await t('admin creates a phone client', async () => {
   const { uid } = await call('adminCreateClient', { type: 'phone', phone: '+972 50 123 4567', fullName: 'Dr Phone', password: PW });
   eq((await AA.getUser(uid)).email, '0501234567@smilecenter.pro', 'auth email (+972 normalised to 0)');

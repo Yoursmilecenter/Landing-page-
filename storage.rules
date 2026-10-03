@@ -2,30 +2,59 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    function me() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Same gate as the database rules: signed in, has a profile, not awaiting / refused approval.
+    function active() {
+      return request.auth != null
+             && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+             && !(me().get('status', 'approved') in ['pending', 'rejected']);
+    }
+
     function role() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+      return me().role;
     }
 
     function isAdmin() {
-      return request.auth != null && role() == 'admin';
+      return active() && role() == 'admin';
     }
 
     function project(pid) {
       return firestore.get(/databases/(default)/documents/projects/$(pid)).data;
     }
 
-    // Admin: all. Designer: assigned projects. Client: own projects.
+    function isDesignerOf(pid) {
+      return active() && role() == 'designer' && project(pid).assignedDesignerEmail == request.auth.token.email;
+    }
+
+    function isClientOf(pid) {
+      return active() && role() == 'client' && project(pid).clientEmail == request.auth.token.email;
+    }
+
     function canAccess(pid) {
-      return request.auth != null && (
-        role() == 'admin' ||
-        (role() == 'designer' && project(pid).assignedDesignerEmail == request.auth.token.email) ||
-        (role() == 'client' && project(pid).clientEmail == request.auth.token.email)
-      );
+      return isAdmin() || isDesignerOf(pid) || isClientOf(pid);
+    }
+
+    function sizeOk() {
+      return request.resource.size < 200 * 1024 * 1024;
+    }
+
+    // Staff (admin / designer) uploads carry customMetadata.by == 'staff'.
+    function staffFile() {
+      return resource != null && resource.metadata != null && resource.metadata.get('by', '') == 'staff';
+    }
+
+    function claimsStaff() {
+      return request.resource.metadata != null && request.resource.metadata.get('by', '') == 'staff';
     }
 
     match /projects/{pid}/{allPaths=**} {
       allow read: if canAccess(pid);
-      allow create, update: if canAccess(pid) && request.resource.size < 200 * 1024 * 1024;
+      allow create: if sizeOk() && (isAdmin() || isDesignerOf(pid) || (isClientOf(pid) && !staffFile() && !claimsStaff()));
+      // Clients may replace their own uploads (e.g. a corrected scan), never a designer/admin file.
+      allow update: if sizeOk() && (isAdmin() || isDesignerOf(pid) || (isClientOf(pid) && !staffFile() && !claimsStaff()));
       allow delete: if isAdmin();
     }
 

@@ -256,11 +256,8 @@
         let lastLoadTime = 0;
         const CACHE_DURATION = 30000; // 30 seconds
         
-        // Designers are loaded from users with role 'designer'; this list is only a fallback if none are found.
-        const designers = [
-            { email: 'designer1@smile.com', name: 'Designer 1' },
-            { email: 'designer2@smile.com', name: 'Designer 2' },
-        ];
+        // Filled by loadDesigners() from users with role 'designer' (no hard-coded fallback accounts).
+        const designers = [];
 
         async function loadDesigners() {
             try {
@@ -270,7 +267,7 @@
                     .map(d => ({ email: String(d.email || '').trim().toLowerCase(), name: String(d.fullName || d.name || d.username || d.email || '').trim() }))
                     .filter(d => d.email)
                     .sort((a, b) => a.name.localeCompare(b.name));
-                if (list.length) designers.splice(0, designers.length, ...list);
+                designers.splice(0, designers.length, ...list);
             } catch (e) { console.error('Loading designers failed:', e); }
         }
 
@@ -410,7 +407,7 @@
 
         // Session Timeout Management
         let sessionTimeout;
-        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const TIMEOUT_DURATION = 60 * 60 * 1000; // 60 minutes of inactivity
 
         function initSessionTimeout() {
             resetSessionTimeout();
@@ -425,9 +422,9 @@
         function resetSessionTimeout() {
             clearTimeout(sessionTimeout);
             sessionTimeout = setTimeout(async () => {
-                alert('Your session has expired due to inactivity. You will be logged out.');
+                // No alert(): a modal dialog freezes the tab until someone clicks it
                 await signOut(auth);
-                window.location.href = 'portal-login.html';
+                window.location.href = 'portal-login.html?expired=1';
             }, TIMEOUT_DURATION);
         }
 
@@ -437,6 +434,8 @@
                 applyFilters();
                 return;
             }
+            // A forced reload (e.g. right after an upload) must re-list Storage, not reuse cached file lists.
+            if (force) projectsCache.clear();
 
             try {
                 const projectsRef = collection(db, 'projects');
@@ -566,10 +565,6 @@
             return bytes.toFixed(1) + ' ' + units[u];
         }
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url).then(() => alert('Download link copied!'));
-        };
-
         window.forceDownload = async (path, filename) => {
             try {
                 const fileRef = ref(storage, path);
@@ -582,6 +577,7 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(blobUrl);
+                adminAudit('file-download', `Admin downloaded "${filename}" (${path})`);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Download failed: ' + error.message);
@@ -1469,9 +1465,8 @@
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        ${file.name.match(/\\.html?$/i) ? `<button class="btn-view" onclick="window.open('${js(file.url)}', '_blank')">View</button>` : ''}
+                        ${/\.html?$/i.test(file.name) ? `<button class="btn-view" onclick="window.open('${js(file.url)}', '_blank')">View</button>` : ''}
                         <button class="btn-download" onclick="forceDownload('${js(file.path)}', '${js(file.name)}')">Download</button>
-                        <button type="button" class="btn-download" onclick="copyLink('${js(file.url)}')" style="background: #10b981; color: white;">Copy</button>
                     </div>
                 </div>
             `).join('') : '<p style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No files yet</p>';
@@ -1488,8 +1483,9 @@
             try {
                 for (const file of files) {
                     const storageRef = ref(storage, `projects/${currentProjectForFiles.id}/${file.name}`);
-                    await uploadBytesResumable(storageRef, file);
+                    await uploadBytesResumable(storageRef, file, { customMetadata: { by: 'staff' } }); // clients can't overwrite staff files
                 }
+                adminAudit('file-upload', `Admin uploaded ${Array.from(files).map(f => f.name).join(', ')} to "${currentProjectForFiles.title}" (${currentProjectForFiles.id})`);
 
                 statusEl.textContent = ' Files uploaded!';
                 statusEl.className = 'status-msg active success';
@@ -1576,6 +1572,7 @@
 
                 // Delete Firestore document
                 await deleteDoc(doc(db, 'projects', projectId));
+                adminAudit('case-deleted', `Deleted patient "${patientName}" (${projectId}) and ${list.items.length} file(s)`);
 
                 alert('Patient deleted successfully');
                 await loadData(true);
@@ -1830,14 +1827,33 @@
             }
         }
 
+        // Fire-and-forget audit entry; logging never blocks or breaks the action itself
+        function adminAudit(eventType, details) {
+            setDoc(doc(collection(db, 'auditLogs')), {
+                eventType, userEmail: currentUser?.email || null, details: String(details).slice(0, 900),
+                ipAddress: null, timestamp: Date.now(), userAgent: navigator.userAgent
+            }).catch(e => console.error('audit log failed', e));
+        }
+
+        // "rulestest (rulestest@smilecenter.pro, contact x@y.com)" instead of a bare uid in the audit log
+        async function userLabel(uid) {
+            try {
+                const u = (await getDoc(doc(db, 'users', uid))).data() || {};
+                const name = u.fullName || u.clientName || u.username || uid;
+                const ids = [u.loginEmail, u.email && `contact ${u.email}`, u.phone].filter(Boolean).join(', ');
+                return ids ? `${name} (${ids})` : name;
+            } catch { return uid; }
+        }
+
         window.approveUser = async (uid) => {
             try {
+                const label = await userLabel(uid);
                 await updateDoc(doc(db, 'users', uid), {
                     status: 'approved', approvedAt: Date.now(), approvedBy: currentUser.email
                 });
                 await setDoc(doc(collection(db, 'auditLogs')), {
                     eventType: 'status-change', userEmail: currentUser.email,
-                    details: `Approved registration for user ${uid}`,
+                    details: `Approved registration: ${label}`.slice(0, 900),
                     ipAddress: null, timestamp: Date.now(), userAgent: navigator.userAgent
                 });
                 loadPendingUsers(); refreshPendingBadge(); loadClientsData();
@@ -1848,12 +1864,13 @@
 
         window.rejectUser = async (uid) => {
             try {
+                const label = await userLabel(uid);
                 await updateDoc(doc(db, 'users', uid), {
                     status: 'rejected', rejectedAt: Date.now(), rejectedBy: currentUser.email
                 });
                 await setDoc(doc(collection(db, 'auditLogs')), {
                     eventType: 'status-change', userEmail: currentUser.email,
-                    details: `Rejected registration for user ${uid}`,
+                    details: `Rejected registration: ${label}`.slice(0, 900),
                     ipAddress: null, timestamp: Date.now(), userAgent: navigator.userAgent
                 });
                 loadPendingUsers(); refreshPendingBadge();

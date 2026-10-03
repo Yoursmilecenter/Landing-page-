@@ -333,6 +333,7 @@
         import * as THREE from './vendor/three/three.module.min.js';
         import { STLLoader } from './vendor/three/STLLoader.js';
         import { OrbitControls } from './vendor/three/OrbitControls.js';
+        import { initAuditLogger, logAuditEvent } from './audit-logger.js';
 
         // XSS-safe helpers: esc() for HTML text/attributes, js() for values inside inline onclick='...'
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -368,6 +369,9 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        initAuditLogger(db);
+        // Fire-and-forget: logging never blocks or breaks the action itself (anonymous gift guests have no email)
+        const logAudit = (type, details) => { if (auth.currentUser && !auth.currentUser.isAnonymous) logAuditEvent(type, auth.currentUser.email, details); };
         // Gift prizes are attached and invites closed server-side (Cloud Functions)
         const claimGift = httpsCallable(getFunctions(app, 'europe-west1'), 'claimGift');
 
@@ -405,7 +409,7 @@
 
         // Session Timeout Management
         let sessionTimeout;
-        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const TIMEOUT_DURATION = 60 * 60 * 1000; // 60 minutes of inactivity
 
         function initSessionTimeout() {
             resetSessionTimeout();
@@ -506,6 +510,13 @@
             }, 5000);
         }
 
+        // The designer's final STL (not the patient's own scan): uploaded by staff, or - for files from before
+        // upload metadata existed - named after the patient by the designer portal.
+        const isFinalStl = (p, f) => /\.stl$/i.test(f.name) &&
+            (f.by === 'staff' || (!f.by && !!p.title && String(f.name).startsWith(String(p.title))));
+        // Final files are only handed over once the client approved the design and the designer delivered.
+        const finalReady = (p) => p.status === 'stl-ready' || p.status === 'completed';
+
         async function loadData(force = false) {
             const now = Date.now();
             if (!force && now - lastLoadTime < CACHE_DURATION && userProjects.length > 0) {
@@ -518,6 +529,9 @@
                 render();
                 return;
             }
+
+            // A forced reload (e.g. right after an upload) must re-list Storage, not reuse cached file lists.
+            if (force) projectsCache.clear();
 
             try {
                 const projectsRef = collection(db, 'projects');
@@ -575,7 +589,8 @@
                         date: new Date(meta.timeCreated).toLocaleDateString(),
                         url: url,
                         path: item.fullPath,
-                        size: meta.size
+                        size: meta.size,
+                        by: (meta.customMetadata && meta.customMetadata.by) || null
                     };
                 });
                 
@@ -808,6 +823,10 @@
                                                 const htmlCount = project.files.filter(f => f.name.match(/\.html?$/i)).length;
                                                 const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
                                                 const stlCount = stlFiles.length;
+                                                // "Download STL" = the designer's final files, only once delivered.
+                                                // (Before: any STL - including the patient's own scan - showed it, and
+                                                // clicking it marked the project completed.)
+                                                const finals = finalReady(project) ? stlFiles.filter(f => isFinalStl(project, f)) : [];
                                                 return `
                                                     <tr>
                                                         <td class="dx-patient">${esc(project.title)}${project.projectNo ? `<span class="dx-workno">#${project.projectNo}</span>` : ''}</td>
@@ -818,7 +837,7 @@
                                                         <td>
                                                             <div class="dx-actions">
                                                                 <button type="button" class="dx-act" onclick="openProjectCard('${js(project.id)}')">${dxIcon('eye', 13)} ${t('view')}</button>
-                                                                ${stlCount > 0 ? `<button type="button" class="dx-act dx-act--accent" onclick="forceDownload('${js(stlFiles[0].path)}', '${js(stlFiles[0].name)}'); trackStlDownload('${js(project.id)}', '${js(stlFiles[0].name)}')">${dxIcon('download', 13)} ${t('downloadStl')}</button>` : ''}
+                                                                ${finals.length > 0 ? `<button type="button" class="dx-act dx-act--accent" onclick="downloadFinalStls('${js(project.id)}')">${dxIcon('download', 13)} ${t('downloadStl')}</button>` : ''}
                                                                 <button type="button" class="dx-act" onclick="openClientUploadModal('${js(project.id)}', '${js(project.title)}')">${dxIcon('upload', 13)} ${t('uploadFile')}</button>
                                                                 <button type="button" class="dx-act" onclick="toggleRowMenu(event, '${js(project.id)}')" aria-label="${esc(t('moreOptions'))}" aria-haspopup="true">&#8943;</button>
                                                             </div>
@@ -1131,12 +1150,6 @@
             dxSyncFileInput();
         };
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Link copied to clipboard!');
-            });
-        };
-
         let currentApprovalProjectId = null;
 
         window.viewHtmlForApproval = (projectId, url, filename) => {
@@ -1166,7 +1179,8 @@
             try {
                 // Get project to check if STL exists
                 const project = userProjects.find(p => p.id === currentApprovalProjectId);
-                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                // Only the designer's final STL moves the case to "STL ready" - not the patient's scan
+                const hasSTL = project.files.some(f => isFinalStl(project, f));
                 
                 await updateDoc(doc(db, 'projects', currentApprovalProjectId), { 
                     htmlApproved: true,
@@ -1174,6 +1188,7 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
+                logAudit('html-approval', `Approved design for "${project.title}" (${currentApprovalProjectId})`);
                 statusEl.textContent = '✅ Thank you for your approval!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -1203,6 +1218,7 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
+                logAudit('html-rejection', `Requested changes on project ${currentApprovalProjectId}: ${remarks}`);
                 statusEl.textContent = '✅ Feedback sent to designer';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -1764,6 +1780,7 @@
                     window.__dxPendingProjectId = projectId;
                     window.__dxUploaded = new Set();
                     window.__dxCreated = true;
+                    logAudit('case-created', `Created patient case "${title}" (${projectId}) for ${clientEmail}`);
                     if (giftUnused()) { try { await updateDoc(doc(db, 'users', currentUser.uid), { giftUsed: true, giftUsedAt: Date.now() }); giftUser.giftUsed = true; } catch (err) { console.error(err); } }
                 }
 
@@ -1777,6 +1794,7 @@
                         await uploadBytesResumable(storageRef, file);
                         if (window.__dxUploaded) window.__dxUploaded.add(file.name);
                     }
+                    logAudit('file-upload', `Uploaded ${files.length} file(s) to "${title}" (${projectId}): ${Array.from(files).map(f => f.name).join(', ')}`);
                 }
 
                 window.__dxPendingProjectId = null;
@@ -1877,6 +1895,7 @@
                     const storageRef = ref(storage, `projects/${currentUploadProjectId}/${file.name}`);
                     await uploadBytesResumable(storageRef, file);
                 }
+                logAudit('file-upload', `Uploaded ${files.length} file(s) to project ${currentUploadProjectId}: ${Array.from(files).map(f => f.name).join(', ')}`);
 
                 statusEl.textContent = '✅ ' + t('filesUploadedSuccess');
                 statusEl.className = 'status-msg active success';
@@ -1907,7 +1926,8 @@
             const modal = document.getElementById('projectCardModal');
             const content = document.getElementById('projectCardContent');
             
-            const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i));
+            // Patient's own scans always; the designer's final STLs only once delivered (STL ready / completed)
+            const stlFiles = project.files.filter(f => f.name.match(/\.stl$/i) && (!isFinalStl(project, f) || finalReady(project)));
             const htmlFiles = project.files.filter(f => f.name.match(/\.html?$/i));
             const isAwaitingApproval = project.status === 'awaiting-client-approval';
             
@@ -1961,7 +1981,7 @@
                                 <button class="action-btn-sm stl-preview-btn ${i === 0 ? 'active' : ''}" onclick="load3DPreview('${js(file.url)}', this)" style="padding: 4px 10px; font-size: 11px;">
                                     <i class="fas fa-cube"></i> ${esc(file.name)}
                                 </button>
-                                <button class="action-btn-sm" onclick="forceDownload('${js(file.path)}', '${js(file.name)}'); trackStlDownload('${js(project.id)}', '${js(file.name)}')" style="padding: 4px 10px; font-size: 11px;">
+                                <button class="action-btn-sm" onclick="forceDownload('${js(file.path)}', '${js(file.name)}')${finalReady(project) && isFinalStl(project, file) ? `; trackStlDownload('${js(project.id)}', '${js(file.name)}')` : ''}" style="padding: 4px 10px; font-size: 11px;">
                                     <i class="fas fa-download"></i>
                                 </button>
                             `).join('')}
@@ -2086,7 +2106,7 @@
             const statusEl = document.getElementById('cardApprovalStatus');
             try {
                 const project = userProjects.find(p => p.id === currentProjectId);
-                const hasSTL = project.files.some(f => f.name.match(/\.stl$/i));
+                const hasSTL = project.files.some(f => isFinalStl(project, f));
                 
                 await updateDoc(doc(db, 'projects', currentProjectId), { 
                     htmlApproved: true,
@@ -2094,6 +2114,7 @@
                     clientRemarks: null,
                     approvedAt: Date.now()
                 });
+                logAudit('html-approval', `Approved design for "${project.title}" (${currentProjectId})`);
                 statusEl.textContent = '✅ Design approved!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -2123,6 +2144,7 @@
                     clientRemarks: remarks,
                     remarksAt: Date.now()
                 });
+                logAudit('html-rejection', `Requested changes on project ${currentProjectId}: ${remarks}`);
                 statusEl.textContent = '✅ Feedback sent!';
                 statusEl.className = 'status-msg active success';
                 setTimeout(() => {
@@ -2182,13 +2204,26 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(blobUrl);
+                logAudit('file-download', `Downloaded "${filename}" (${path})`);
             } catch (error) {
                 console.error('Download error:', error);
                 alert('Download failed: ' + error.message);
             }
         };
 
+        // Row button: download every final STL (e.g. upper + lower), then mark the case completed once
+        window.downloadFinalStls = async (projectId) => {
+            const project = userProjects.find(p => p.id === projectId);
+            if (!project || !finalReady(project)) return;
+            const finals = project.files.filter(f => isFinalStl(project, f));
+            for (const f of finals) await forceDownload(f.path, f.name);
+            if (finals.length) await trackStlDownload(projectId, finals.map(f => f.name).join(', '));
+        };
+
         window.trackStlDownload = async (projectId, fileName) => {
+            const p = userProjects.find(x => x.id === projectId);
+            // Only a delivered case (STL ready) becomes completed; never from the patient's own scan or mid-design
+            if (!p || p.status !== 'stl-ready') return;
             try {
                 const projectRef = doc(db, 'projects', projectId);
                 await updateDoc(projectRef, {
@@ -2197,7 +2232,7 @@
                     stlDownloadedFile: fileName,
                     status: 'completed'
                 });
-                console.log('STL download tracked');
+                logAudit('status-change', `Project ${projectId} completed (final STL "${fileName}" downloaded)`);
             } catch (error) {
                 console.error('Error tracking download:', error);
             }

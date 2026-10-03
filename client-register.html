@@ -211,6 +211,7 @@
                     'bad-email': ['Enter a valid email address.', 'נא להזין כתובת אימייל תקינה.'],
                     'weak-password': ['Password must be at least 10 characters.', 'הסיסמה חייבת להכיל לפחות 10 תווים.'],
                     'too-many-pending': ['We have many requests waiting. Please message us on WhatsApp.', 'יש כרגע הרבה בקשות בהמתנה. כתבו לנו בוואטסאפ.'],
+                    'too-many-requests': ['Too many requests from this connection. Try again in an hour or message us on WhatsApp.', 'יותר מדי בקשות מהחיבור הזה. נסו שוב בעוד שעה או כתבו לנו בוואטסאפ.'],
                 }[err.message] || (err.code === 'functions/unavailable'
                     ? ['Network problem. Check your connection and try again.', 'בעיית רשת. בדקו את החיבור ונסו שוב.']
                     : ['Something went wrong. Please try again.', 'משהו השתבש. נסו שוב.']);
@@ -222,7 +223,7 @@
 
     <!-- WhatsApp Float Button -->
     <a href="https://wa.me/972559339666?text=Hello%20Smile%20Center!" 
-       class="whatsapp-float" 
+       class="whatsapp-float auth-float" 
        target="_blank" 
        aria-label="Chat on WhatsApp">
         <svg viewBox="0 0 32 32" width="32" height="32">
