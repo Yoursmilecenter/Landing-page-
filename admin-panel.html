@@ -256,11 +256,8 @@
         let lastLoadTime = 0;
         const CACHE_DURATION = 30000; // 30 seconds
         
-        // Designers are loaded from users with role 'designer'; this list is only a fallback if none are found.
-        const designers = [
-            { email: 'designer1@smile.com', name: 'Designer 1' },
-            { email: 'designer2@smile.com', name: 'Designer 2' },
-        ];
+        // Filled by loadDesigners() from users with role 'designer' (no hard-coded fallback accounts).
+        const designers = [];
 
         async function loadDesigners() {
             try {
@@ -270,7 +267,7 @@
                     .map(d => ({ email: String(d.email || '').trim().toLowerCase(), name: String(d.fullName || d.name || d.username || d.email || '').trim() }))
                     .filter(d => d.email)
                     .sort((a, b) => a.name.localeCompare(b.name));
-                if (list.length) designers.splice(0, designers.length, ...list);
+                designers.splice(0, designers.length, ...list);
             } catch (e) { console.error('Loading designers failed:', e); }
         }
 
