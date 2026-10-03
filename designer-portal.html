@@ -232,6 +232,18 @@
         [dir="rtl"] table td {
             text-align: right;
         }
+
+        /* Narrow screens: the 6-column stats row and the table pushed the page sideways */
+        @media (max-width: 900px) {
+            .stats { grid-template-columns: repeat(3, 1fr) !important; }
+            .header-content > div { flex-wrap: wrap; }
+            .filter-bar { flex-wrap: wrap; }
+        }
+        @media (max-width: 600px) {
+            .stats { grid-template-columns: repeat(2, 1fr) !important; }
+            .ultra-compact-table { display: block; overflow-x: auto; }
+            .filter-bar > * { flex: 1 1 140px; min-width: 0 !important; }
+        }
     </style>
 </head>
 <body>
@@ -472,6 +484,20 @@
             }
         };
 
+        // Status -> translation key (the generated key "statusAwaitingClientApproval" didn't exist, so the raw key was shown)
+        const STATUS_KEYS = {
+            'pending': 'statusPending', 'in-progress': 'statusInProgress', 'awaiting-client-approval': 'statusAwaitingApproval',
+            'approved': 'statusApproved', 'changes-requested': 'statusChangesRequested', 'stl-ready': 'statusStlReady',
+            'completed': 'statusCompleted', 'canceled': 'statusCanceled'
+        };
+        function statusLabel(s) {
+            const key = STATUS_KEYS[s];
+            const v = key ? t(key) : '';
+            return v && v !== key ? v : String(s || '').toUpperCase().replace(/-/g, ' ');
+        }
+
+        window.setPerPage = (n) => { itemsPerPage = parseInt(n, 10) || 50; applyFilters(); };
+
         function render() {
             const stats = {
                 total: myProjects.length,
@@ -544,7 +570,7 @@
                             <div class="stat-value">${stats.completed}</div>
                         </div>
                         <div class="stat-card" style="background: rgba(239, 68, 68, 0.1);">
-                            <div class="stat-label">⚡ Urgent</div>
+                            <div class="stat-label">⚡ ${t('urgent')}</div>
                             <div class="stat-value">${stats.urgent}</div>
                         </div>
                     </div>
@@ -557,14 +583,14 @@
                             <option value="pending" ${sel('pending', currentFilters.status)}>${t('pending')}</option>
                             <option value="in-progress" ${sel('in-progress', currentFilters.status)}>${t('inProgress')}</option>
                             <option value="awaiting-client-approval" ${sel('awaiting-client-approval', currentFilters.status)}>${t('awaitingApproval')}</option>
-                            <option value="approved" ${sel('approved', currentFilters.status)}>Approved</option>
-                            <option value="changes-requested" ${sel('changes-requested', currentFilters.status)}>Changes Requested</option>
-                            <option value="stl-ready" ${sel('stl-ready', currentFilters.status)}>STL Ready</option>
+                            <option value="approved" ${sel('approved', currentFilters.status)}>${statusLabel('approved')}</option>
+                            <option value="changes-requested" ${sel('changes-requested', currentFilters.status)}>${statusLabel('changes-requested')}</option>
+                            <option value="stl-ready" ${sel('stl-ready', currentFilters.status)}>${statusLabel('stl-ready')}</option>
                             <option value="completed" ${sel('completed', currentFilters.status)}>${t('completed')}</option>
                         </select>
                         <select onchange="updateFilter('priority', this.value)" style="min-width: 140px;">
                             <option value="all" ${sel('all', currentFilters.priority)}>${t('allPriorities')}</option>
-                            <option value="urgent" ${sel('urgent', currentFilters.priority)}>⚡ Urgent Only</option>
+                            <option value="urgent" ${sel('urgent', currentFilters.priority)}>${t('urgentOnly')}</option>
                             <option value="vip" ${sel('vip', currentFilters.priority)}>${t('vipOnly')}</option>
                             <option value="normal" ${sel('normal', currentFilters.priority)}>${t('normalOnly')}</option>
                         </select>
@@ -574,7 +600,7 @@
                             <option value="name-asc" ${sel('name-asc', currentFilters.sortBy)}>${t('nameAZ')}</option>
                             <option value="name-desc" ${sel('name-desc', currentFilters.sortBy)}>${t('nameZA')}</option>
                         </select>
-                        <select onchange="itemsPerPage = parseInt(this.value); applyFilters();" style="min-width: 120px;">
+                        <select onchange="setPerPage(this.value)" style="min-width: 120px;">
                             <option value="25" ${sel(25, itemsPerPage)}>25 ${t('perPage')}</option>
                             <option value="50" ${sel(50, itemsPerPage)}>50 ${t('perPage')}</option>
                             <option value="100" ${sel(100, itemsPerPage)}>100 ${t('perPage')}</option>
@@ -611,10 +637,10 @@
                                         ${project.clientRemarks ? `<div style="font-size: 11px; color: #ef4444; margin-top: 2px; cursor: pointer;" onclick="alert('Client Remarks:\\n${js(project.clientRemarks)}')">⚠️ Changes requested (click to view)</div>` : ''}
                                     </td>
                                     <td>
-                                        <span class="status-badge status-${esc(String(project.status || '').replace(/[^a-z0-9]/gi, ''))}">${esc(t('status' + String(project.status || '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')) || String(project.status || '').toUpperCase().replace(/-/g, ' '))}</span>
+                                        <span class="status-badge status-${esc(String(project.status || '').replace(/[^a-z0-9]/gi, ''))}">${esc(statusLabel(project.status))}</span>
                                     </td>
                                     <td>
-                                        ${project.isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
+                                        ${project.isUrgent ? `<span class="badge-urgent">${esc(t('urgent'))}</span>` : ''}
                                         ${project.isVIP ? '<span class="badge-vip">VIP</span>' : ''}
                                         ${!project.isUrgent && !project.isVIP ? '<span style="font-size: 11px; color: var(--color-text-secondary);">Normal</span>' : ''}
                                     </td>
